@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(WAR
-    VERSION 0.6.0
-    DESCRIPTION "Wrath and Ruin milestone 32"
+    VERSION 0.7.0
+    DESCRIPTION "Wrath and Ruin milestone 33"
     LANGUAGES CXX
 )
 
@@ -40,6 +40,7 @@ set(WAR_SOURCES
     src/engine/world/WorldState.cpp
     src/engine/gameplay/EntityManager.cpp
     src/engine/gameplay/ActionSystem.cpp
+    src/engine/simulation/SimulationRuntime.cpp
     src/platform/win32/Win32Window.cpp
     src/game/GameLayer.cpp
 )
@@ -106,7 +107,7 @@ endif()
 
 if(WIN32 AND EXISTS "${WAR_SHADER_BUILD_SCRIPT}")
     add_custom_target(war_build_shaders
-        COMMAND cmd /c "\"${WAR_SHADER_BUILD_SCRIPT}\" \"${CMAKE_SOURCE_DIR}\" \"$<CONFIG>\""
+        COMMAND cmd /c ""${WAR_SHADER_BUILD_SCRIPT}" "${CMAKE_SOURCE_DIR}" "$<CONFIG>""
         BYPRODUCTS
             "${CMAKE_SOURCE_DIR}/assets/shaders/dx11/vs_color.bin"
             "${CMAKE_SOURCE_DIR}/assets/shaders/dx11/fs_color.bin"

@@ -11,6 +11,7 @@
 #include "engine/render/BgfxShaderProgram.h"
 #include "engine/render/BgfxTextureAsset.h"
 #include "engine/render/Camera2D.h"
+#include "engine/simulation/SimulationIntent.h"
 #include "engine/world/WorldGrid.h"
 #include "engine/world/WorldState.h"
 
@@ -32,7 +33,8 @@ namespace war
             bool hasActionTargetTile,
             TileCoord actionTargetTile,
             const RuntimeBoundaryReport& runtimeBoundaryReport,
-            const LocalDemoDiagnosticsReport& localDemoDiagnosticsReport);
+            const LocalDemoDiagnosticsReport& localDemoDiagnosticsReport,
+            const SharedSimulationDiagnostics& simulationDiagnostics);
 
         void shutdown();
 

@@ -16,6 +16,8 @@
     <ClCompile Include="src\engine\core\Application.cpp"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="src\engine\core\Timer.cpp"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="src\engine\core\Log.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\engine\core\RuntimePaths.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\engine\core\LocalDemoDiagnostics.cpp"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="src\engine\math\Vec2.cpp"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="src\engine\render\Camera2D.cpp"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="src\engine\render\WorldRenderer.cpp"><Filter>Source Files</Filter></ClCompile>
@@ -39,6 +41,7 @@
     <ClCompile Include="src\engine\world\WorldState.cpp"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="src\engine\gameplay\EntityManager.cpp"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="src\engine\gameplay\ActionSystem.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\engine\simulation\SimulationRuntime.cpp"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="src\platform\win32\Win32Window.cpp"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="src\game\GameLayer.cpp"><Filter>Source Files</Filter></ClCompile>
   </ItemGroup>
@@ -47,6 +50,8 @@
     <ClInclude Include="src\engine\core\Application.h"><Filter>Header Files</Filter></ClInclude>
     <ClInclude Include="src\engine\core\Timer.h"><Filter>Header Files</Filter></ClInclude>
     <ClInclude Include="src\engine\core\Log.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\core\RuntimePaths.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\core\LocalDemoDiagnostics.h"><Filter>Header Files</Filter></ClInclude>
     <ClInclude Include="src\engine\math\Vec2.h"><Filter>Header Files</Filter></ClInclude>
     <ClInclude Include="src\engine\render\Camera2D.h"><Filter>Header Files</Filter></ClInclude>
     <ClInclude Include="src\engine\render\WorldRenderer.h"><Filter>Header Files</Filter></ClInclude>
@@ -75,6 +80,8 @@
     <ClInclude Include="src\engine\gameplay\Entity.h"><Filter>Header Files</Filter></ClInclude>
     <ClInclude Include="src\engine\gameplay\EntityManager.h"><Filter>Header Files</Filter></ClInclude>
     <ClInclude Include="src\engine\gameplay\ActionSystem.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\simulation\SimulationIntent.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\simulation\SimulationRuntime.h"><Filter>Header Files</Filter></ClInclude>
     <ClInclude Include="src\platform\IWindow.h"><Filter>Header Files</Filter></ClInclude>
     <ClInclude Include="src\platform\win32\Win32Window.h"><Filter>Header Files</Filter></ClInclude>
     <ClInclude Include="src\game\GameLayer.h"><Filter>Header Files</Filter></ClInclude>

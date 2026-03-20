@@ -9,6 +9,7 @@
 #include "engine/core/RuntimePaths.h"
 #include "engine/math/Vec2.h"
 #include "engine/render/Camera2D.h"
+#include "engine/simulation/SimulationIntent.h"
 #include "engine/world/WorldState.h"
 
 namespace war
@@ -33,7 +34,8 @@ namespace war
             float lastDeltaTime,
             const POINT& mousePosition,
             const RuntimeBoundaryReport& runtimeBoundaryReport,
-            const LocalDemoDiagnosticsReport& localDemoDiagnosticsReport) const;
+            const LocalDemoDiagnosticsReport& localDemoDiagnosticsReport,
+            const SharedSimulationDiagnostics& simulationDiagnostics) const;
 
     private:
         [[nodiscard]] const char* entityTypeToText(EntityType type) const;

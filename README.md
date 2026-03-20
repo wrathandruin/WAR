@@ -1,39 +1,39 @@
-# WAR — Milestone 32 (Local Demo Lane / Packaging / Diagnostics Baseline)
+# WAR — Milestone 33 (Shared Simulation Contract / Fixed-Step Ownership)
 
-> Current development milestone: M32 — Local Demo Lane / Packaging / Diagnostics Baseline
+> Current development milestone: M33 — Shared Simulation Contract / Fixed-Step Ownership
 
 ## Focus
-Turn the repo from a manually prepared local prototype into a repeatable local demo lane with package staging, startup reporting, and smoke-test discipline.
+Move gameplay-critical update ownership out of the frame-driven client shell and into a shared local simulation runtime with a fixed-step loop and explicit intent contract.
 
-M31 established source-versus-runtime ownership.
-M32 uses that contract to define how a local demo build should be staged, launched, checked, and diagnosed.
+M32 established a repeatable local demo lane.
+M33 uses that safer base to define where gameplay truth lives, how often it updates, and how client input becomes simulation work.
 
 ## What this milestone does
-- adds `LocalDemoDiagnostics` so startup generates a local demo readiness report in `Runtime/Logs/`
-- adds a repo-side packaging script at `scripts/build_local_demo_package_win64.bat`
-- adds launch and smoke-test starter scripts for staged demo builds
-- surfaces build configuration, startup-report path, packaged-lane readiness, and script availability in runtime diagnostics
-- updates the README and dedicated M32 docs so demo prep stops living in memory
+- adds `SimulationRuntime` as the first explicit shared-simulation boundary inside the repo
+- adds `SimulationIntent` as the client-to-simulation action contract for move, inspect, and interact requests
+- moves world state, action processing, path progression, player position ownership, and event-log ownership into the simulation runtime
+- updates `GameLayer` so the client shell becomes an input, camera, render, and diagnostics surface rather than the owner of gameplay truth
+- runs gameplay updates on a fixed simulation cadence while keeping presentation separate from simulation ownership
+- surfaces simulation diagnostics in both the GDI overlay and bgfx status line
+- updates milestone and architecture docs so the new boundary is explicit and reviewable
 
-## Local demo lane after M32
-A disciplined local demo lane now means:
+## Shared simulation after M33
+The repo should now read more clearly as:
 
-- the build can be staged into `out/local_demo/`
-- the staged package uses executable-local `assets/` and `runtime/` roots
-- startup writes a concrete report describing runtime and packaging state
-- launch and smoke-test scripts exist as first-class repo assets
-- diagnostics explain whether the package is really ready or still only a source-tree run
-
-## Intended operator flow
-1. Build WAR in `Release|x64`.
-2. Run `scripts/build_local_demo_package_win64.bat Release`.
-3. Launch the staged package with `launch_local_demo_win64.bat`.
-4. Run `smoke_test_local_demo_win64.bat` to verify demo prerequisites and emit a report.
+- client: input capture, camera, rendering, local diagnostics
+- shared simulation runtime: world state, player state, fixed-step ticking, intent processing, event-log ownership
+- future host: next milestone destination for moving that same contract out of process
 
 ## Why this matters
-M32 is where demoability becomes production work instead of habit.
+M33 is where WAR stops treating gameplay state as an incidental by-product of rendering and starts treating it as an owned runtime.
 
-That matters because the roadmap requires a clean local demo lane before shared simulation, authority, persistence, and hosted runtime work expand the support surface.
+That matters because M34 through M36 depend on this exact separation:
+
+- M34 needs a headless world-host bootstrap
+- M35 needs authoritative intent validation and resolution
+- M36 needs replication and divergence visibility
+
+Without M33, those milestones would be architecture theatre instead of grounded runtime work.
 
 ## Requirements
 The bgfx textured path expects compiled shader binaries at:
@@ -52,7 +52,7 @@ assets/textures/world_atlas.bmp
 ```
 
 ## Next Milestone
-### M33 — Shared Simulation Contract / Fixed-Step Ownership
-- define a shared gameplay-state contract between client and future host
-- establish fixed-step ownership and simulation cadence boundaries
-- stop treating local presentation as the source of gameplay truth
+### M34 — Headless World Host / Dedicated Server Bootstrap
+- stand up the first host-owned runtime lane outside the client shell
+- reuse the new shared simulation contract instead of inventing a second gameplay path
+- prove that authority can live outside the rendering process

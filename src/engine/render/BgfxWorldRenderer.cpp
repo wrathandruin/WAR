@@ -187,7 +187,8 @@ namespace war
             bool hasActionTargetTile,
             TileCoord actionTargetTile,
             const RuntimeBoundaryReport& runtimeBoundaryReport,
-            const LocalDemoDiagnosticsReport& localDemoDiagnosticsReport)
+            const LocalDemoDiagnosticsReport& localDemoDiagnosticsReport,
+            const SharedSimulationDiagnostics& simulationDiagnostics)
         {
             const std::string hovered = tileText(hasHoveredTile && worldState.world().isInBounds(hoveredTile), hoveredTile);
             const std::string selected = tileText(hasSelectedTile && worldState.world().isInBounds(selectedTile), selectedTile);
@@ -200,14 +201,18 @@ namespace war
             const std::string runtimeIssue = runtimeBoundaryReport.issues.empty() ? std::string("none") : runtimeBoundaryReport.issues.front();
             const std::string demoIssue = localDemoDiagnosticsReport.issues.empty() ? std::string("none") : localDemoDiagnosticsReport.issues.front();
 
-            return std::string("M32 demo lane active | mode: ")
+            return std::string("M33 shared sim active | owner: local-runtime | fixed step: ")
+                + std::to_string(simulationDiagnostics.fixedStepSeconds)
+                + " | sim ticks: "
+                + std::to_string(simulationDiagnostics.simulationTicks)
+                + " | intents q/p/pending: "
+                + std::to_string(simulationDiagnostics.intentsQueued)
+                + "/"
+                + std::to_string(simulationDiagnostics.intentsProcessed)
+                + "/"
+                + std::to_string(simulationDiagnostics.pendingIntentCount)
+                + " | mode: "
                 + (runtimeBoundaryReport.runningFromSourceTree ? "source-tree" : "packaged")
-                + " | build: "
-                + localDemoDiagnosticsReport.buildConfiguration
-                + " | startup: "
-                + RuntimePaths::displayPath(localDemoDiagnosticsReport.startupReportPath)
-                + " | repo scripts: "
-                + (localDemoDiagnosticsReport.repoPackagingScriptsReady ? "ready" : "missing")
                 + " | packaged lane: "
                 + (localDemoDiagnosticsReport.packagedLaneReady ? "ready" : "not staged")
                 + " | runtime issue: "
@@ -240,7 +245,8 @@ namespace war
         bool hasActionTargetTile,
         TileCoord actionTargetTile,
         const RuntimeBoundaryReport& runtimeBoundaryReport,
-        const LocalDemoDiagnosticsReport& localDemoDiagnosticsReport)
+        const LocalDemoDiagnosticsReport& localDemoDiagnosticsReport,
+        const SharedSimulationDiagnostics& simulationDiagnostics)
     {
 #if WAR_HAS_BGFX
         ensureSharedBgfxState();
@@ -316,7 +322,8 @@ namespace war
             hasActionTargetTile,
             actionTargetTile,
             runtimeBoundaryReport,
-            localDemoDiagnosticsReport);
+            localDemoDiagnosticsReport,
+            simulationDiagnostics);
         return true;
 #else
         (void)worldState;
@@ -332,6 +339,7 @@ namespace war
         (void)actionTargetTile;
         (void)runtimeBoundaryReport;
         (void)localDemoDiagnosticsReport;
+        (void)simulationDiagnostics;
         m_statusMessage = "bgfx headers not available at compile time";
         return false;
 #endif

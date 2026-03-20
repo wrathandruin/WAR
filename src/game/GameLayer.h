@@ -2,13 +2,11 @@
 
 #include <memory>
 #include <string>
-#include <vector>
 
 #include <windows.h>
 
 #include "engine/core/LocalDemoDiagnostics.h"
 #include "engine/core/RuntimePaths.h"
-#include "engine/gameplay/ActionQueue.h"
 #include "engine/math/Vec2.h"
 #include "engine/render/BgfxDebugFrameRenderer.h"
 #include "engine/render/BgfxWorldRenderer.h"
@@ -17,8 +15,7 @@
 #include "engine/render/DebugOverlayRenderer.h"
 #include "engine/render/IRenderDevice.h"
 #include "engine/render/WorldRenderer.h"
-#include "engine/world/WorldGrid.h"
-#include "engine/world/WorldState.h"
+#include "engine/simulation/SimulationRuntime.h"
 #include "platform/IWindow.h"
 
 namespace war
@@ -33,7 +30,6 @@ namespace war
 
     private:
         void updateInput();
-        void updatePlayer(float dt);
         void pushEvent(const std::string& message);
         void applyAuthoringHotkeys();
 
@@ -41,18 +37,14 @@ namespace war
 
         IWindow* m_window = nullptr;
         Camera2D m_camera{};
-        WorldState m_worldState{};
+        SimulationRuntime m_simulationRuntime{};
         RuntimeBoundaryReport m_runtimeBoundaryReport{};
         LocalDemoDiagnosticsReport m_localDemoDiagnosticsReport{};
-        ActionQueue m_actions{};
         WorldRenderer m_worldRenderer{};
         DebugOverlayRenderer m_debugOverlayRenderer{};
         BgfxWorldRenderer m_bgfxWorldRenderer{};
         BgfxDebugFrameRenderer m_bgfxDebugFrameRenderer{};
         std::unique_ptr<IRenderDevice> m_renderDevice{};
-
-        Vec2 m_playerPosition{ 0.0f, 0.0f };
-        float m_playerSpeed = 210.0f;
 
         TileCoord m_hoveredTile{};
         bool m_hasHoveredTile = false;
@@ -63,11 +55,7 @@ namespace war
         TileCoord m_actionTargetTile{};
         bool m_hasActionTargetTile = false;
 
-        std::vector<TileCoord> m_currentPath;
-        size_t m_pathIndex = 0;
-
         float m_lastDeltaTime = 0.016f;
-        std::vector<std::string> m_eventLog;
 
         bool m_overlayKeyWasDown = false;
         bool m_hotspotKeyWasDown = false;

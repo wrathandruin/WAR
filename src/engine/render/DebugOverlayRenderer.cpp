@@ -14,17 +14,14 @@ namespace war
             {
             case EntityType::Crate:
                 return entity.isOpen ? "open" : "closed";
-
             case EntityType::Terminal:
                 return entity.isPowered ? "powered" : "offline";
-
             case EntityType::Locker:
                 if (entity.isLocked)
                 {
                     return "locked";
                 }
                 return entity.isOpen ? "open" : "closed";
-
             default:
                 return "unknown";
             }
@@ -157,7 +154,8 @@ namespace war
         float lastDeltaTime,
         const POINT& mousePosition,
         const RuntimeBoundaryReport& runtimeBoundaryReport,
-        const LocalDemoDiagnosticsReport& localDemoDiagnosticsReport) const
+        const LocalDemoDiagnosticsReport& localDemoDiagnosticsReport,
+        const SharedSimulationDiagnostics& simulationDiagnostics) const
     {
         SetBkMode(dc, TRANSPARENT);
         SetTextColor(dc, RGB(225, 225, 225));
@@ -169,12 +167,12 @@ namespace war
             hasHoveredTile && worldState.world().isInBounds(hoveredTile) && worldState.world().isBlocked(hoveredTile);
         const Entity* hoveredEntity =
             hasHoveredTile && worldState.world().isInBounds(hoveredTile)
-            ? worldState.entities().getAt(hoveredTile)
-            : nullptr;
+                ? worldState.entities().getAt(hoveredTile)
+                : nullptr;
         const WorldAuthoringHotspot* hoveredHotspot =
             hasHoveredTile && worldState.world().isInBounds(hoveredTile)
-            ? worldState.authoringHotspotAt(hoveredTile)
-            : nullptr;
+                ? worldState.authoringHotspotAt(hoveredTile)
+                : nullptr;
 
         const std::string affordance = hoverAffordance(worldState, hasHoveredTile, hoveredTile, hoveredEntity, hoveredHotspot);
         const std::string prompt = hoverPrompt(worldState, hasHoveredTile, hoveredTile, hoveredEntity, hoveredHotspot);
@@ -182,68 +180,67 @@ namespace war
         const std::string actionTarget = tileText(hasActionTargetTile, actionTargetTile);
         const std::string pathDestination =
             currentPath.empty() || pathIndex >= currentPath.size()
-            ? "none"
-            : tileText(true, currentPath.back());
+                ? "none"
+                : tileText(true, currentPath.back());
         const std::string repoRoot = RuntimePaths::displayPath(runtimeBoundaryReport.repoRoot);
         const std::string assetRoot = RuntimePaths::displayPath(runtimeBoundaryReport.assetRoot);
         const std::string runtimeRoot = RuntimePaths::displayPath(runtimeBoundaryReport.runtimeRoot);
-        const std::string configRoot = RuntimePaths::displayPath(runtimeBoundaryReport.configDirectory);
-        const std::string logsRoot = RuntimePaths::displayPath(runtimeBoundaryReport.logsDirectory);
-        const std::string savesRoot = RuntimePaths::displayPath(runtimeBoundaryReport.savesDirectory);
-        const std::string crashRoot = RuntimePaths::displayPath(runtimeBoundaryReport.crashDirectory);
         const std::string startupReport = RuntimePaths::displayPath(localDemoDiagnosticsReport.startupReportPath);
-        const std::string suggestedPackageRoot = RuntimePaths::displayPath(localDemoDiagnosticsReport.suggestedPackageRoot);
         const char* runtimeIssue = runtimeBoundaryReport.issues.empty() ? "none" : runtimeBoundaryReport.issues.front().c_str();
         const char* demoIssue = localDemoDiagnosticsReport.issues.empty() ? "none" : localDemoDiagnosticsReport.issues.front().c_str();
 
-        char buffer[4096]{};
+        char buffer[6144]{};
         std::snprintf(
             buffer,
             sizeof(buffer),
-            "WAR Milestone 32"
-            "LMB: move    RMB: interact    Shift+RMB: inspect    MMB drag: pan    Wheel: zoom"
-            "Authoring: O region overlay    H hotspot overlay    7/8/9 palette"
-            "Player world: (%.1f, %.1f)"
-            "Player tile: (%d, %d)"
-            "Mouse tile: (%d, %d)"
-            "Hovered region: %s"
-            "Hovered blocked: %s"
-            "Hovered affordance: %s"
-            "Prompt: %s"
-            "Hovered entity: %s"
-            "Hovered entity type: %s"
-            "Hovered entity state: %s"
-            "Hovered hotspot: %s"
-            "Hovered hotspot type: %s"
-            "Hovered hotspot state: %s"
-            "Hovered hotspot summary: %s"
-            "Selected tile: %s"
-            "Move target: %s"
-            "Path destination: %s"
-            "Runtime mode: %s"
-            "Build: %s"
-            "Build timestamp: %s"
-            "Repo root: %s"
-            "Asset root: %s"
-            "Runtime root: %s"
-            "Runtime dirs: cfg=%s  log=%s"
-            "Runtime dirs: save=%s  crash=%s"
-            "Startup report: %s"
-            "Suggested package root: %s"
-            "Repo packaging scripts: %s"
-            "Packaged assets ready: %s"
-            "Packaged runtime ready: %s"
-            "Launch script present: %s"
-            "Smoke script present: %s"
-            "Packaged lane ready: %s"
-            "Runtime issue: %s"
-            "Demo issue: %s"
-            "Region overlay: %s"
-            "Hotspot overlay: %s"
-            "Camera: (%.1f, %.1f)  Zoom: %.2f"
-            "Path nodes remaining: %zu"
-            "Entities: %zu"
-            "Hotspots: %zu"
+            "WAR Milestone 33\n"
+            "LMB: move    RMB: interact    Shift+RMB: inspect    MMB drag: pan    Wheel: zoom\n"
+            "Authoring: O region overlay    H hotspot overlay    7/8/9 palette\n"
+            "Simulation owner: SharedSimulationRuntime\n"
+            "Client role: input / camera / render / diagnostics\n"
+            "Local authority active: %s\n"
+            "Fixed step enabled: %s\n"
+            "Fixed step seconds: %.3f\n"
+            "Accumulator seconds: %.3f\n"
+            "Presentation alpha: %.2f\n"
+            "Rendered frames: %llu\n"
+            "Simulation ticks: %llu\n"
+            "Intents queued: %llu\n"
+            "Intents processed: %llu\n"
+            "Pending intents: %zu\n"
+            "Last intent sequence: %llu\n"
+            "Player world: (%.1f, %.1f)\n"
+            "Player tile: (%d, %d)\n"
+            "Mouse tile: (%d, %d)\n"
+            "Hovered region: %s\n"
+            "Hovered blocked: %s\n"
+            "Hovered affordance: %s\n"
+            "Prompt: %s\n"
+            "Hovered entity: %s\n"
+            "Hovered entity type: %s\n"
+            "Hovered entity state: %s\n"
+            "Hovered hotspot: %s\n"
+            "Hovered hotspot type: %s\n"
+            "Hovered hotspot state: %s\n"
+            "Hovered hotspot summary: %s\n"
+            "Selected tile: %s\n"
+            "Move target: %s\n"
+            "Path destination: %s\n"
+            "Runtime mode: %s\n"
+            "Build: %s\n"
+            "Repo root: %s\n"
+            "Asset root: %s\n"
+            "Runtime root: %s\n"
+            "Startup report: %s\n"
+            "Packaged lane ready: %s\n"
+            "Runtime issue: %s\n"
+            "Demo issue: %s\n"
+            "Region overlay: %s\n"
+            "Hotspot overlay: %s\n"
+            "Camera: (%.1f, %.1f)  Zoom: %.2f\n"
+            "Path nodes remaining: %zu\n"
+            "Entities: %zu\n"
+            "Hotspots: %zu\n"
             "Frame dt: %.4f",
             playerPosition.x,
             playerPosition.y,
@@ -252,8 +249,8 @@ namespace war
             mouseTile.x,
             mouseTile.y,
             hasHoveredTile && worldState.world().isInBounds(hoveredTile)
-            ? WorldRegionTags::debugName(worldState.regionTag(hoveredTile))
-            : "none",
+                ? WorldRegionTags::debugName(worldState.regionTag(hoveredTile))
+                : "none",
             hoveredBlocked ? "yes" : "no",
             affordance.c_str(),
             prompt.c_str(),
@@ -269,21 +266,10 @@ namespace war
             pathDestination.c_str(),
             runtimeBoundaryReport.runningFromSourceTree ? "source-tree" : "packaged",
             localDemoDiagnosticsReport.buildConfiguration.c_str(),
-            localDemoDiagnosticsReport.buildTimestamp.c_str(),
             repoRoot.c_str(),
             assetRoot.c_str(),
             runtimeRoot.c_str(),
-            configRoot.c_str(),
-            logsRoot.c_str(),
-            savesRoot.c_str(),
-            crashRoot.c_str(),
             startupReport.c_str(),
-            suggestedPackageRoot.c_str(),
-            localDemoDiagnosticsReport.repoPackagingScriptsReady ? "yes" : "no",
-            localDemoDiagnosticsReport.packageAssetsReady ? "yes" : "no",
-            localDemoDiagnosticsReport.packageRuntimeReady ? "yes" : "no",
-            localDemoDiagnosticsReport.launchScriptPresent ? "yes" : "no",
-            localDemoDiagnosticsReport.smokeScriptPresent ? "yes" : "no",
             localDemoDiagnosticsReport.packagedLaneReady ? "yes" : "no",
             runtimeIssue,
             demoIssue,
@@ -299,7 +285,7 @@ namespace war
 
         TextOutA(dc, 16, 16, buffer, static_cast<int>(std::strlen(buffer)));
 
-        int y = 700;
+        int y = 760;
         TextOutA(dc, 16, y, "Event Log:", 10);
         y += 22;
 
