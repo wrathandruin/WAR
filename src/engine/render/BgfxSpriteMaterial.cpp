@@ -6,20 +6,26 @@ namespace war
     {
         switch (material)
         {
+        case BgfxSpriteMaterialId::Floor:
+            return { 0.0f / 3.0f, 0.0f / 2.0f, 1.0f / 3.0f, 1.0f / 2.0f };
+
+        case BgfxSpriteMaterialId::Wall:
+            return { 1.0f / 3.0f, 0.0f / 2.0f, 2.0f / 3.0f, 1.0f / 2.0f };
+
         case BgfxSpriteMaterialId::Player:
-            return { 0.0f, 0.0f, 0.5f, 0.5f };
+            return { 2.0f / 3.0f, 0.0f / 2.0f, 3.0f / 3.0f, 1.0f / 2.0f };
 
         case BgfxSpriteMaterialId::Crate:
-            return { 0.5f, 0.0f, 1.0f, 0.5f };
+            return { 0.0f / 3.0f, 1.0f / 2.0f, 1.0f / 3.0f, 2.0f / 2.0f };
 
         case BgfxSpriteMaterialId::Terminal:
-            return { 0.0f, 0.5f, 0.5f, 1.0f };
+            return { 1.0f / 3.0f, 1.0f / 2.0f, 2.0f / 3.0f, 2.0f / 2.0f };
 
         case BgfxSpriteMaterialId::Locker:
-            return { 0.5f, 0.5f, 1.0f, 1.0f };
+            return { 2.0f / 3.0f, 1.0f / 2.0f, 3.0f / 3.0f, 2.0f / 2.0f };
 
         default:
-            return { 0.0f, 0.0f, 0.5f, 0.5f };
+            return { 0.0f / 3.0f, 0.0f / 2.0f, 1.0f / 3.0f, 1.0f / 2.0f };
         }
     }
 
@@ -27,6 +33,12 @@ namespace war
     {
         switch (material)
         {
+        case BgfxSpriteMaterialId::Floor:
+            return "Floor";
+
+        case BgfxSpriteMaterialId::Wall:
+            return "Wall";
+
         case BgfxSpriteMaterialId::Player:
             return "Player";
 

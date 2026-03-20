@@ -1,6 +1,5 @@
 #include "engine/render/BgfxWorldRenderer.h"
 
-#include <array>
 #include <cstring>
 #include <vector>
 
@@ -143,13 +142,12 @@ namespace war
             hasHoveredTile,
             hoveredTile);
 
-        submitColorLayer(renderData.tiles);
+        submitTexturedLayer(renderData.tiles);
         submitColorLayer(renderData.path);
         submitColorLayer(renderData.hoveredTile);
-        submitTexturedLayer(renderData.entities);
-        submitTexturedLayer(renderData.player);
+        submitTexturedLayer(renderData.actors);
 
-        m_statusMessage = "bgfx world rendered with atlas materials";
+        m_statusMessage = "bgfx world rendered with expanded atlas batching";
         return true;
 #else
         (void)worldState;

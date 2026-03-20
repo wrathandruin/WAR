@@ -28,6 +28,25 @@ namespace war
             };
         }
 
+        BgfxTexturedQuad tileToWorldTexturedQuad(
+            const WorldState& worldState,
+            TileCoord tile,
+            uint32_t color,
+            BgfxSpriteMaterialId material)
+        {
+            const int tileSize = worldState.world().getTileSize();
+            const Vec2 center = worldState.world().tileToWorldCenter(tile);
+
+            return BgfxTexturedQuad{
+                center.x - static_cast<float>(tileSize) * 0.5f,
+                center.y - static_cast<float>(tileSize) * 0.5f,
+                center.x + static_cast<float>(tileSize) * 0.5f,
+                center.y + static_cast<float>(tileSize) * 0.5f,
+                color,
+                material
+            };
+        }
+
         BgfxQuad centeredWorldQuad(const Vec2& worldPosition, float halfSize, uint32_t color)
         {
             return BgfxQuad{
@@ -55,11 +74,14 @@ namespace war
             };
         }
 
-        uint32_t tileColor(bool blocked)
+        uint32_t floorTileColor()
         {
-            return blocked
-                ? rgbaToAbgr(220, 60, 60)
-                : rgbaToAbgr(34, 38, 46);
+            return rgbaToAbgr(230, 235, 240);
+        }
+
+        uint32_t wallTileColor()
+        {
+            return rgbaToAbgr(210, 215, 220);
         }
 
         uint32_t pathColor()
@@ -69,7 +91,7 @@ namespace war
 
         uint32_t playerColor()
         {
-            return rgbaToAbgr(160, 210, 255);
+            return rgbaToAbgr(180, 225, 255);
         }
 
         uint32_t hoveredColor(bool blocked)
@@ -85,23 +107,23 @@ namespace war
             {
             case EntityType::Crate:
                 return entity.isOpen
-                    ? rgbaToAbgr(160, 160, 160)
-                    : rgbaToAbgr(200, 180, 120);
+                    ? rgbaToAbgr(180, 180, 180)
+                    : rgbaToAbgr(215, 195, 130);
 
             case EntityType::Terminal:
                 return entity.isPowered
-                    ? rgbaToAbgr(120, 220, 255)
-                    : rgbaToAbgr(100, 120, 150);
+                    ? rgbaToAbgr(130, 230, 255)
+                    : rgbaToAbgr(120, 145, 170);
 
             case EntityType::Locker:
                 if (entity.isLocked)
                 {
-                    return rgbaToAbgr(220, 110, 110);
+                    return rgbaToAbgr(230, 120, 120);
                 }
 
                 return entity.isOpen
-                    ? rgbaToAbgr(200, 200, 230)
-                    : rgbaToAbgr(180, 180, 210);
+                    ? rgbaToAbgr(215, 215, 240)
+                    : rgbaToAbgr(190, 190, 220);
 
             default:
                 return rgbaToAbgr(255, 255, 255);
@@ -124,6 +146,18 @@ namespace war
             default:
                 return BgfxSpriteMaterialId::Crate;
             }
+        }
+
+        BgfxSpriteMaterialId tileMaterial(bool blocked)
+        {
+            return blocked
+                ? BgfxSpriteMaterialId::Wall
+                : BgfxSpriteMaterialId::Floor;
+        }
+
+        uint32_t tileTint(bool blocked)
+        {
+            return blocked ? wallTileColor() : floorTileColor();
         }
     }
 
@@ -149,8 +183,9 @@ namespace war
             for (int x = 0; x < worldState.world().getWidth(); ++x)
             {
                 const TileCoord tile{ x, y };
+                const bool blocked = worldState.world().isBlocked(tile);
                 data.tiles.quads.push_back(
-                    tileToWorldQuad(worldState, tile, tileColor(worldState.world().isBlocked(tile))));
+                    tileToWorldTexturedQuad(worldState, tile, tileTint(blocked), tileMaterial(blocked)));
             }
         }
 
@@ -171,11 +206,11 @@ namespace war
                 tileToWorldQuad(worldState, hoveredTile, hoveredColor(worldState.world().isBlocked(hoveredTile))));
         }
 
-        data.entities.quads.reserve(worldState.entities().all().size());
+        data.actors.quads.reserve(worldState.entities().all().size() + 1u);
 
         for (const Entity& entity : worldState.entities().all())
         {
-            data.entities.quads.push_back(
+            data.actors.quads.push_back(
                 centeredWorldTexturedQuad(
                     worldState.world().tileToWorldCenter(entity.tile),
                     12.0f,
@@ -183,7 +218,7 @@ namespace war
                     entityMaterial(entity)));
         }
 
-        data.player.quads.push_back(
+        data.actors.quads.push_back(
             centeredWorldTexturedQuad(
                 playerPosition,
                 14.0f,

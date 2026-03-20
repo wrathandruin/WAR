@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(WAR
-    VERSION 0.3.4
-    DESCRIPTION "Wrath and Ruin milestone 21"
+    VERSION 0.3.5
+    DESCRIPTION "Wrath and Ruin milestone 22"
     LANGUAGES CXX
 )
 

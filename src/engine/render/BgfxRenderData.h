@@ -43,11 +43,10 @@ namespace war
 
     struct BgfxWorldRenderData
     {
-        BgfxRenderLayer tiles;
+        BgfxTexturedRenderLayer tiles;
         BgfxRenderLayer path;
         BgfxRenderLayer hoveredTile;
-        BgfxTexturedRenderLayer entities;
-        BgfxTexturedRenderLayer player;
+        BgfxTexturedRenderLayer actors;
     };
 
     class BgfxRenderDataBuilder
