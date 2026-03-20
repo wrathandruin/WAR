@@ -1,9 +1,11 @@
 #include "engine/render/BgfxWorldRenderer.h"
 
 #include <cstring>
+#include <sstream>
 #include <string>
 #include <vector>
 
+#include "engine/gameplay/Entity.h"
 #include "engine/render/BgfxSpriteMaterial.h"
 #include "engine/render/BgfxViewTransform.h"
 #include "engine/render/RenderAssetPaths.h"
@@ -86,59 +88,6 @@ namespace war
 {
     namespace
     {
-        const char* entityTypeToText(EntityType type)
-        {
-            switch (type)
-            {
-            case EntityType::Crate:
-                return "crate";
-            case EntityType::Terminal:
-                return "terminal";
-            case EntityType::Locker:
-                return "locker";
-            default:
-                return "unknown";
-            }
-        }
-
-        const char* entityStateText(const Entity& entity)
-        {
-            switch (entity.type)
-            {
-            case EntityType::Crate:
-                return entity.isOpen ? "open" : "closed";
-            case EntityType::Terminal:
-                return entity.isPowered ? "powered" : "offline";
-            case EntityType::Locker:
-                if (entity.isLocked)
-                {
-                    return "locked";
-                }
-                return entity.isOpen ? "open" : "closed";
-            default:
-                return "unknown";
-            }
-        }
-
-        const char* hotspotTypeToText(WorldAuthoringHotspotType type)
-        {
-            switch (type)
-            {
-            case WorldAuthoringHotspotType::Encounter:
-                return "encounter";
-            case WorldAuthoringHotspotType::Control:
-                return "control";
-            case WorldAuthoringHotspotType::Transit:
-                return "transit";
-            case WorldAuthoringHotspotType::Loot:
-                return "loot";
-            case WorldAuthoringHotspotType::Hazard:
-                return "hazard";
-            default:
-                return "unknown";
-            }
-        }
-
         std::string tileText(bool hasTile, TileCoord tile)
         {
             if (!hasTile)
@@ -164,13 +113,13 @@ namespace war
             const Entity* entity = worldState.entities().getAt(hoveredTile);
             if (entity != nullptr)
             {
-                return std::string("RMB interact ") + entity->name + " [" + entityTypeToText(entity->type) + ", " + entityStateText(*entity) + "]";
+                return std::string("RMB interact ") + entity->name;
             }
 
             const WorldAuthoringHotspot* hotspot = worldState.authoringHotspotAt(hoveredTile);
             if (hotspot != nullptr)
             {
-                return std::string("RMB use ") + hotspot->label + " [" + hotspotTypeToText(hotspot->type) + "]";
+                return std::string("RMB use ") + hotspot->label;
             }
 
             return "LMB move | Shift+RMB inspect terrain";
@@ -188,7 +137,8 @@ namespace war
             TileCoord actionTargetTile,
             const RuntimeBoundaryReport& runtimeBoundaryReport,
             const LocalDemoDiagnosticsReport& localDemoDiagnosticsReport,
-            const SharedSimulationDiagnostics& simulationDiagnostics)
+            const SharedSimulationDiagnostics& simulationDiagnostics,
+            const HeadlessHostPresenceReport& headlessHostPresenceReport)
         {
             const std::string hovered = tileText(hasHoveredTile && worldState.world().isInBounds(hoveredTile), hoveredTile);
             const std::string selected = tileText(hasSelectedTile && worldState.world().isInBounds(selectedTile), selectedTile);
@@ -198,37 +148,24 @@ namespace war
                     ? "none"
                     : tileText(true, currentPath.back());
 
-            const std::string runtimeIssue = runtimeBoundaryReport.issues.empty() ? std::string("none") : runtimeBoundaryReport.issues.front();
-            const std::string demoIssue = localDemoDiagnosticsReport.issues.empty() ? std::string("none") : localDemoDiagnosticsReport.issues.front();
-
-            return std::string("M33 shared sim active | owner: local-runtime | fixed step: ")
-                + std::to_string(simulationDiagnostics.fixedStepSeconds)
-                + " | sim ticks: "
-                + std::to_string(simulationDiagnostics.simulationTicks)
-                + " | intents q/p/pending: "
-                + std::to_string(simulationDiagnostics.intentsQueued)
-                + "/"
-                + std::to_string(simulationDiagnostics.intentsProcessed)
-                + "/"
-                + std::to_string(simulationDiagnostics.pendingIntentCount)
-                + " | mode: "
-                + (runtimeBoundaryReport.runningFromSourceTree ? "source-tree" : "packaged")
-                + " | packaged lane: "
-                + (localDemoDiagnosticsReport.packagedLaneReady ? "ready" : "not staged")
-                + " | runtime issue: "
-                + runtimeIssue
-                + " | demo issue: "
-                + demoIssue
-                + " | hover: "
-                + hovered
-                + " | prompt: "
-                + contextPrompt(worldState, hasHoveredTile, hoveredTile)
-                + " | selected: "
-                + selected
-                + " | move target: "
-                + moveTarget
-                + " | path destination: "
-                + pathDestination;
+            std::ostringstream status;
+            status
+                << "M34 host bootstrap | sim ticks: " << simulationDiagnostics.simulationTicks
+                << " | intents q/p/pending: "
+                << simulationDiagnostics.intentsQueued << "/"
+                << simulationDiagnostics.intentsProcessed << "/"
+                << simulationDiagnostics.pendingIntentCount
+                << " | runtime: " << (runtimeBoundaryReport.runningFromSourceTree ? "source-tree" : "packaged")
+                << " | packaged lane: " << (localDemoDiagnosticsReport.packagedLaneReady ? "ready" : "not staged")
+                << " | host online: " << (headlessHostPresenceReport.hostOnline ? "yes" : "no")
+                << " | host state: " << headlessHostPresenceReport.hostState
+                << " | host age ms: " << headlessHostPresenceReport.heartbeatAgeMilliseconds
+                << " | hover: " << hovered
+                << " | prompt: " << contextPrompt(worldState, hasHoveredTile, hoveredTile)
+                << " | selected: " << selected
+                << " | move target: " << moveTarget
+                << " | path destination: " << pathDestination;
+            return status.str();
         }
     }
 
@@ -246,7 +183,8 @@ namespace war
         TileCoord actionTargetTile,
         const RuntimeBoundaryReport& runtimeBoundaryReport,
         const LocalDemoDiagnosticsReport& localDemoDiagnosticsReport,
-        const SharedSimulationDiagnostics& simulationDiagnostics)
+        const SharedSimulationDiagnostics& simulationDiagnostics,
+        const HeadlessHostPresenceReport& headlessHostPresenceReport)
     {
 #if WAR_HAS_BGFX
         ensureSharedBgfxState();
@@ -323,7 +261,8 @@ namespace war
             actionTargetTile,
             runtimeBoundaryReport,
             localDemoDiagnosticsReport,
-            simulationDiagnostics);
+            simulationDiagnostics,
+            headlessHostPresenceReport);
         return true;
 #else
         (void)worldState;
@@ -340,6 +279,7 @@ namespace war
         (void)runtimeBoundaryReport;
         (void)localDemoDiagnosticsReport;
         (void)simulationDiagnostics;
+        (void)headlessHostPresenceReport;
         m_statusMessage = "bgfx headers not available at compile time";
         return false;
 #endif

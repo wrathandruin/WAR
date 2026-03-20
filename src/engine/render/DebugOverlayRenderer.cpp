@@ -1,7 +1,6 @@
 #include "engine/render/DebugOverlayRenderer.h"
 
-#include <cstdio>
-#include <cstring>
+#include <sstream>
 #include <string>
 
 namespace war
@@ -155,7 +154,8 @@ namespace war
         const POINT& mousePosition,
         const RuntimeBoundaryReport& runtimeBoundaryReport,
         const LocalDemoDiagnosticsReport& localDemoDiagnosticsReport,
-        const SharedSimulationDiagnostics& simulationDiagnostics) const
+        const SharedSimulationDiagnostics& simulationDiagnostics,
+        const HeadlessHostPresenceReport& headlessHostPresenceReport) const
     {
         SetBkMode(dc, TRANSPARENT);
         SetTextColor(dc, RGB(225, 225, 225));
@@ -185,107 +185,86 @@ namespace war
         const std::string repoRoot = RuntimePaths::displayPath(runtimeBoundaryReport.repoRoot);
         const std::string assetRoot = RuntimePaths::displayPath(runtimeBoundaryReport.assetRoot);
         const std::string runtimeRoot = RuntimePaths::displayPath(runtimeBoundaryReport.runtimeRoot);
+        const std::string hostPath = RuntimePaths::displayPath(headlessHostPresenceReport.statusFilePath);
         const std::string startupReport = RuntimePaths::displayPath(localDemoDiagnosticsReport.startupReportPath);
         const char* runtimeIssue = runtimeBoundaryReport.issues.empty() ? "none" : runtimeBoundaryReport.issues.front().c_str();
         const char* demoIssue = localDemoDiagnosticsReport.issues.empty() ? "none" : localDemoDiagnosticsReport.issues.front().c_str();
+        const char* hostIssue = headlessHostPresenceReport.issues.empty() ? "none" : headlessHostPresenceReport.issues.front().c_str();
 
-        char buffer[6144]{};
-        std::snprintf(
-            buffer,
-            sizeof(buffer),
-            "WAR Milestone 33\n"
-            "LMB: move    RMB: interact    Shift+RMB: inspect    MMB drag: pan    Wheel: zoom\n"
-            "Authoring: O region overlay    H hotspot overlay    7/8/9 palette\n"
-            "Simulation owner: SharedSimulationRuntime\n"
-            "Client role: input / camera / render / diagnostics\n"
-            "Local authority active: %s\n"
-            "Fixed step enabled: %s\n"
-            "Fixed step seconds: %.3f\n"
-            "Accumulator seconds: %.3f\n"
-            "Presentation alpha: %.2f\n"
-            "Rendered frames: %llu\n"
-            "Simulation ticks: %llu\n"
-            "Intents queued: %llu\n"
-            "Intents processed: %llu\n"
-            "Pending intents: %zu\n"
-            "Last intent sequence: %llu\n"
-            "Player world: (%.1f, %.1f)\n"
-            "Player tile: (%d, %d)\n"
-            "Mouse tile: (%d, %d)\n"
-            "Hovered region: %s\n"
-            "Hovered blocked: %s\n"
-            "Hovered affordance: %s\n"
-            "Prompt: %s\n"
-            "Hovered entity: %s\n"
-            "Hovered entity type: %s\n"
-            "Hovered entity state: %s\n"
-            "Hovered hotspot: %s\n"
-            "Hovered hotspot type: %s\n"
-            "Hovered hotspot state: %s\n"
-            "Hovered hotspot summary: %s\n"
-            "Selected tile: %s\n"
-            "Move target: %s\n"
-            "Path destination: %s\n"
-            "Runtime mode: %s\n"
-            "Build: %s\n"
-            "Repo root: %s\n"
-            "Asset root: %s\n"
-            "Runtime root: %s\n"
-            "Startup report: %s\n"
-            "Packaged lane ready: %s\n"
-            "Runtime issue: %s\n"
-            "Demo issue: %s\n"
-            "Region overlay: %s\n"
-            "Hotspot overlay: %s\n"
-            "Camera: (%.1f, %.1f)  Zoom: %.2f\n"
-            "Path nodes remaining: %zu\n"
-            "Entities: %zu\n"
-            "Hotspots: %zu\n"
-            "Frame dt: %.4f",
-            playerPosition.x,
-            playerPosition.y,
-            playerTile.x,
-            playerTile.y,
-            mouseTile.x,
-            mouseTile.y,
-            hasHoveredTile && worldState.world().isInBounds(hoveredTile)
-                ? WorldRegionTags::debugName(worldState.regionTag(hoveredTile))
-                : "none",
-            hoveredBlocked ? "yes" : "no",
-            affordance.c_str(),
-            prompt.c_str(),
-            hoveredEntity ? hoveredEntity->name.c_str() : "none",
-            hoveredEntity ? entityTypeToText(hoveredEntity->type) : "none",
-            hoveredEntity ? entityStateText(*hoveredEntity) : "none",
-            hoveredHotspot ? hoveredHotspot->label.c_str() : "none",
-            hoveredHotspot ? hotspotTypeToText(hoveredHotspot->type) : "none",
-            hoveredHotspot ? hotspotStateText(*hoveredHotspot) : "none",
-            hoveredHotspot ? hoveredHotspot->summary.c_str() : "none",
-            selected.c_str(),
-            actionTarget.c_str(),
-            pathDestination.c_str(),
-            runtimeBoundaryReport.runningFromSourceTree ? "source-tree" : "packaged",
-            localDemoDiagnosticsReport.buildConfiguration.c_str(),
-            repoRoot.c_str(),
-            assetRoot.c_str(),
-            runtimeRoot.c_str(),
-            startupReport.c_str(),
-            localDemoDiagnosticsReport.packagedLaneReady ? "yes" : "no",
-            runtimeIssue,
-            demoIssue,
-            worldState.regionOverlayEnabled() ? "on" : "off",
-            worldState.authoringHotspotsVisible() ? "on" : "off",
-            camera.getPosition().x,
-            camera.getPosition().y,
-            camera.getZoom(),
-            pathIndex < currentPath.size() ? currentPath.size() - pathIndex : 0,
-            worldState.entities().count(),
-            worldState.authoringHotspots().size(),
-            lastDeltaTime);
+        std::ostringstream info;
+        info
+            << "WAR Milestone 34\n"
+            << "LMB: move    RMB: interact    Shift+RMB: inspect    MMB drag: pan    Wheel: zoom\n"
+            << "Authoring: O region overlay    H hotspot overlay    7/8/9 palette\n"
+            << "Simulation owner: SharedSimulationRuntime (client local authority until M35)\n"
+            << "Local authority active: " << (simulationDiagnostics.localAuthorityActive ? "yes" : "no") << "\n"
+            << "Fixed step enabled: " << (simulationDiagnostics.fixedStepEnabled ? "yes" : "no") << "\n"
+            << "Fixed step seconds: " << simulationDiagnostics.fixedStepSeconds << "\n"
+            << "Accumulator seconds: " << simulationDiagnostics.accumulatorSeconds << "\n"
+            << "Presentation alpha: " << simulationDiagnostics.presentationAlpha << "\n"
+            << "Rendered frames: " << simulationDiagnostics.renderedFrames << "\n"
+            << "Simulation ticks: " << simulationDiagnostics.simulationTicks << "\n"
+            << "Intents queued: " << simulationDiagnostics.intentsQueued << "\n"
+            << "Intents processed: " << simulationDiagnostics.intentsProcessed << "\n"
+            << "Pending intents: " << simulationDiagnostics.pendingIntentCount << "\n"
+            << "Last intent sequence: " << simulationDiagnostics.lastIntentSequence << "\n"
+            << "Headless host file: " << hostPath << "\n"
+            << "Headless host online: " << (headlessHostPresenceReport.hostOnline ? "yes" : "no") << "\n"
+            << "Host heartbeat fresh: " << (headlessHostPresenceReport.heartbeatFresh ? "yes" : "no") << "\n"
+            << "Host heartbeat age ms: " << headlessHostPresenceReport.heartbeatAgeMilliseconds << "\n"
+            << "Host mode: " << headlessHostPresenceReport.hostMode << "\n"
+            << "Host state: " << headlessHostPresenceReport.hostState << "\n"
+            << "Host pid: " << headlessHostPresenceReport.hostPid << "\n"
+            << "Host tick ms: " << headlessHostPresenceReport.hostTickMilliseconds << "\n"
+            << "Advertised host sim ticks: " << headlessHostPresenceReport.advertisedSimulationTicks << "\n"
+            << "Local host lane ready: " << (headlessHostPresenceReport.localBootstrapLaneReady ? "yes" : "no") << "\n"
+            << "Player world: (" << playerPosition.x << ", " << playerPosition.y << ")\n"
+            << "Player tile: (" << playerTile.x << ", " << playerTile.y << ")\n"
+            << "Mouse tile: (" << mouseTile.x << ", " << mouseTile.y << ")\n"
+            << "Hovered region: "
+            << (hasHoveredTile && worldState.world().isInBounds(hoveredTile)
+                    ? WorldRegionTags::debugName(worldState.regionTag(hoveredTile))
+                    : "none")
+            << "\n"
+            << "Hovered blocked: " << (hoveredBlocked ? "yes" : "no") << "\n"
+            << "Hovered affordance: " << affordance << "\n"
+            << "Prompt: " << prompt << "\n"
+            << "Hovered entity: " << (hoveredEntity ? hoveredEntity->name : std::string("none")) << "\n"
+            << "Hovered entity type: " << (hoveredEntity ? entityTypeToText(hoveredEntity->type) : "none") << "\n"
+            << "Hovered entity state: " << (hoveredEntity ? entityStateText(*hoveredEntity) : "none") << "\n"
+            << "Hovered hotspot: " << (hoveredHotspot ? hoveredHotspot->label : std::string("none")) << "\n"
+            << "Hovered hotspot type: " << (hoveredHotspot ? hotspotTypeToText(hoveredHotspot->type) : "none") << "\n"
+            << "Hovered hotspot state: " << (hoveredHotspot ? hotspotStateText(*hoveredHotspot) : "none") << "\n"
+            << "Hovered hotspot summary: " << (hoveredHotspot ? hoveredHotspot->summary : std::string("none")) << "\n"
+            << "Selected tile: " << selected << "\n"
+            << "Move target: " << actionTarget << "\n"
+            << "Path destination: " << pathDestination << "\n"
+            << "Runtime mode: " << (runtimeBoundaryReport.runningFromSourceTree ? "source-tree" : "packaged") << "\n"
+            << "Build: " << localDemoDiagnosticsReport.buildConfiguration << "\n"
+            << "Build timestamp: " << localDemoDiagnosticsReport.buildTimestamp << "\n"
+            << "Repo root: " << repoRoot << "\n"
+            << "Asset root: " << assetRoot << "\n"
+            << "Runtime root: " << runtimeRoot << "\n"
+            << "Startup report: " << startupReport << "\n"
+            << "Packaged lane ready: " << (localDemoDiagnosticsReport.packagedLaneReady ? "yes" : "no") << "\n"
+            << "Runtime issue: " << runtimeIssue << "\n"
+            << "Demo issue: " << demoIssue << "\n"
+            << "Host issue: " << hostIssue << "\n"
+            << "Region overlay: " << (worldState.regionOverlayEnabled() ? "on" : "off") << "\n"
+            << "Hotspot overlay: " << (worldState.authoringHotspotsVisible() ? "on" : "off") << "\n"
+            << "Camera: (" << camera.getPosition().x << ", " << camera.getPosition().y << ")  Zoom: " << camera.getZoom() << "\n"
+            << "Path nodes remaining: " << (pathIndex < currentPath.size() ? currentPath.size() - pathIndex : 0) << "\n"
+            << "Entities: " << worldState.entities().count() << "\n"
+            << "Hotspots: " << worldState.authoringHotspots().size() << "\n"
+            << "Frame dt: " << lastDeltaTime;
 
-        TextOutA(dc, 16, 16, buffer, static_cast<int>(std::strlen(buffer)));
+        const std::string infoText = info.str();
+        RECT infoRect{ 16, 16, 1540, 760 };
+        RECT measureRect = infoRect;
+        DrawTextA(dc, infoText.c_str(), -1, &measureRect, DT_LEFT | DT_TOP | DT_NOPREFIX | DT_CALCRECT);
+        DrawTextA(dc, infoText.c_str(), -1, &infoRect, DT_LEFT | DT_TOP | DT_NOPREFIX);
 
-        int y = 760;
+        int y = measureRect.bottom + 24;
         TextOutA(dc, 16, y, "Event Log:", 10);
         y += 22;
 

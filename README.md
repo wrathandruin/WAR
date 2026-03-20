@@ -1,39 +1,53 @@
-# WAR — Milestone 33 (Shared Simulation Contract / Fixed-Step Ownership)
+# WAR — Milestone 34 (Headless World Host / Dedicated Server Bootstrap)
 
-> Current development milestone: M33 — Shared Simulation Contract / Fixed-Step Ownership
+> Current development milestone: M34 — Headless World Host / Dedicated Server Bootstrap
 
 ## Focus
-Move gameplay-critical update ownership out of the frame-driven client shell and into a shared local simulation runtime with a fixed-step loop and explicit intent contract.
+Stand up the first separate host-owned runtime lane outside the client window loop.
 
-M32 established a repeatable local demo lane.
-M33 uses that safer base to define where gameplay truth lives, how often it updates, and how client input becomes simulation work.
+M33 established shared simulation and fixed-step ownership.
+M34 uses that same simulation runtime to prove that world ownership can boot in a separate process, publish startup diagnostics, and expose a controlled local host-presence lane ahead of the real client intent protocol in M35.
 
 ## What this milestone does
-- adds `SimulationRuntime` as the first explicit shared-simulation boundary inside the repo
-- adds `SimulationIntent` as the client-to-simulation action contract for move, inspect, and interact requests
-- moves world state, action processing, path progression, player position ownership, and event-log ownership into the simulation runtime
-- updates `GameLayer` so the client shell becomes an input, camera, render, and diagnostics surface rather than the owner of gameplay truth
-- runs gameplay updates on a fixed simulation cadence while keeping presentation separate from simulation ownership
-- surfaces simulation diagnostics in both the GDI overlay and bgfx status line
-- updates milestone and architecture docs so the new boundary is explicit and reviewable
+- adds `HeadlessHostMode` so `WAR.exe --headless-host` can boot a separate runtime process without creating the client window
+- adds `HeadlessHostPresence` so the host writes a heartbeat/status file under `Runtime/Host` and the client can diagnose that host bootstrap lane
+- keeps the client locally authoritative for gameplay truth for now, but makes the bootstrap boundary explicit so M35 can move action validation into the host
+- adds host launch and smoke-test scripts for local authority bootstrap review
+- fixes the Visual Studio project file and build definitions so the new shared/host files are included without broken path escaping
+- updates runtime boundary rules so host bootstrap artifacts live under `Runtime/Host`
 
-## Shared simulation after M33
+## Headless host bootstrap after M34
 The repo should now read more clearly as:
 
-- client: input capture, camera, rendering, local diagnostics
-- shared simulation runtime: world state, player state, fixed-step ticking, intent processing, event-log ownership
-- future host: next milestone destination for moving that same contract out of process
+- client: input, camera, rendering, diagnostics, local simulation presentation
+- shared simulation runtime: reusable gameplay state/update ownership
+- headless host bootstrap: separate process that can own and advertise a world runtime
+- future protocol work: next milestone destination for client intents and authoritative validation
 
 ## Why this matters
-M33 is where WAR stops treating gameplay state as an incidental by-product of rendering and starts treating it as an owned runtime.
+M34 is where WAR stops only talking about authority and starts proving that authority can live outside the rendering process.
 
-That matters because M34 through M36 depend on this exact separation:
+It is intentionally still a bootstrap milestone, not a full protocol milestone.
+That discipline matters:
 
-- M34 needs a headless world-host bootstrap
-- M35 needs authoritative intent validation and resolution
-- M36 needs replication and divergence visibility
+- M34 proves separate host boot and host diagnostics
+- M35 moves movement and interaction truth into the host through a real intent lane
+- M36 adds replication, latency, and divergence visibility
 
-Without M33, those milestones would be architecture theatre instead of grounded runtime work.
+## Host launch commands
+- `WAR.exe --headless-host`
+- `WAR.exe --headless-host --host-tick-ms=50`
+- `WAR.exe --headless-host --host-run-seconds=5`
+
+## Demo controls
+- `LMB`: move / set movement target
+- `RMB`: interact
+- `Shift + RMB`: inspect
+- `MMB drag`: pan camera
+- `Mouse wheel`: zoom
+- `O`: toggle region boundary overlay
+- `H`: toggle authored hotspot overlay
+- `7 / 8 / 9`: Default / Muted / Vivid palette modes
 
 ## Requirements
 The bgfx textured path expects compiled shader binaries at:
@@ -52,7 +66,7 @@ assets/textures/world_atlas.bmp
 ```
 
 ## Next Milestone
-### M34 — Headless World Host / Dedicated Server Bootstrap
-- stand up the first host-owned runtime lane outside the client shell
-- reuse the new shared simulation contract instead of inventing a second gameplay path
-- prove that authority can live outside the rendering process
+### M35 — Client Intent Protocol / Authoritative Movement And Interaction
+- move movement and interaction requests into the host lane
+- validate and resolve client intents on the host instead of inside the client shell
+- make authority visible in actual gameplay behavior rather than only startup/process diagnostics

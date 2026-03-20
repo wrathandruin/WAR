@@ -22,6 +22,7 @@ namespace war
         std::filesystem::path logsDirectory;
         std::filesystem::path savesDirectory;
         std::filesystem::path crashDirectory;
+        std::filesystem::path hostDirectory;
 
         std::vector<std::string> issues;
     };

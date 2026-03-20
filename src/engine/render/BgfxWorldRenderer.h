@@ -6,6 +6,7 @@
 
 #include "engine/core/LocalDemoDiagnostics.h"
 #include "engine/core/RuntimePaths.h"
+#include "engine/host/HeadlessHostPresence.h"
 #include "engine/math/Vec2.h"
 #include "engine/render/BgfxRenderData.h"
 #include "engine/render/BgfxShaderProgram.h"
@@ -34,7 +35,8 @@ namespace war
             TileCoord actionTargetTile,
             const RuntimeBoundaryReport& runtimeBoundaryReport,
             const LocalDemoDiagnosticsReport& localDemoDiagnosticsReport,
-            const SharedSimulationDiagnostics& simulationDiagnostics);
+            const SharedSimulationDiagnostics& simulationDiagnostics,
+            const HeadlessHostPresenceReport& headlessHostPresenceReport);
 
         void shutdown();
 

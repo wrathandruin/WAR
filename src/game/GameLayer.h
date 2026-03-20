@@ -7,6 +7,7 @@
 
 #include "engine/core/LocalDemoDiagnostics.h"
 #include "engine/core/RuntimePaths.h"
+#include "engine/host/HeadlessHostPresence.h"
 #include "engine/math/Vec2.h"
 #include "engine/render/BgfxDebugFrameRenderer.h"
 #include "engine/render/BgfxWorldRenderer.h"
@@ -40,6 +41,7 @@ namespace war
         SimulationRuntime m_simulationRuntime{};
         RuntimeBoundaryReport m_runtimeBoundaryReport{};
         LocalDemoDiagnosticsReport m_localDemoDiagnosticsReport{};
+        HeadlessHostPresenceReport m_headlessHostPresenceReport{};
         WorldRenderer m_worldRenderer{};
         DebugOverlayRenderer m_debugOverlayRenderer{};
         BgfxWorldRenderer m_bgfxWorldRenderer{};

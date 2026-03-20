@@ -3,9 +3,9 @@
 #include <memory>
 #include <windows.h>
 
+#include "engine/host/HeadlessHostPresence.h"
 #include "engine/render/BgfxRenderDevice.h"
 #include "engine/render/GdiRenderDevice.h"
-#include "engine/simulation/SimulationIntent.h"
 
 namespace war
 {
@@ -25,14 +25,14 @@ namespace war
         RuntimePaths::ensureRuntimeDirectories(m_runtimeBoundaryReport);
         m_localDemoDiagnosticsReport = LocalDemoDiagnostics::buildReport(m_runtimeBoundaryReport);
         LocalDemoDiagnostics::writeStartupReport(m_runtimeBoundaryReport, m_localDemoDiagnosticsReport);
+        m_headlessHostPresenceReport = HeadlessHostPresence::buildReport(m_runtimeBoundaryReport);
 
-        auto pushM33StartupEvents = [this]()
+        auto pushM34StartupEvents = [this]()
         {
-            pushEvent("Milestone 33 initialized");
-            pushEvent("shared simulation contract / fixed-step ownership active");
-            pushEvent("Simulation owner: SharedSimulationRuntime");
-            pushEvent("Client role: input, camera, render, diagnostics");
-            pushEvent("Fixed-step cadence: 50 ms authoritative local tick");
+            pushEvent("Milestone 34 initialized");
+            pushEvent("headless world host / dedicated server bootstrap active");
+            pushEvent("Simulation owner: SharedSimulationRuntime (client local authority until M35)");
+            pushEvent("Headless host launch: WAR.exe --headless-host");
             pushEvent(std::string("Build: ")
                 + m_localDemoDiagnosticsReport.buildConfiguration
                 + " | "
@@ -42,9 +42,20 @@ namespace war
                 : "Runtime mode: packaged layout");
             pushEvent(std::string("Startup report: ")
                 + RuntimePaths::displayPath(m_localDemoDiagnosticsReport.startupReportPath));
-            pushEvent(m_localDemoDiagnosticsReport.packagedLaneReady
-                ? "Packaged demo lane staged next to executable"
-                : "Packaged demo lane not yet staged next to executable");
+
+            if (m_headlessHostPresenceReport.hostOnline)
+            {
+                pushEvent("Headless host heartbeat detected");
+            }
+            else if (m_headlessHostPresenceReport.statusFilePresent)
+            {
+                pushEvent("Headless host status file found but no fresh running heartbeat");
+            }
+            else
+            {
+                pushEvent("No external headless host heartbeat detected yet");
+            }
+
             pushEvent("Press O / H / 7 / 8 / 9 for review overlays and palette modes");
         };
 
@@ -52,7 +63,7 @@ namespace war
         if (preferred->initialize(m_window->getHandle()))
         {
             m_renderDevice = std::move(preferred);
-            pushM33StartupEvents();
+            pushM34StartupEvents();
             pushEvent(std::string("Active backend: ") + m_renderDevice->name());
             return;
         }
@@ -61,7 +72,7 @@ namespace war
         const bool fallbackReady = fallback->initialize(m_window->getHandle());
         m_renderDevice = std::move(fallback);
 
-        pushM33StartupEvents();
+        pushM34StartupEvents();
         pushEvent("bgfx unavailable, falling back to GDI");
         pushEvent(std::string("Active backend: ") + m_renderDevice->name());
         if (!fallbackReady)
@@ -77,6 +88,7 @@ namespace war
 
         updateInput();
         m_simulationRuntime.advanceFrame(dt);
+        m_headlessHostPresenceReport = HeadlessHostPresence::buildReport(m_runtimeBoundaryReport);
 
         m_hasActionTargetTile = m_simulationRuntime.hasMovementTarget();
         if (m_hasActionTargetTile)
@@ -141,7 +153,8 @@ namespace war
                 m_window->getMousePosition(),
                 m_runtimeBoundaryReport,
                 m_localDemoDiagnosticsReport,
-                simulationDiagnostics);
+                simulationDiagnostics,
+                m_headlessHostPresenceReport);
         }
         else
         {
@@ -159,7 +172,8 @@ namespace war
                 m_actionTargetTile,
                 m_runtimeBoundaryReport,
                 m_localDemoDiagnosticsReport,
-                simulationDiagnostics);
+                simulationDiagnostics,
+                m_headlessHostPresenceReport);
 
             m_bgfxDebugFrameRenderer.render(
                 worldState,

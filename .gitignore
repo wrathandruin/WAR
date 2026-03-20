@@ -20,6 +20,8 @@
 !/Runtime/Saves/.gitkeep
 !/Runtime/CrashDumps/
 !/Runtime/CrashDumps/.gitkeep
+!/Runtime/Host/
+!/Runtime/Host/.gitkeep
 
 # Packaging outputs
 /Packaging/output/

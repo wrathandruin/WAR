@@ -90,6 +90,7 @@ namespace war
         report.logsDirectory = report.runtimeRoot / "Logs";
         report.savesDirectory = report.runtimeRoot / "Saves";
         report.crashDirectory = report.runtimeRoot / "CrashDumps";
+        report.hostDirectory = report.runtimeRoot / "Host";
 
         if (report.assetRootResolved)
         {
@@ -117,6 +118,7 @@ namespace war
         ensureDirectory(report.logsDirectory, report);
         ensureDirectory(report.savesDirectory, report);
         ensureDirectory(report.crashDirectory, report);
+        ensureDirectory(report.hostDirectory, report);
 
         report.runtimeDirectoriesReady = true;
     }
