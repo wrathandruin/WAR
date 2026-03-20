@@ -147,7 +147,7 @@ namespace war
         submitColorLayer(renderData.hoveredTile);
         submitTexturedLayer(renderData.actors);
 
-        m_statusMessage = "bgfx world rendered with expanded atlas batching";
+        m_statusMessage = "bgfx world rendered with tile variants";
         return true;
 #else
         (void)worldState;

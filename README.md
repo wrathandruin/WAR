@@ -1,20 +1,20 @@
-# WAR — Milestone 22 (bgfx Sprite Expansion / Batch Cleanup)
+# WAR — Milestone 23 (bgfx Tile Variant / Authoring Prep)
 
-> Current development milestone: M22 — bgfx Sprite Expansion / Batch Cleanup
+> Current development milestone: M23 — bgfx Tile Variant / Authoring Prep
 
 ## Focus
-Expand atlas-backed sprite coverage further into the scene and tighten textured world submission around a cleaner batched flow.
+Introduce tile material variants and centralize tile visual selection so the atlas/material path is easier to extend without renderer churn.
 
-M21 organized the textured path around a shared atlas and material descriptors.
-M22 builds on that foundation by moving world tiles onto the atlas-backed sprite path and reducing the number of textured world layers that need to be submitted separately.
+M22 expanded atlas-backed rendering into the world tile layer.
+M23 builds on that by formalizing tile material selection behind a dedicated resolver and by expanding the atlas to support multiple floor and wall variants.
 
 ## What this milestone does
-- expands atlas-backed rendering from actors into world tiles
-- introduces tile sprite materials for floor and wall visuals
-- combines player and entity sprite submission into a single actor layer
-- keeps path nodes and hovered-tile feedback as explicit overlays
-- preserves the current camera / projection / world-space rendering flow
-- keeps the atlas/material approach established in M21
+- introduces `BgfxTileVisuals` as the tile material selection layer
+- expands the shared world atlas with multiple floor and wall regions
+- moves tile visual choice out of render-data construction and into a dedicated authoring-prep helper
+- keeps actor materials on the shared atlas path
+- preserves the current camera / projection / world-space submission flow
+- keeps path nodes and hovered tile feedback as explicit overlays
 
 ## Renderer architecture
 The bgfx world path is now split into:
@@ -32,6 +32,7 @@ The bgfx world path is now split into:
 
 3. **Resolve materials**
    - map sprite material ids to atlas UV regions
+   - resolve tile materials through `BgfxTileVisuals`
    - keep material selection separate from submission code
 
 4. **Load renderer assets**
@@ -41,13 +42,13 @@ The bgfx world path is now split into:
    - load the shared sprite atlas texture
 
 ## Why this matters
-This is the bridge from “a few textured sprites work” to “the scene is broadly atlas-driven and submission is cleaner”.
+This is the bridge from “the scene uses an atlas” to “the scene can grow visually without rewriting render code”.
 
 It makes the next milestones safer:
-- tile variation expansion
-- richer sprite coverage
-- future authoring improvements
-- cleaner scene-wide visual iteration
+- richer tile variation
+- broader atlas authoring
+- cleaner content expansion
+- less renderer churn when visuals change
 
 ## Requirements
 The bgfx textured path expects compiled shader binaries at:
@@ -66,7 +67,7 @@ assets/textures/world_atlas.bmp
 ```
 
 ## Next Milestone
-### M23 — bgfx Tile Variant / Authoring Prep
-- introduce additional tile/material variants
-- prepare the atlas/material layer for broader content authoring
-- make scene visuals easier to extend without renderer churn
+### M24 — bgfx Theme Sets / Authoring Hooks
+- introduce theme-oriented material grouping
+- prepare scene visuals for broader content styling
+- make atlas/material expansion easier to direct from authored data

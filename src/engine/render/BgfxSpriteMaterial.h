@@ -4,8 +4,12 @@ namespace war
 {
     enum class BgfxSpriteMaterialId
     {
-        Floor,
-        Wall,
+        FloorA,
+        FloorB,
+        FloorC,
+        WallA,
+        WallB,
+        WallC,
         Player,
         Crate,
         Terminal,

@@ -26,8 +26,8 @@ namespace war
             if (preferred->initialize(m_window->getHandle()))
             {
                 m_renderDevice = std::move(preferred);
-                pushEvent("Milestone 22 initialized");
-                pushEvent("bgfx sprite expansion / batch cleanup active");
+                pushEvent("Milestone 23 initialized");
+                pushEvent("bgfx tile variant / authoring prep active");
                 pushEvent(std::string("Active backend: ") + m_renderDevice->name());
             }
             else
@@ -36,7 +36,7 @@ namespace war
                 const bool fallbackReady = fallback->initialize(m_window->getHandle());
                 m_renderDevice = std::move(fallback);
 
-                pushEvent("Milestone 22 initialized");
+                pushEvent("Milestone 23 initialized");
                 pushEvent("bgfx unavailable, falling back to GDI");
                 pushEvent(std::string("Active backend: ") + m_renderDevice->name());
                 if (!fallbackReady)

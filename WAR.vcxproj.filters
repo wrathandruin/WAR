@@ -25,6 +25,7 @@
     <ClCompile Include="src\engine\render\BgfxShaderProgram.cpp"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="src\engine\render\BgfxTextureAsset.cpp"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="src\engine\render\BgfxSpriteMaterial.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\engine\render\BgfxTileVisuals.cpp"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="src\engine\render\RenderAssetPaths.cpp"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="src\engine\render\DebugOverlayRenderer.cpp"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="src\engine\render\GdiRenderDevice.cpp"><Filter>Source Files</Filter></ClCompile>
@@ -52,6 +53,7 @@
     <ClInclude Include="src\engine\render\BgfxShaderProgram.h"><Filter>Header Files</Filter></ClInclude>
     <ClInclude Include="src\engine\render\BgfxTextureAsset.h"><Filter>Header Files</Filter></ClInclude>
     <ClInclude Include="src\engine\render\BgfxSpriteMaterial.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\render\BgfxTileVisuals.h"><Filter>Header Files</Filter></ClInclude>
     <ClInclude Include="src\engine\render\RenderAssetPaths.h"><Filter>Header Files</Filter></ClInclude>
     <ClInclude Include="src\engine\render\DebugOverlayRenderer.h"><Filter>Header Files</Filter></ClInclude>
     <ClInclude Include="src\engine\render\RenderBackendType.h"><Filter>Header Files</Filter></ClInclude>

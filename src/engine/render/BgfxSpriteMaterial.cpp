@@ -6,26 +6,38 @@ namespace war
     {
         switch (material)
         {
-        case BgfxSpriteMaterialId::Floor:
-            return { 0.0f / 3.0f, 0.0f / 2.0f, 1.0f / 3.0f, 1.0f / 2.0f };
+        case BgfxSpriteMaterialId::FloorA:
+            return { 0.0f / 5.0f, 0.0f / 2.0f, 1.0f / 5.0f, 1.0f / 2.0f };
 
-        case BgfxSpriteMaterialId::Wall:
-            return { 1.0f / 3.0f, 0.0f / 2.0f, 2.0f / 3.0f, 1.0f / 2.0f };
+        case BgfxSpriteMaterialId::FloorB:
+            return { 1.0f / 5.0f, 0.0f / 2.0f, 2.0f / 5.0f, 1.0f / 2.0f };
+
+        case BgfxSpriteMaterialId::FloorC:
+            return { 2.0f / 5.0f, 0.0f / 2.0f, 3.0f / 5.0f, 1.0f / 2.0f };
+
+        case BgfxSpriteMaterialId::WallA:
+            return { 3.0f / 5.0f, 0.0f / 2.0f, 4.0f / 5.0f, 1.0f / 2.0f };
+
+        case BgfxSpriteMaterialId::WallB:
+            return { 4.0f / 5.0f, 0.0f / 2.0f, 5.0f / 5.0f, 1.0f / 2.0f };
+
+        case BgfxSpriteMaterialId::WallC:
+            return { 0.0f / 5.0f, 1.0f / 2.0f, 1.0f / 5.0f, 2.0f / 2.0f };
 
         case BgfxSpriteMaterialId::Player:
-            return { 2.0f / 3.0f, 0.0f / 2.0f, 3.0f / 3.0f, 1.0f / 2.0f };
+            return { 1.0f / 5.0f, 1.0f / 2.0f, 2.0f / 5.0f, 2.0f / 2.0f };
 
         case BgfxSpriteMaterialId::Crate:
-            return { 0.0f / 3.0f, 1.0f / 2.0f, 1.0f / 3.0f, 2.0f / 2.0f };
+            return { 2.0f / 5.0f, 1.0f / 2.0f, 3.0f / 5.0f, 2.0f / 2.0f };
 
         case BgfxSpriteMaterialId::Terminal:
-            return { 1.0f / 3.0f, 1.0f / 2.0f, 2.0f / 3.0f, 2.0f / 2.0f };
+            return { 3.0f / 5.0f, 1.0f / 2.0f, 4.0f / 5.0f, 2.0f / 2.0f };
 
         case BgfxSpriteMaterialId::Locker:
-            return { 2.0f / 3.0f, 1.0f / 2.0f, 3.0f / 3.0f, 2.0f / 2.0f };
+            return { 4.0f / 5.0f, 1.0f / 2.0f, 5.0f / 5.0f, 2.0f / 2.0f };
 
         default:
-            return { 0.0f / 3.0f, 0.0f / 2.0f, 1.0f / 3.0f, 1.0f / 2.0f };
+            return { 0.0f / 5.0f, 0.0f / 2.0f, 1.0f / 5.0f, 1.0f / 2.0f };
         }
     }
 
@@ -33,11 +45,23 @@ namespace war
     {
         switch (material)
         {
-        case BgfxSpriteMaterialId::Floor:
-            return "Floor";
+        case BgfxSpriteMaterialId::FloorA:
+            return "FloorA";
 
-        case BgfxSpriteMaterialId::Wall:
-            return "Wall";
+        case BgfxSpriteMaterialId::FloorB:
+            return "FloorB";
+
+        case BgfxSpriteMaterialId::FloorC:
+            return "FloorC";
+
+        case BgfxSpriteMaterialId::WallA:
+            return "WallA";
+
+        case BgfxSpriteMaterialId::WallB:
+            return "WallB";
+
+        case BgfxSpriteMaterialId::WallC:
+            return "WallC";
 
         case BgfxSpriteMaterialId::Player:
             return "Player";

@@ -1,6 +1,7 @@
 #include "engine/render/BgfxRenderData.h"
 
 #include "engine/gameplay/Entity.h"
+#include "engine/render/BgfxTileVisuals.h"
 
 namespace war
 {
@@ -74,16 +75,6 @@ namespace war
             };
         }
 
-        uint32_t floorTileColor()
-        {
-            return rgbaToAbgr(230, 235, 240);
-        }
-
-        uint32_t wallTileColor()
-        {
-            return rgbaToAbgr(210, 215, 220);
-        }
-
         uint32_t pathColor()
         {
             return rgbaToAbgr(255, 180, 90);
@@ -147,18 +138,6 @@ namespace war
                 return BgfxSpriteMaterialId::Crate;
             }
         }
-
-        BgfxSpriteMaterialId tileMaterial(bool blocked)
-        {
-            return blocked
-                ? BgfxSpriteMaterialId::Wall
-                : BgfxSpriteMaterialId::Floor;
-        }
-
-        uint32_t tileTint(bool blocked)
-        {
-            return blocked ? wallTileColor() : floorTileColor();
-        }
     }
 
     BgfxWorldRenderData BgfxRenderDataBuilder::build(
@@ -183,9 +162,12 @@ namespace war
             for (int x = 0; x < worldState.world().getWidth(); ++x)
             {
                 const TileCoord tile{ x, y };
-                const bool blocked = worldState.world().isBlocked(tile);
                 data.tiles.quads.push_back(
-                    tileToWorldTexturedQuad(worldState, tile, tileTint(blocked), tileMaterial(blocked)));
+                    tileToWorldTexturedQuad(
+                        worldState,
+                        tile,
+                        BgfxTileVisuals::tintForTile(worldState, tile),
+                        BgfxTileVisuals::materialForTile(worldState, tile)));
             }
         }
 

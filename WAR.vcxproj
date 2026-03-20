@@ -117,6 +117,7 @@ if exist "$(ProjectDir)assets\textures" xcopy /Y /I /E "$(ProjectDir)assets\text
     <ClCompile Include="src\engine\render\BgfxShaderProgram.cpp" />
     <ClCompile Include="src\engine\render\BgfxTextureAsset.cpp" />
     <ClCompile Include="src\engine\render\BgfxSpriteMaterial.cpp" />
+    <ClCompile Include="src\engine\render\BgfxTileVisuals.cpp" />
     <ClCompile Include="src\engine\render\RenderAssetPaths.cpp" />
     <ClCompile Include="src\engine\render\DebugOverlayRenderer.cpp" />
     <ClCompile Include="src\engine\render\GdiRenderDevice.cpp" />
@@ -144,6 +145,7 @@ if exist "$(ProjectDir)assets\textures" xcopy /Y /I /E "$(ProjectDir)assets\text
     <ClInclude Include="src\engine\render\BgfxShaderProgram.h" />
     <ClInclude Include="src\engine\render\BgfxTextureAsset.h" />
     <ClInclude Include="src\engine\render\BgfxSpriteMaterial.h" />
+    <ClInclude Include="src\engine\render\BgfxTileVisuals.h" />
     <ClInclude Include="src\engine\render\RenderAssetPaths.h" />
     <ClInclude Include="src\engine\render\DebugOverlayRenderer.h" />
     <ClInclude Include="src\engine\render\RenderBackendType.h" />
