@@ -30,6 +30,7 @@ call :check_dir "%RUNTIME_ROOT%\CrashDumps" "Runtime crash directory"
 
 (
     echo WAR Local Demo Smoke Test
+    echo Milestone: M37 - Persistence Schema / Save-Load / Versioned Migration
     echo Demo root: %DEMO_ROOT%
     echo Executable: %EXE_PATH%
     echo Asset root: %ASSET_ROOT%
@@ -45,11 +46,11 @@ call :check_dir "%RUNTIME_ROOT%\CrashDumps" "Runtime crash directory"
 
 type "%REPORT_PATH%"
 if "%FAILED%"=="0" (
-    echo [M36] Smoke test passed.
+    echo [M37] Smoke test passed.
     exit /b 0
 )
 
-echo [M36] Smoke test failed.
+echo [M37] Smoke test failed.
 exit /b 1
 
 :check_file

@@ -151,7 +151,16 @@ namespace war
 
             std::ostringstream status;
             status
-                << "M36 replication harness | sim ticks: " << simulationDiagnostics.simulationTicks
+                << "M37 persistence | sim ticks: " << simulationDiagnostics.simulationTicks
+                << " | save/load: "
+                << simulationDiagnostics.persistenceSaveCount << "/"
+                << simulationDiagnostics.persistenceLoadCount
+                << " | schema: " << simulationDiagnostics.persistenceSchemaVersion
+                << " loaded: " << simulationDiagnostics.persistenceLoadedSchemaVersion
+                << " migrated-from: " << simulationDiagnostics.persistenceMigratedFromSchemaVersion
+                << " | last save/load ok: "
+                << (simulationDiagnostics.lastPersistenceSaveSucceeded ? "y" : "n") << "/"
+                << (simulationDiagnostics.lastPersistenceLoadSucceeded ? "y" : "n")
                 << " | snapshot age ms: " << simulationDiagnostics.lastSnapshotAgeMilliseconds
                 << " | corr/div: "
                 << simulationDiagnostics.correctionsApplied << "/"
@@ -160,21 +169,11 @@ namespace war
                 << simulationDiagnostics.intentsQueued << "/"
                 << simulationDiagnostics.intentsProcessed << "/"
                 << simulationDiagnostics.pendingIntentCount
-                << " | harness ms: "
-                << simulationDiagnostics.intentLatencyMilliseconds << "/"
-                << simulationDiagnostics.acknowledgementLatencyMilliseconds << "/"
-                << simulationDiagnostics.snapshotLatencyMilliseconds
-                << " | jitter: " << simulationDiagnostics.jitterMilliseconds
                 << " | runtime: " << (runtimeBoundaryReport.runningFromSourceTree ? "source-tree" : "packaged")
                 << " | packaged lane: " << (localDemoDiagnosticsReport.packagedLaneReady ? "ready" : "not staged")
                 << " | host online: " << (headlessHostPresenceReport.hostOnline ? "yes" : "no")
-                << " | host state: " << headlessHostPresenceReport.hostState
-                << " | host age ms: " << headlessHostPresenceReport.heartbeatAgeMilliseconds
-                << " | host q: "
-                << headlessHostPresenceReport.pendingInboundIntentCount << "/"
-                << headlessHostPresenceReport.pendingOutboundAcknowledgementCount << "/"
-                << headlessHostPresenceReport.pendingSnapshotCount
-                << " | protocol lane: " << (authoritativeHostProtocolReport.authorityLaneReady ? "ready" : "not ready")
+                << " | host save present: " << (headlessHostPresenceReport.persistenceSavePresent ? "yes" : "no")
+                << " | protocol save present: " << (authoritativeHostProtocolReport.persistentSavePresent ? "yes" : "no")
                 << " | hover: " << hovered
                 << " | prompt: " << contextPrompt(worldState, hasHoveredTile, hoveredTile)
                 << " | selected: " << selected

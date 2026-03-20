@@ -73,6 +73,14 @@ namespace war
         m_diagnostics.lastSnapshotReadFailed = false;
         m_diagnostics.lastSnapshotReadError.clear();
         m_diagnostics.snapshotReadFailures = 0;
+        m_diagnostics.persistenceSchemaVersion = 2;
+        m_diagnostics.persistenceSlotName = "primary";
+        m_diagnostics.persistenceActive = false;
+        m_diagnostics.persistenceDataLoaded = false;
+        m_diagnostics.persistenceMigrationApplied = false;
+        m_diagnostics.lastPersistenceSaveSucceeded = false;
+        m_diagnostics.lastPersistenceLoadSucceeded = false;
+        m_diagnostics.lastPersistenceError.clear();
     }
 
     void SimulationRuntime::setAuthorityMode(bool localAuthorityActive, bool hostAuthorityActive, bool clientPredictionEnabled)
@@ -96,6 +104,53 @@ namespace war
         m_diagnostics.snapshotLatencyMilliseconds = snapshotLatencyMilliseconds;
         m_diagnostics.jitterMilliseconds = jitterMilliseconds;
         m_diagnostics.lastSnapshotAgeMilliseconds = snapshotAgeMilliseconds;
+    }
+
+    void SimulationRuntime::setPersistenceState(bool persistenceActive, const std::string& slotName)
+    {
+        m_diagnostics.persistenceActive = persistenceActive;
+        m_diagnostics.persistenceSlotName = slotName.empty() ? "primary" : slotName;
+    }
+
+    void SimulationRuntime::notePersistenceSave(uint32_t schemaVersion, uint64_t saveEpochMilliseconds)
+    {
+        m_diagnostics.persistenceSchemaVersion = schemaVersion;
+        m_diagnostics.lastPersistenceSaveSucceeded = true;
+        ++m_diagnostics.persistenceSaveCount;
+        m_diagnostics.lastPersistenceSaveEpochMilliseconds = saveEpochMilliseconds;
+        m_diagnostics.lastPersistenceError.clear();
+    }
+
+    void SimulationRuntime::notePersistenceLoad(
+        uint32_t loadedSchemaVersion,
+        uint32_t migratedFromSchemaVersion,
+        uint64_t loadEpochMilliseconds)
+    {
+        m_diagnostics.persistenceLoadedSchemaVersion = loadedSchemaVersion;
+        m_diagnostics.persistenceMigratedFromSchemaVersion = migratedFromSchemaVersion;
+        m_diagnostics.persistenceMigrationApplied = migratedFromSchemaVersion > 0;
+        m_diagnostics.lastPersistenceLoadSucceeded = true;
+        m_diagnostics.persistenceDataLoaded = true;
+        ++m_diagnostics.persistenceLoadCount;
+        m_diagnostics.lastPersistenceLoadEpochMilliseconds = loadEpochMilliseconds;
+        m_diagnostics.lastPersistenceError.clear();
+    }
+
+    void SimulationRuntime::notePersistenceFailure(const std::string& error, bool duringLoad)
+    {
+        if (duringLoad)
+        {
+            m_diagnostics.lastPersistenceLoadSucceeded = false;
+        }
+        else
+        {
+            m_diagnostics.lastPersistenceSaveSucceeded = false;
+        }
+
+        if (!error.empty())
+        {
+            m_diagnostics.lastPersistenceError = error;
+        }
     }
 
     uint64_t SimulationRuntime::enqueueIntent(SimulationIntentType type, TileCoord target)
@@ -310,35 +365,7 @@ namespace war
             }
         }
 
-        m_authoritativePlayerPosition = snapshot.authoritativePlayerPosition;
-        m_previousAuthoritativePlayerPosition = snapshot.authoritativePlayerPosition;
-        m_presentedPlayerPosition = snapshot.authoritativePlayerPosition;
-        m_currentPath = snapshot.currentPath;
-        m_pathIndex = snapshot.pathIndex;
-        m_hasMovementTarget = snapshot.movementTargetActive;
-        m_movementTargetTile = snapshot.movementTargetTile;
-
-        m_worldState.entities().clear();
-        for (const ReplicatedEntityState& replicated : snapshot.entities)
-        {
-            Entity entity{};
-            entity.id = replicated.id;
-            entity.name = replicated.name;
-            entity.type = replicated.type;
-            entity.tile = replicated.tile;
-            entity.isOpen = replicated.isOpen;
-            entity.isLocked = replicated.isLocked;
-            entity.isPowered = replicated.isPowered;
-            m_worldState.entities().add(entity);
-        }
-
-        m_eventLog = snapshot.eventLog;
-        trimEventLog();
-
-        m_diagnostics.lastSnapshotSequence = snapshot.lastProcessedIntentSequence;
-        m_diagnostics.lastSnapshotSimulationTicks = snapshot.simulationTicks;
-        m_diagnostics.pendingIntentCount = m_pendingIntents.size();
-        m_diagnostics.movementTargetActive = m_hasMovementTarget;
+        applySnapshotState(snapshot);
         m_diagnostics.lastPathDivergence = pathCorrected;
         m_diagnostics.lastEntityDivergence = entityCorrected;
 
@@ -369,6 +396,43 @@ namespace war
         return true;
     }
 
+    void SimulationRuntime::applyPersistedSnapshot(
+        const AuthoritativeWorldSnapshot& snapshot,
+        uint32_t loadedSchemaVersion,
+        uint32_t migratedFromSchemaVersion,
+        uint64_t loadEpochMilliseconds)
+    {
+        if (!snapshot.valid)
+        {
+            return;
+        }
+
+        m_actions = ActionQueue{};
+        m_pendingIntents.clear();
+        m_accumulatorSeconds = 0.0f;
+        applySnapshotState(snapshot);
+
+        m_diagnostics.simulationTicks = snapshot.simulationTicks;
+        m_diagnostics.lastIntentSequence = snapshot.lastProcessedIntentSequence;
+        m_diagnostics.lastSnapshotSequence = snapshot.lastProcessedIntentSequence;
+        m_diagnostics.lastSnapshotSimulationTicks = snapshot.simulationTicks;
+        m_nextIntentSequence = snapshot.lastProcessedIntentSequence + 1;
+        if (m_nextIntentSequence == 0)
+        {
+            m_nextIntentSequence = 1;
+        }
+
+        m_diagnostics.accumulatorSeconds = 0.0f;
+        m_diagnostics.presentationAlpha = 0.0f;
+        m_diagnostics.lastSnapshotAgeMilliseconds = 0;
+        m_diagnostics.lastPositionDivergenceDistance = 0.0f;
+        m_diagnostics.lastPathDivergence = false;
+        m_diagnostics.lastEntityDivergence = false;
+        m_diagnostics.lastPersistenceSaveEpochMilliseconds = snapshot.persistenceEpochMilliseconds;
+        m_diagnostics.lastPersistenceSaveSucceeded = snapshot.persistenceEpochMilliseconds > 0;
+        notePersistenceLoad(loadedSchemaVersion, migratedFromSchemaVersion, loadEpochMilliseconds);
+    }
+
     AuthoritativeWorldSnapshot SimulationRuntime::buildAuthoritativeSnapshot(uint64_t lastProcessedIntentSequence) const
     {
         AuthoritativeWorldSnapshot snapshot{};
@@ -381,6 +445,10 @@ namespace war
         snapshot.currentPath = m_currentPath;
         snapshot.pathIndex = m_pathIndex;
         snapshot.eventLog = m_eventLog;
+        snapshot.persistenceSchemaVersion = m_diagnostics.persistenceSchemaVersion;
+        snapshot.persistenceMigratedFromSchemaVersion = m_diagnostics.persistenceMigratedFromSchemaVersion;
+        snapshot.persistenceEpochMilliseconds = m_diagnostics.lastPersistenceSaveEpochMilliseconds;
+        snapshot.persistenceSlotName = m_diagnostics.persistenceSlotName;
 
         snapshot.entities.reserve(m_worldState.entities().all().size());
         for (const Entity& entity : m_worldState.entities().all())
@@ -617,5 +685,43 @@ namespace war
                 m_eventLog.begin(),
                 m_eventLog.begin() + static_cast<std::ptrdiff_t>(m_eventLog.size() - kMaxEvents));
         }
+    }
+
+    void SimulationRuntime::applySnapshotState(const AuthoritativeWorldSnapshot& snapshot)
+    {
+        m_authoritativePlayerPosition = snapshot.authoritativePlayerPosition;
+        m_previousAuthoritativePlayerPosition = snapshot.authoritativePlayerPosition;
+        m_presentedPlayerPosition = snapshot.authoritativePlayerPosition;
+        m_currentPath = snapshot.currentPath;
+        m_pathIndex = snapshot.pathIndex;
+        m_hasMovementTarget = snapshot.movementTargetActive;
+        m_movementTargetTile = snapshot.movementTargetTile;
+
+        m_worldState.entities().clear();
+        for (const ReplicatedEntityState& replicated : snapshot.entities)
+        {
+            Entity entity{};
+            entity.id = replicated.id;
+            entity.name = replicated.name;
+            entity.type = replicated.type;
+            entity.tile = replicated.tile;
+            entity.isOpen = replicated.isOpen;
+            entity.isLocked = replicated.isLocked;
+            entity.isPowered = replicated.isPowered;
+            m_worldState.entities().add(entity);
+        }
+
+        m_eventLog = snapshot.eventLog;
+        trimEventLog();
+
+        if (!snapshot.persistenceSlotName.empty())
+        {
+            m_diagnostics.persistenceSlotName = snapshot.persistenceSlotName;
+        }
+
+        m_diagnostics.lastSnapshotSequence = snapshot.lastProcessedIntentSequence;
+        m_diagnostics.lastSnapshotSimulationTicks = snapshot.simulationTicks;
+        m_diagnostics.pendingIntentCount = m_pendingIntents.size();
+        m_diagnostics.movementTargetActive = m_hasMovementTarget;
     }
 }

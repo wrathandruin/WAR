@@ -42,8 +42,9 @@ call :check_file "%HOST_LOG%" "Headless host log"
 :report
 (
     echo WAR Headless Host Smoke Test
+    echo Milestone: M37 - Persistence Schema / Save-Load / Versioned Migration
     echo Demo root: %DEMO_ROOT%
-    echo Executable: %HOST_EXE_PATH%
+    echo Host executable: %HOST_EXE_PATH%
     echo Runtime root: %RUNTIME_ROOT%
     echo Host root: %HOST_ROOT%
     if "%FAILED%"=="0" (
@@ -57,11 +58,11 @@ call :check_file "%HOST_LOG%" "Headless host log"
 
 type "%REPORT_PATH%"
 if "%FAILED%"=="0" (
-    echo [M36] Host smoke test passed.
+    echo [M37] Host smoke test passed.
     exit /b 0
 )
 
-echo [M36] Host smoke test failed.
+echo [M37] Host smoke test failed.
 exit /b 1
 
 :check_file

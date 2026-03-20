@@ -294,6 +294,244 @@ namespace war
 
             return true;
         }
+
+        std::string serializeWorldSnapshotBody(const AuthoritativeWorldSnapshot& snapshot)
+        {
+            std::ostringstream output;
+            output
+                << "valid=" << (snapshot.valid ? "yes" : "no") << "\n"
+                << "simulation_ticks=" << snapshot.simulationTicks << "\n"
+                << "last_processed_intent_sequence=" << snapshot.lastProcessedIntentSequence << "\n"
+                << "player_x=" << snapshot.authoritativePlayerPosition.x << "\n"
+                << "player_y=" << snapshot.authoritativePlayerPosition.y << "\n"
+                << "movement_target_active=" << (snapshot.movementTargetActive ? "yes" : "no") << "\n"
+                << "movement_target_x=" << snapshot.movementTargetTile.x << "\n"
+                << "movement_target_y=" << snapshot.movementTargetTile.y << "\n"
+                << "path_index=" << snapshot.pathIndex << "\n"
+                << "path_count=" << snapshot.currentPath.size() << "\n";
+
+            for (size_t i = 0; i < snapshot.currentPath.size(); ++i)
+            {
+                output << "path_" << i << "=" << snapshot.currentPath[i].x << "," << snapshot.currentPath[i].y << "\n";
+            }
+
+            output << "entity_count=" << snapshot.entities.size() << "\n";
+            for (size_t i = 0; i < snapshot.entities.size(); ++i)
+            {
+                const ReplicatedEntityState& entity = snapshot.entities[i];
+                output
+                    << "entity_" << i << "="
+                    << entity.id << "|"
+                    << entityTypeText(entity.type) << "|"
+                    << entity.tile.x << "|"
+                    << entity.tile.y << "|"
+                    << (entity.isOpen ? 1 : 0) << "|"
+                    << (entity.isLocked ? 1 : 0) << "|"
+                    << (entity.isPowered ? 1 : 0) << "|"
+                    << sanitizeSingleLine(entity.name)
+                    << "\n";
+            }
+
+            output << "event_count=" << snapshot.eventLog.size() << "\n";
+            for (size_t i = 0; i < snapshot.eventLog.size(); ++i)
+            {
+                output << "event_" << i << "=" << sanitizeSingleLine(snapshot.eventLog[i]) << "\n";
+            }
+
+            return output.str();
+        }
+
+        bool parseWorldSnapshotBody(
+            const StringMap& values,
+            bool requirePublishedEpoch,
+            AuthoritativeWorldSnapshot& snapshot,
+            std::string& outError)
+        {
+            outError.clear();
+
+            uint64_t simulationTicks = 0;
+            uint64_t lastProcessedIntentSequence = 0;
+            uint64_t publishedEpochMilliseconds = 0;
+            uint64_t movementTargetX = 0;
+            uint64_t movementTargetY = 0;
+            uint64_t pathIndex = 0;
+            uint64_t pathCount = 0;
+            uint64_t entityCount = 0;
+            uint64_t eventCount = 0;
+            float playerX = 0.0f;
+            float playerY = 0.0f;
+            bool valid = false;
+            bool movementTargetActive = false;
+
+            if (!tryParseYesNo(values, "valid", valid)
+                || !tryParseUnsigned(values, "simulation_ticks", simulationTicks)
+                || !tryParseUnsigned(values, "last_processed_intent_sequence", lastProcessedIntentSequence)
+                || !tryParseFloat(values, "player_x", playerX)
+                || !tryParseFloat(values, "player_y", playerY)
+                || !tryParseUnsigned(values, "path_count", pathCount)
+                || !tryParseUnsigned(values, "entity_count", entityCount))
+            {
+                outError = "Snapshot missing required fields.";
+                return false;
+            }
+
+            if (requirePublishedEpoch)
+            {
+                if (!tryParseUnsigned(values, "published_epoch_ms", publishedEpochMilliseconds))
+                {
+                    outError = "Snapshot missing published epoch.";
+                    return false;
+                }
+            }
+
+            if (!tryParseUnsigned(values, "path_index", pathIndex))
+            {
+                pathIndex = 0;
+            }
+
+            if (!tryParseUnsigned(values, "event_count", eventCount))
+            {
+                eventCount = 0;
+            }
+
+            if (!tryParseYesNo(values, "movement_target_active", movementTargetActive))
+            {
+                movementTargetActive = false;
+            }
+
+            if (!tryParseUnsigned(values, "movement_target_x", movementTargetX))
+            {
+                movementTargetX = 0;
+            }
+
+            if (!tryParseUnsigned(values, "movement_target_y", movementTargetY))
+            {
+                movementTargetY = 0;
+            }
+
+            snapshot.valid = valid;
+            snapshot.simulationTicks = simulationTicks;
+            snapshot.lastProcessedIntentSequence = lastProcessedIntentSequence;
+            snapshot.publishedEpochMilliseconds = publishedEpochMilliseconds;
+            snapshot.authoritativePlayerPosition.x = playerX;
+            snapshot.authoritativePlayerPosition.y = playerY;
+            snapshot.movementTargetActive = movementTargetActive;
+            snapshot.movementTargetTile.x = static_cast<int>(movementTargetX);
+            snapshot.movementTargetTile.y = static_cast<int>(movementTargetY);
+            snapshot.pathIndex = static_cast<size_t>(pathIndex);
+
+            snapshot.currentPath.clear();
+            snapshot.currentPath.reserve(static_cast<size_t>(pathCount));
+            for (size_t i = 0; i < static_cast<size_t>(pathCount); ++i)
+            {
+                const std::string key = "path_" + std::to_string(i);
+                const auto it = values.find(key);
+                if (it == values.end())
+                {
+                    outError = std::string("Snapshot missing path entry: ") + key;
+                    snapshot.valid = false;
+                    return false;
+                }
+
+                const size_t split = it->second.find(',');
+                if (split == std::string::npos)
+                {
+                    outError = std::string("Snapshot path entry malformed: ") + key;
+                    snapshot.valid = false;
+                    return false;
+                }
+
+                try
+                {
+                    snapshot.currentPath.push_back({
+                        std::stoi(it->second.substr(0, split)),
+                        std::stoi(it->second.substr(split + 1))
+                    });
+                }
+                catch (...)
+                {
+                    outError = std::string("Snapshot path entry invalid: ") + key;
+                    snapshot.valid = false;
+                    return false;
+                }
+            }
+
+            snapshot.entities.clear();
+            snapshot.entities.reserve(static_cast<size_t>(entityCount));
+            for (size_t i = 0; i < static_cast<size_t>(entityCount); ++i)
+            {
+                const std::string key = "entity_" + std::to_string(i);
+                const auto it = values.find(key);
+                if (it == values.end())
+                {
+                    outError = std::string("Snapshot missing entity entry: ") + key;
+                    snapshot.valid = false;
+                    return false;
+                }
+
+                std::stringstream stream(it->second);
+                std::string idText;
+                std::string typeText;
+                std::string xText;
+                std::string yText;
+                std::string openText;
+                std::string lockedText;
+                std::string poweredText;
+                std::string nameText;
+
+                if (!std::getline(stream, idText, '|')
+                    || !std::getline(stream, typeText, '|')
+                    || !std::getline(stream, xText, '|')
+                    || !std::getline(stream, yText, '|')
+                    || !std::getline(stream, openText, '|')
+                    || !std::getline(stream, lockedText, '|')
+                    || !std::getline(stream, poweredText, '|')
+                    || !std::getline(stream, nameText))
+                {
+                    outError = std::string("Snapshot malformed entity entry: ") + key;
+                    snapshot.valid = false;
+                    return false;
+                }
+
+                try
+                {
+                    ReplicatedEntityState entity{};
+                    entity.id = std::stoi(idText);
+                    entity.type = parseEntityType(typeText);
+                    entity.tile.x = std::stoi(xText);
+                    entity.tile.y = std::stoi(yText);
+                    entity.isOpen = openText == "1";
+                    entity.isLocked = lockedText == "1";
+                    entity.isPowered = poweredText == "1";
+                    entity.name = nameText;
+                    snapshot.entities.push_back(entity);
+                }
+                catch (...)
+                {
+                    outError = std::string("Snapshot invalid entity entry: ") + key;
+                    snapshot.valid = false;
+                    return false;
+                }
+            }
+
+            snapshot.eventLog.clear();
+            snapshot.eventLog.reserve(static_cast<size_t>(eventCount));
+            for (size_t i = 0; i < static_cast<size_t>(eventCount); ++i)
+            {
+                const std::string key = "event_" + std::to_string(i);
+                const auto it = values.find(key);
+                if (it == values.end())
+                {
+                    outError = std::string("Snapshot missing event entry: ") + key;
+                    snapshot.valid = false;
+                    return false;
+                }
+
+                snapshot.eventLog.push_back(it->second);
+            }
+
+            return true;
+        }
     }
 
     AuthoritativeHostProtocolReport AuthoritativeHostProtocol::buildReport(const RuntimeBoundaryReport& runtimeBoundaryReport)
@@ -302,10 +540,12 @@ namespace war
         report.intentQueueDirectory = intentQueueDirectory(runtimeBoundaryReport);
         report.acknowledgementQueueDirectory = acknowledgementQueueDirectory(runtimeBoundaryReport);
         report.snapshotPath = snapshotPath(runtimeBoundaryReport);
+        report.persistentSavePath = persistentSavePath(runtimeBoundaryReport);
 
         report.intentQueueReady = directoryExists(report.intentQueueDirectory);
         report.acknowledgementQueueReady = directoryExists(report.acknowledgementQueueDirectory);
         report.snapshotPresent = fileExists(report.snapshotPath);
+        report.persistentSavePresent = fileExists(report.persistentSavePath);
         report.authorityLaneReady = report.intentQueueReady && report.acknowledgementQueueReady;
         return report;
     }
@@ -314,9 +554,16 @@ namespace war
     {
         ensureDirectory(report.intentQueueDirectory, report.issues);
         ensureDirectory(report.acknowledgementQueueDirectory, report.issues);
+        std::error_code error;
+        std::filesystem::create_directories(report.persistentSavePath.parent_path(), error);
+        if (error)
+        {
+            report.issues.push_back(std::string("Failed to create persistence directory: ") + report.persistentSavePath.parent_path().generic_string());
+        }
 
         report.intentQueueReady = directoryExists(report.intentQueueDirectory);
         report.acknowledgementQueueReady = directoryExists(report.acknowledgementQueueDirectory);
+        report.persistentSavePresent = fileExists(report.persistentSavePath);
         report.authorityLaneReady = report.intentQueueReady && report.acknowledgementQueueReady;
     }
 
@@ -519,45 +766,8 @@ namespace war
         std::ostringstream output;
         output
             << "version=1\n"
-            << "valid=" << (snapshot.valid ? "yes" : "no") << "\n"
-            << "simulation_ticks=" << snapshot.simulationTicks << "\n"
-            << "last_processed_intent_sequence=" << snapshot.lastProcessedIntentSequence << "\n"
             << "published_epoch_ms=" << snapshot.publishedEpochMilliseconds << "\n"
-            << "player_x=" << snapshot.authoritativePlayerPosition.x << "\n"
-            << "player_y=" << snapshot.authoritativePlayerPosition.y << "\n"
-            << "movement_target_active=" << (snapshot.movementTargetActive ? "yes" : "no") << "\n"
-            << "movement_target_x=" << snapshot.movementTargetTile.x << "\n"
-            << "movement_target_y=" << snapshot.movementTargetTile.y << "\n"
-            << "path_index=" << snapshot.pathIndex << "\n"
-            << "path_count=" << snapshot.currentPath.size() << "\n";
-
-        for (size_t i = 0; i < snapshot.currentPath.size(); ++i)
-        {
-            output << "path_" << i << "=" << snapshot.currentPath[i].x << "," << snapshot.currentPath[i].y << "\n";
-        }
-
-        output << "entity_count=" << snapshot.entities.size() << "\n";
-        for (size_t i = 0; i < snapshot.entities.size(); ++i)
-        {
-            const ReplicatedEntityState& entity = snapshot.entities[i];
-            output
-                << "entity_" << i << "="
-                << entity.id << "|"
-                << entityTypeText(entity.type) << "|"
-                << entity.tile.x << "|"
-                << entity.tile.y << "|"
-                << (entity.isOpen ? 1 : 0) << "|"
-                << (entity.isLocked ? 1 : 0) << "|"
-                << (entity.isPowered ? 1 : 0) << "|"
-                << sanitizeSingleLine(entity.name)
-                << "\n";
-        }
-
-        output << "event_count=" << snapshot.eventLog.size() << "\n";
-        for (size_t i = 0; i < snapshot.eventLog.size(); ++i)
-        {
-            output << "event_" << i << "=" << sanitizeSingleLine(snapshot.eventLog[i]) << "\n";
-        }
+            << serializeWorldSnapshotBody(snapshot);
 
         return writeTextFileAtomically(path, output.str(), outError);
     }
@@ -582,156 +792,110 @@ namespace war
             return snapshot;
         }
 
-        uint64_t version = 0;
-        uint64_t simulationTicks = 0;
-        uint64_t lastProcessedIntentSequence = 0;
-        uint64_t publishedEpochMilliseconds = 0;
-        uint64_t movementTargetX = 0;
-        uint64_t movementTargetY = 0;
-        uint64_t pathIndex = 0;
-        uint64_t pathCount = 0;
-        uint64_t entityCount = 0;
-        uint64_t eventCount = 0;
-        float playerX = 0.0f;
-        float playerY = 0.0f;
-        bool valid = false;
-        bool movementTargetActive = false;
-
-        if (!tryParseUnsigned(values, "version", version)
-            || !tryParseYesNo(values, "valid", valid)
-            || !tryParseUnsigned(values, "simulation_ticks", simulationTicks)
-            || !tryParseUnsigned(values, "last_processed_intent_sequence", lastProcessedIntentSequence)
-            || !tryParseUnsigned(values, "published_epoch_ms", publishedEpochMilliseconds)
-            || !tryParseFloat(values, "player_x", playerX)
-            || !tryParseFloat(values, "player_y", playerY)
-            || !tryParseYesNo(values, "movement_target_active", movementTargetActive)
-            || !tryParseUnsigned(values, "movement_target_x", movementTargetX)
-            || !tryParseUnsigned(values, "movement_target_y", movementTargetY)
-            || !tryParseUnsigned(values, "path_index", pathIndex)
-            || !tryParseUnsigned(values, "path_count", pathCount)
-            || !tryParseUnsigned(values, "entity_count", entityCount)
-            || !tryParseUnsigned(values, "event_count", eventCount))
+        if (!parseWorldSnapshotBody(values, true, snapshot, outError))
         {
-            outError = "Authoritative snapshot missing required fields.";
             return snapshot;
         }
 
-        snapshot.valid = valid;
-        snapshot.simulationTicks = simulationTicks;
-        snapshot.lastProcessedIntentSequence = lastProcessedIntentSequence;
-        snapshot.publishedEpochMilliseconds = publishedEpochMilliseconds;
-        snapshot.authoritativePlayerPosition.x = playerX;
-        snapshot.authoritativePlayerPosition.y = playerY;
-        snapshot.movementTargetActive = movementTargetActive;
-        snapshot.movementTargetTile.x = static_cast<int>(movementTargetX);
-        snapshot.movementTargetTile.y = static_cast<int>(movementTargetY);
-        snapshot.pathIndex = static_cast<size_t>(pathIndex);
+        return snapshot;
+    }
 
-        snapshot.currentPath.reserve(static_cast<size_t>(pathCount));
-        for (size_t i = 0; i < static_cast<size_t>(pathCount); ++i)
+    bool AuthoritativeHostProtocol::writePersistentWorldSave(
+        const RuntimeBoundaryReport& runtimeBoundaryReport,
+        const AuthoritativeWorldSnapshot& snapshot,
+        std::string& outError)
+    {
+        outError.clear();
+        AuthoritativeHostProtocolReport report = buildReport(runtimeBoundaryReport);
+        ensureDirectories(report);
+        if (!report.issues.empty())
         {
-            const std::string key = "path_" + std::to_string(i);
-            const auto it = values.find(key);
-            if (it == values.end())
-            {
-                outError = std::string("Authoritative snapshot missing path entry: ") + key;
-                snapshot.valid = false;
-                return snapshot;
-            }
-
-            const size_t split = it->second.find(',');
-            if (split == std::string::npos)
-            {
-                outError = std::string("Authoritative snapshot path entry malformed: ") + key;
-                snapshot.valid = false;
-                return snapshot;
-            }
-
-            try
-            {
-                snapshot.currentPath.push_back({
-                    std::stoi(it->second.substr(0, split)),
-                    std::stoi(it->second.substr(split + 1))
-                });
-            }
-            catch (...)
-            {
-                outError = std::string("Authoritative snapshot path entry invalid: ") + key;
-                snapshot.valid = false;
-                return snapshot;
-            }
+            outError = report.issues.front();
+            return false;
         }
 
-        snapshot.entities.reserve(static_cast<size_t>(entityCount));
-        for (size_t i = 0; i < static_cast<size_t>(entityCount); ++i)
+        const std::filesystem::path path = persistentSavePath(runtimeBoundaryReport);
+        std::ostringstream output;
+        output
+            << "schema_version=2\n"
+            << "save_slot=" << sanitizeSingleLine(snapshot.persistenceSlotName.empty() ? std::string("primary") : snapshot.persistenceSlotName) << "\n"
+            << "save_epoch_ms=" << snapshot.persistenceEpochMilliseconds << "\n"
+            << serializeWorldSnapshotBody(snapshot);
+
+        return writeTextFileAtomically(path, output.str(), outError);
+    }
+
+    AuthoritativeWorldSnapshot AuthoritativeHostProtocol::readPersistentWorldSave(
+        const RuntimeBoundaryReport& runtimeBoundaryReport,
+        uint32_t& outLoadedSchemaVersion,
+        uint32_t& outMigratedFromSchemaVersion,
+        std::string& outError)
+    {
+        outLoadedSchemaVersion = 0;
+        outMigratedFromSchemaVersion = 0;
+        outError.clear();
+
+        AuthoritativeWorldSnapshot snapshot{};
+        const std::filesystem::path path = persistentSavePath(runtimeBoundaryReport);
+        if (!fileExists(path))
         {
-            const std::string key = "entity_" + std::to_string(i);
-            const auto it = values.find(key);
-            if (it == values.end())
-            {
-                outError = std::string("Authoritative snapshot missing entity entry: ") + key;
-                snapshot.valid = false;
-                return snapshot;
-            }
-
-            std::stringstream stream(it->second);
-            std::string idText;
-            std::string typeText;
-            std::string xText;
-            std::string yText;
-            std::string openText;
-            std::string lockedText;
-            std::string poweredText;
-            std::string nameText;
-
-            if (!std::getline(stream, idText, '|')
-                || !std::getline(stream, typeText, '|')
-                || !std::getline(stream, xText, '|')
-                || !std::getline(stream, yText, '|')
-                || !std::getline(stream, openText, '|')
-                || !std::getline(stream, lockedText, '|')
-                || !std::getline(stream, poweredText, '|')
-                || !std::getline(stream, nameText))
-            {
-                outError = std::string("Authoritative snapshot malformed entity entry: ") + key;
-                snapshot.valid = false;
-                return snapshot;
-            }
-
-            try
-            {
-                ReplicatedEntityState entity{};
-                entity.id = std::stoi(idText);
-                entity.type = parseEntityType(typeText);
-                entity.tile.x = std::stoi(xText);
-                entity.tile.y = std::stoi(yText);
-                entity.isOpen = openText == "1";
-                entity.isLocked = lockedText == "1";
-                entity.isPowered = poweredText == "1";
-                entity.name = nameText;
-                snapshot.entities.push_back(entity);
-            }
-            catch (...)
-            {
-                outError = std::string("Authoritative snapshot invalid entity entry: ") + key;
-                snapshot.valid = false;
-                return snapshot;
-            }
+            outError = "Persistent save not present.";
+            return snapshot;
         }
 
-        snapshot.eventLog.reserve(static_cast<size_t>(eventCount));
-        for (size_t i = 0; i < static_cast<size_t>(eventCount); ++i)
+        const StringMap values = parseKeyValueFile(path);
+        if (values.empty())
         {
-            const std::string key = "event_" + std::to_string(i);
-            const auto it = values.find(key);
-            if (it == values.end())
-            {
-                outError = std::string("Authoritative snapshot missing event entry: ") + key;
-                snapshot.valid = false;
-                return snapshot;
-            }
+            outError = "Persistent save file could not be parsed.";
+            return snapshot;
+        }
 
-            snapshot.eventLog.push_back(it->second);
+        uint64_t schemaVersion = 0;
+        if (!tryParseUnsigned(values, "schema_version", schemaVersion))
+        {
+            outError = "Persistent save missing schema version.";
+            return snapshot;
+        }
+
+        if (schemaVersion != 1ull && schemaVersion != 2ull)
+        {
+            outError = std::string("Unsupported persistence schema version: ") + std::to_string(schemaVersion);
+            return snapshot;
+        }
+
+        if (!parseWorldSnapshotBody(values, false, snapshot, outError))
+        {
+            return snapshot;
+        }
+
+        snapshot.persistenceSchemaVersion = static_cast<uint32_t>(schemaVersion);
+        outLoadedSchemaVersion = static_cast<uint32_t>(schemaVersion);
+
+        std::string saveSlot;
+        if (tryParseString(values, "save_slot", saveSlot) && !saveSlot.empty())
+        {
+            snapshot.persistenceSlotName = saveSlot;
+        }
+        else
+        {
+            snapshot.persistenceSlotName = "primary";
+        }
+
+        uint64_t saveEpochMilliseconds = 0;
+        if (tryParseUnsigned(values, "save_epoch_ms", saveEpochMilliseconds))
+        {
+            snapshot.persistenceEpochMilliseconds = saveEpochMilliseconds;
+        }
+        else
+        {
+            snapshot.persistenceEpochMilliseconds = 0;
+        }
+
+        if (schemaVersion == 1ull)
+        {
+            snapshot.persistenceSchemaVersion = 2;
+            snapshot.persistenceMigratedFromSchemaVersion = 1;
+            outMigratedFromSchemaVersion = 1;
         }
 
         return snapshot;
@@ -750,5 +914,10 @@ namespace war
     std::filesystem::path AuthoritativeHostProtocol::snapshotPath(const RuntimeBoundaryReport& runtimeBoundaryReport)
     {
         return runtimeBoundaryReport.hostDirectory / "authoritative_snapshot.txt";
+    }
+
+    std::filesystem::path AuthoritativeHostProtocol::persistentSavePath(const RuntimeBoundaryReport& runtimeBoundaryReport)
+    {
+        return runtimeBoundaryReport.savesDirectory / "authoritative_world_primary.txt";
     }
 }

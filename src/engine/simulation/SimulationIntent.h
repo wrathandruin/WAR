@@ -60,6 +60,10 @@ namespace war
         uint64_t simulationTicks = 0;
         uint64_t lastProcessedIntentSequence = 0;
         uint64_t publishedEpochMilliseconds = 0;
+        uint32_t persistenceSchemaVersion = 2;
+        uint32_t persistenceMigratedFromSchemaVersion = 0;
+        uint64_t persistenceEpochMilliseconds = 0;
+        std::string persistenceSlotName = "primary";
         Vec2 authoritativePlayerPosition{ 0.0f, 0.0f };
         bool movementTargetActive = false;
         TileCoord movementTargetTile{};
@@ -76,6 +80,11 @@ namespace war
         bool hostAuthorityActive = false;
         bool clientPredictionEnabled = false;
         bool latencyHarnessEnabled = false;
+        bool persistenceActive = false;
+        bool persistenceDataLoaded = false;
+        bool persistenceMigrationApplied = false;
+        bool lastPersistenceSaveSucceeded = false;
+        bool lastPersistenceLoadSucceeded = false;
         float fixedStepSeconds = 0.05f;
         float accumulatorSeconds = 0.0f;
         float presentationAlpha = 0.0f;
@@ -84,6 +93,9 @@ namespace war
         uint32_t acknowledgementLatencyMilliseconds = 0;
         uint32_t snapshotLatencyMilliseconds = 0;
         uint32_t jitterMilliseconds = 0;
+        uint32_t persistenceSchemaVersion = 2;
+        uint32_t persistenceLoadedSchemaVersion = 0;
+        uint32_t persistenceMigratedFromSchemaVersion = 0;
         uint64_t renderedFrames = 0;
         uint64_t simulationTicks = 0;
         uint64_t intentsQueued = 0;
@@ -99,12 +111,18 @@ namespace war
         uint64_t lastSnapshotSimulationTicks = 0;
         uint64_t lastSnapshotAgeMilliseconds = 0;
         uint64_t snapshotReadFailures = 0;
+        uint64_t persistenceSaveCount = 0;
+        uint64_t persistenceLoadCount = 0;
+        uint64_t lastPersistenceSaveEpochMilliseconds = 0;
+        uint64_t lastPersistenceLoadEpochMilliseconds = 0;
         size_t pendingIntentCount = 0;
         bool movementTargetActive = false;
         bool lastPathDivergence = false;
         bool lastEntityDivergence = false;
         bool lastSnapshotReadFailed = false;
         std::string lastSnapshotReadError;
+        std::string persistenceSlotName = "primary";
+        std::string lastPersistenceError;
     };
 
     [[nodiscard]] inline const char* simulationIntentTypeText(SimulationIntentType type)

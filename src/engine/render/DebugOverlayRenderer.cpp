@@ -187,17 +187,22 @@ namespace war
         const std::string assetRoot = RuntimePaths::displayPath(runtimeBoundaryReport.assetRoot);
         const std::string runtimeRoot = RuntimePaths::displayPath(runtimeBoundaryReport.runtimeRoot);
         const std::string hostPath = RuntimePaths::displayPath(headlessHostPresenceReport.statusFilePath);
+        const std::string persistentSavePath = RuntimePaths::displayPath(authoritativeHostProtocolReport.persistentSavePath);
         const std::string startupReport = RuntimePaths::displayPath(localDemoDiagnosticsReport.startupReportPath);
         const char* runtimeIssue = runtimeBoundaryReport.issues.empty() ? "none" : runtimeBoundaryReport.issues.front().c_str();
         const char* demoIssue = localDemoDiagnosticsReport.issues.empty() ? "none" : localDemoDiagnosticsReport.issues.front().c_str();
         const char* hostIssue = headlessHostPresenceReport.issues.empty() ? "none" : headlessHostPresenceReport.issues.front().c_str();
+        const char* persistenceIssue = simulationDiagnostics.lastPersistenceError.empty()
+            ? "none"
+            : simulationDiagnostics.lastPersistenceError.c_str();
 
         std::ostringstream info;
         info
-            << "WAR Milestone 36\n"
+            << "WAR Milestone 37\n"
             << "LMB: move    RMB: interact    Shift+RMB: inspect    MMB drag: pan    Wheel: zoom\n"
             << "Authoring: O region overlay    H hotspot overlay    7/8/9 palette\n"
-            << "Simulation owner: SharedSimulationRuntime with localhost authority diagnostics\n"
+            << "Harness: J toggle    K latency preset    L jitter preset\n"
+            << "Simulation owner: SharedSimulationRuntime with authoritative persistence diagnostics\n"
             << "Local authority active: " << (simulationDiagnostics.localAuthorityActive ? "yes" : "no") << "\n"
             << "Client prediction enabled: " << (simulationDiagnostics.clientPredictionEnabled ? "yes" : "no") << "\n"
             << "Fixed step enabled: " << (simulationDiagnostics.fixedStepEnabled ? "yes" : "no") << "\n"
@@ -231,6 +236,20 @@ namespace war
             << "Last snapshot read error: "
             << (simulationDiagnostics.lastSnapshotReadError.empty() ? "none" : simulationDiagnostics.lastSnapshotReadError)
             << "\n"
+            << "Persistence active: " << (simulationDiagnostics.persistenceActive ? "yes" : "no") << "\n"
+            << "Persistence slot: " << simulationDiagnostics.persistenceSlotName << "\n"
+            << "Persistence schema version: " << simulationDiagnostics.persistenceSchemaVersion << "\n"
+            << "Loaded schema version: " << simulationDiagnostics.persistenceLoadedSchemaVersion << "\n"
+            << "Migrated from schema version: " << simulationDiagnostics.persistenceMigratedFromSchemaVersion << "\n"
+            << "Persistence data loaded: " << (simulationDiagnostics.persistenceDataLoaded ? "yes" : "no") << "\n"
+            << "Persistence migration applied: " << (simulationDiagnostics.persistenceMigrationApplied ? "yes" : "no") << "\n"
+            << "Persistence save count: " << simulationDiagnostics.persistenceSaveCount << "\n"
+            << "Persistence load count: " << simulationDiagnostics.persistenceLoadCount << "\n"
+            << "Last persistence save ok: " << (simulationDiagnostics.lastPersistenceSaveSucceeded ? "yes" : "no") << "\n"
+            << "Last persistence load ok: " << (simulationDiagnostics.lastPersistenceLoadSucceeded ? "yes" : "no") << "\n"
+            << "Last persistence save epoch ms: " << simulationDiagnostics.lastPersistenceSaveEpochMilliseconds << "\n"
+            << "Last persistence load epoch ms: " << simulationDiagnostics.lastPersistenceLoadEpochMilliseconds << "\n"
+            << "Last persistence error: " << persistenceIssue << "\n"
             << "Headless host file: " << hostPath << "\n"
             << "Headless host online: " << (headlessHostPresenceReport.hostOnline ? "yes" : "no") << "\n"
             << "Host heartbeat fresh: " << (headlessHostPresenceReport.heartbeatFresh ? "yes" : "no") << "\n"
@@ -244,9 +263,19 @@ namespace war
             << "Host pending inbound intents: " << headlessHostPresenceReport.pendingInboundIntentCount << "\n"
             << "Host pending outbound acks: " << headlessHostPresenceReport.pendingOutboundAcknowledgementCount << "\n"
             << "Host pending snapshots: " << headlessHostPresenceReport.pendingSnapshotCount << "\n"
+            << "Host persistence save present: " << (headlessHostPresenceReport.persistenceSavePresent ? "yes" : "no") << "\n"
+            << "Host persistence schema version: " << headlessHostPresenceReport.persistenceSchemaVersion << "\n"
+            << "Host persistence loaded schema version: " << headlessHostPresenceReport.persistenceLoadedSchemaVersion << "\n"
+            << "Host persistence migrated from version: " << headlessHostPresenceReport.persistenceMigratedFromSchemaVersion << "\n"
+            << "Host persistence save count: " << headlessHostPresenceReport.persistenceSaveCount << "\n"
+            << "Host persistence load count: " << headlessHostPresenceReport.persistenceLoadCount << "\n"
+            << "Host persistence last save epoch ms: " << headlessHostPresenceReport.lastPersistenceSaveEpochMilliseconds << "\n"
+            << "Host persistence last load epoch ms: " << headlessHostPresenceReport.lastPersistenceLoadEpochMilliseconds << "\n"
             << "Intent queue ready: " << (authoritativeHostProtocolReport.intentQueueReady ? "yes" : "no") << "\n"
             << "Ack queue ready: " << (authoritativeHostProtocolReport.acknowledgementQueueReady ? "yes" : "no") << "\n"
             << "Snapshot present: " << (authoritativeHostProtocolReport.snapshotPresent ? "yes" : "no") << "\n"
+            << "Persistent save present: " << (authoritativeHostProtocolReport.persistentSavePresent ? "yes" : "no") << "\n"
+            << "Persistent save path: " << persistentSavePath << "\n"
             << "Authority protocol lane ready: " << (authoritativeHostProtocolReport.authorityLaneReady ? "yes" : "no") << "\n"
             << "Player world: (" << playerPosition.x << ", " << playerPosition.y << ")\n"
             << "Player tile: (" << playerTile.x << ", " << playerTile.y << ")\n"
@@ -289,7 +318,7 @@ namespace war
             << "Frame dt: " << lastDeltaTime;
 
         const std::string infoText = info.str();
-        RECT infoRect{ 16, 16, 1540, 760 };
+        RECT infoRect{ 16, 16, 1540, 860 };
         RECT measureRect = infoRect;
         DrawTextA(dc, infoText.c_str(), -1, &measureRect, DT_LEFT | DT_TOP | DT_NOPREFIX | DT_CALCRECT);
         DrawTextA(dc, infoText.c_str(), -1, &infoRect, DT_LEFT | DT_TOP | DT_NOPREFIX);

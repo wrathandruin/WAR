@@ -21,18 +21,31 @@ namespace war
         bool authorityHostAdvertised = false;
         bool localBootstrapLaneReady = false;
         bool latencyHarnessEnabled = false;
+        bool persistenceSavePresent = false;
+        bool persistenceLastSaveSucceeded = false;
+        bool persistenceLastLoadSucceeded = false;
+        bool persistenceMigrationApplied = false;
 
         uint64_t heartbeatAgeMilliseconds = 0;
         uint64_t advertisedSimulationTicks = 0;
         uint64_t pendingInboundIntentCount = 0;
         uint64_t pendingOutboundAcknowledgementCount = 0;
         uint64_t pendingSnapshotCount = 0;
+        uint64_t persistenceSaveCount = 0;
+        uint64_t persistenceLoadCount = 0;
+        uint64_t lastPersistenceSaveEpochMilliseconds = 0;
+        uint64_t lastPersistenceLoadEpochMilliseconds = 0;
         uint32_t hostTickMilliseconds = 0;
+        uint32_t persistenceSchemaVersion = 0;
+        uint32_t persistenceLoadedSchemaVersion = 0;
+        uint32_t persistenceMigratedFromSchemaVersion = 0;
 
         std::string hostMode = "offline";
         std::string hostState = "unseen";
         std::string hostPid = "none";
+        std::string persistenceSlotName = "primary";
         std::filesystem::path statusFilePath;
+        std::filesystem::path persistentSavePath;
         ReplicationHarnessConfig harnessConfig{};
 
         std::vector<std::string> issues;

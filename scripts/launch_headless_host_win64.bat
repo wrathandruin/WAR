@@ -18,12 +18,12 @@ if not exist "%RUNTIME_ROOT%" set "RUNTIME_ROOT=%DEMO_ROOT%\Runtime"
 set "LOG_DIR=%RUNTIME_ROOT%\Logs"
 
 if not exist "%HOST_EXE_PATH%" (
-    echo [M36] ERROR: no host executable found next to the host launch script.
+    echo [M37] ERROR: no host executable found next to the host launch script.
     exit /b 1
 )
 
 if not exist "%LOG_DIR%" mkdir "%LOG_DIR%" >nul 2>nul
 
-echo [%DATE% %TIME%] launching headless host %HOST_EXE_PATH% %HOST_ARGS% >> "%LOG_DIR%\headless_host_launch.txt"
+echo [%DATE% %TIME%] launching M37 headless host %HOST_EXE_PATH% %HOST_ARGS% >> "%LOG_DIR%\headless_host_launch.txt"
 start "WAR Headless Host" /min "%HOST_EXE_PATH%" %HOST_ARGS%
 exit /b 0

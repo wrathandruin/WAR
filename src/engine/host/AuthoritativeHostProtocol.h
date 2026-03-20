@@ -14,11 +14,13 @@ namespace war
         bool intentQueueReady = false;
         bool acknowledgementQueueReady = false;
         bool snapshotPresent = false;
+        bool persistentSavePresent = false;
         bool authorityLaneReady = false;
 
         std::filesystem::path intentQueueDirectory;
         std::filesystem::path acknowledgementQueueDirectory;
         std::filesystem::path snapshotPath;
+        std::filesystem::path persistentSavePath;
 
         std::vector<std::string> issues;
     };
@@ -54,9 +56,21 @@ namespace war
             const RuntimeBoundaryReport& runtimeBoundaryReport,
             std::string& outError);
 
+        [[nodiscard]] static bool writePersistentWorldSave(
+            const RuntimeBoundaryReport& runtimeBoundaryReport,
+            const AuthoritativeWorldSnapshot& snapshot,
+            std::string& outError);
+
+        [[nodiscard]] static AuthoritativeWorldSnapshot readPersistentWorldSave(
+            const RuntimeBoundaryReport& runtimeBoundaryReport,
+            uint32_t& outLoadedSchemaVersion,
+            uint32_t& outMigratedFromSchemaVersion,
+            std::string& outError);
+
     private:
         [[nodiscard]] static std::filesystem::path intentQueueDirectory(const RuntimeBoundaryReport& runtimeBoundaryReport);
         [[nodiscard]] static std::filesystem::path acknowledgementQueueDirectory(const RuntimeBoundaryReport& runtimeBoundaryReport);
         [[nodiscard]] static std::filesystem::path snapshotPath(const RuntimeBoundaryReport& runtimeBoundaryReport);
+        [[nodiscard]] static std::filesystem::path persistentSavePath(const RuntimeBoundaryReport& runtimeBoundaryReport);
     };
 }

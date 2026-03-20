@@ -101,6 +101,8 @@ namespace war
     {
         HeadlessHostPresenceReport report{};
         report.statusFilePath = runtimeBoundaryReport.hostDirectory / "headless_host_status.txt";
+        report.persistentSavePath = runtimeBoundaryReport.savesDirectory / "authoritative_world_primary.txt";
+        report.persistenceSavePresent = fileExists(report.persistentSavePath);
 
         if (!fileExists(report.statusFilePath))
         {
@@ -167,7 +169,81 @@ namespace war
         report.harnessConfig.acknowledgementLatencyMilliseconds = static_cast<uint32_t>(ackLatency);
         report.harnessConfig.snapshotLatencyMilliseconds = static_cast<uint32_t>(snapshotLatency);
         report.harnessConfig.jitterMilliseconds = static_cast<uint32_t>(jitter);
-        report.statusParseValid = !malformed && statusVersion >= 2 && report.hostTickMilliseconds > 0;
+
+        uint64_t persistenceSchemaVersion = 0;
+        uint64_t persistenceLoadedSchemaVersion = 0;
+        uint64_t persistenceMigratedFromSchemaVersion = 0;
+        uint64_t persistenceSaveCount = 0;
+        uint64_t persistenceLoadCount = 0;
+        uint64_t lastPersistenceSaveEpochMilliseconds = 0;
+        uint64_t lastPersistenceLoadEpochMilliseconds = 0;
+        bool persistenceLastSaveSucceeded = false;
+        bool persistenceLastLoadSucceeded = false;
+        bool persistenceMigrationApplied = false;
+        bool persistenceActive = false;
+        bool persistenceParseValid = true;
+
+        if (values.contains("persistence_active"))
+        {
+            persistenceParseValid &= tryParseYesNo(values, "persistence_active", persistenceActive);
+        }
+        if (values.contains("persistence_schema_version"))
+        {
+            persistenceParseValid &= tryParseUnsigned(values, "persistence_schema_version", persistenceSchemaVersion);
+        }
+        if (values.contains("persistence_loaded_schema_version"))
+        {
+            persistenceParseValid &= tryParseUnsigned(values, "persistence_loaded_schema_version", persistenceLoadedSchemaVersion);
+        }
+        if (values.contains("persistence_migrated_from_version"))
+        {
+            persistenceParseValid &= tryParseUnsigned(values, "persistence_migrated_from_version", persistenceMigratedFromSchemaVersion);
+        }
+        if (values.contains("persistence_save_count"))
+        {
+            persistenceParseValid &= tryParseUnsigned(values, "persistence_save_count", persistenceSaveCount);
+        }
+        if (values.contains("persistence_load_count"))
+        {
+            persistenceParseValid &= tryParseUnsigned(values, "persistence_load_count", persistenceLoadCount);
+        }
+        if (values.contains("persistence_last_save_epoch_ms"))
+        {
+            persistenceParseValid &= tryParseUnsigned(values, "persistence_last_save_epoch_ms", lastPersistenceSaveEpochMilliseconds);
+        }
+        if (values.contains("persistence_last_load_epoch_ms"))
+        {
+            persistenceParseValid &= tryParseUnsigned(values, "persistence_last_load_epoch_ms", lastPersistenceLoadEpochMilliseconds);
+        }
+        if (values.contains("persistence_last_save_succeeded"))
+        {
+            persistenceParseValid &= tryParseYesNo(values, "persistence_last_save_succeeded", persistenceLastSaveSucceeded);
+        }
+        if (values.contains("persistence_last_load_succeeded"))
+        {
+            persistenceParseValid &= tryParseYesNo(values, "persistence_last_load_succeeded", persistenceLastLoadSucceeded);
+        }
+        if (values.contains("persistence_migration_applied"))
+        {
+            persistenceParseValid &= tryParseYesNo(values, "persistence_migration_applied", persistenceMigrationApplied);
+        }
+        if (values.contains("persistence_slot"))
+        {
+            persistenceParseValid &= tryParseString(values, "persistence_slot", report.persistenceSlotName);
+        }
+
+        report.persistenceSchemaVersion = static_cast<uint32_t>(persistenceSchemaVersion);
+        report.persistenceLoadedSchemaVersion = static_cast<uint32_t>(persistenceLoadedSchemaVersion);
+        report.persistenceMigratedFromSchemaVersion = static_cast<uint32_t>(persistenceMigratedFromSchemaVersion);
+        report.persistenceSaveCount = persistenceSaveCount;
+        report.persistenceLoadCount = persistenceLoadCount;
+        report.lastPersistenceSaveEpochMilliseconds = lastPersistenceSaveEpochMilliseconds;
+        report.lastPersistenceLoadEpochMilliseconds = lastPersistenceLoadEpochMilliseconds;
+        report.persistenceLastSaveSucceeded = persistenceLastSaveSucceeded;
+        report.persistenceLastLoadSucceeded = persistenceLastLoadSucceeded;
+        report.persistenceMigrationApplied = persistenceMigrationApplied;
+
+        report.statusParseValid = !malformed && persistenceParseValid && statusVersion >= 2 && report.hostTickMilliseconds > 0;
 
         const uint64_t now = currentEpochMilliseconds();
         if (report.heartbeatFieldValid && heartbeatEpochMilliseconds > 0 && now >= heartbeatEpochMilliseconds)
@@ -185,7 +261,7 @@ namespace war
             && report.heartbeatFresh
             && report.hostState == "running"
             && report.authorityHostAdvertised;
-        report.localBootstrapLaneReady = report.statusParseValid && report.authorityHostAdvertised;
+        report.localBootstrapLaneReady = report.statusParseValid && report.authorityHostAdvertised && persistenceActive;
 
         if (!report.statusParseValid)
         {
@@ -223,6 +299,9 @@ namespace war
 
         const std::filesystem::path finalPath = runtimeBoundaryReport.hostDirectory / "headless_host_status.txt";
         const std::filesystem::path tempPath = runtimeBoundaryReport.hostDirectory / "headless_host_status.tmp";
+        const std::filesystem::path persistentSavePath = runtimeBoundaryReport.savesDirectory / "authoritative_world_primary.txt";
+        const bool persistenceSavePresent = fileExists(persistentSavePath);
+
         std::ofstream output(tempPath, std::ios::out | std::ios::trunc);
         if (!output.is_open())
         {
@@ -230,7 +309,7 @@ namespace war
         }
 
         output
-            << "status_version=2\n"
+            << "status_version=3\n"
             << "mode=headless-authoritative-host\n"
             << "state=" << hostState << "\n"
             << "pid=" << processId << "\n"
@@ -248,7 +327,20 @@ namespace war
             << "jitter_ms=" << harnessConfig.jitterMilliseconds << "\n"
             << "pending_inbound_intents=" << pendingInboundIntentCount << "\n"
             << "pending_outbound_acks=" << pendingOutboundAcknowledgementCount << "\n"
-            << "pending_snapshots=" << pendingSnapshotCount << "\n";
+            << "pending_snapshots=" << pendingSnapshotCount << "\n"
+            << "persistence_active=" << (simulationDiagnostics.persistenceActive ? "yes" : "no") << "\n"
+            << "persistence_slot=" << simulationDiagnostics.persistenceSlotName << "\n"
+            << "persistence_save_present=" << (persistenceSavePresent ? "yes" : "no") << "\n"
+            << "persistence_schema_version=" << simulationDiagnostics.persistenceSchemaVersion << "\n"
+            << "persistence_loaded_schema_version=" << simulationDiagnostics.persistenceLoadedSchemaVersion << "\n"
+            << "persistence_migrated_from_version=" << simulationDiagnostics.persistenceMigratedFromSchemaVersion << "\n"
+            << "persistence_migration_applied=" << (simulationDiagnostics.persistenceMigrationApplied ? "yes" : "no") << "\n"
+            << "persistence_last_save_succeeded=" << (simulationDiagnostics.lastPersistenceSaveSucceeded ? "yes" : "no") << "\n"
+            << "persistence_last_load_succeeded=" << (simulationDiagnostics.lastPersistenceLoadSucceeded ? "yes" : "no") << "\n"
+            << "persistence_save_count=" << simulationDiagnostics.persistenceSaveCount << "\n"
+            << "persistence_load_count=" << simulationDiagnostics.persistenceLoadCount << "\n"
+            << "persistence_last_save_epoch_ms=" << simulationDiagnostics.lastPersistenceSaveEpochMilliseconds << "\n"
+            << "persistence_last_load_epoch_ms=" << simulationDiagnostics.lastPersistenceLoadEpochMilliseconds << "\n";
         output.close();
         if (!output)
         {

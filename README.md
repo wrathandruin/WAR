@@ -1,109 +1,52 @@
-# WAR — Milestone 36 (Replication / Latency Harness / Divergence Diagnostics)
+# WAR — Milestone 37 (Persistence Schema / Save-Load / Versioned Migration)
 
-> Current development milestone: M36 — Replication / Latency Harness / Divergence Diagnostics
+> Current development milestone: M37 — Persistence Schema / Save-Load / Versioned Migration
 
 ## Focus
-Harden the localhost authoritative lane so it is observable, testable, and supportable before persistence work begins.
+Begin Phase 3 by giving the authoritative localhost lane a versioned persistence surface that can survive restart, migrate older save payloads forward safely, and keep persistence ownership in the correct shared/server runtime boundaries.
 
-M35 moved movement and interaction requests into the headless host through the file-backed localhost authority lane.
-M36 closes that subsection by adding latency and jitter harness controls, queue visibility, divergence diagnostics, snapshot read failure surfacing, and an acceptance lane the team can run repeatedly.
+M36 signed off the localhost authority and replication hardening pass.
+M37 builds on that by introducing authoritative save/load flow, versioned persistence schema handling, and migration-safe read behavior without regressing the split workspace baseline.
 
 ## What this milestone does
-- adds a shared replication harness config under `Runtime/Config/replication_harness.cfg`
-- simulates latency for inbound intents, outbound acknowledgements, and outbound snapshots
-- preserves original publication timestamps for acknowledgements and snapshots under delayed delivery
-- publishes authoritative snapshots atomically through temp-file write plus rename
-- surfaces snapshot read failures in diagnostics and event log instead of failing silently
-- hardens host freshness so malformed or incomplete heartbeat files cannot report the host as online
-- adds a machine-readable client replication status file for acceptance and diagnostics review
-- upgrades the local Windows packaging lane to locate `MSBuild.exe` through `vswhere.exe`
-- adds an M36 acceptance script for localhost authority review
+- introduces a versioned authoritative persistence save under `Runtime/Saves/authoritative_world_primary.txt`
+- loads authoritative world state from the save file during host boot when present
+- writes authoritative save state atomically from the host during autosave and shutdown
+- records persistence diagnostics in shared simulation state so desktop and server can both surface the same truth
+- supports migration-safe loading from schema version `1` into canonical schema version `2`
+- preserves the M36 localhost authority lane and keeps persistence out of desktop-only ownership
 
-## Local validation procedure
-1. Build or stage with `scripts/build_local_demo_package_win64.bat Release`
-2. Launch the headless host with `scripts/launch_headless_host_win64.bat`
-3. Launch the client against the host with `scripts/launch_local_client_against_host_win64.bat`
-4. Verify in the overlay that authority is `headless-host`, host heartbeat is online, and queue visibility is present
-5. Toggle the harness with `J`, cycle latency with `K`, and cycle jitter with `L`
-6. Confirm snapshot age increases under delayed delivery and that correction/divergence counters remain visible
-7. Run `scripts/acceptance_m36_localhost_authority_win64.bat` and review the generated pass/fail report under `Runtime/Logs`
+## Persistence behavior after M37
+The current localhost authority stack should now read as:
 
-## Known limits of the current localhost protocol
-The current authority lane is still intentionally file-backed and local-only.
-It is suitable for proving runtime ownership and diagnostics, but it is not a final transport.
+- `WARShared`: owns persistence-facing simulation state and diagnostics
+- `WARServer.exe`: owns authoritative load/save decisions and file publication
+- `WAR.exe`: presents persistence status, snapshot status, and authority diagnostics
+- `WARLegacy`: remains available only as fallback during transition
 
-Current limits:
-- no real socket transport
-- no binary serialization or packet framing
-- no reliability layer beyond file presence and sequencing
-- no session security or remote host discovery
-- no bandwidth or packet-loss simulation beyond the current latency/jitter harness
-- no rollback or advanced prediction model beyond current correction flow
+## Validation procedure
+1. Build the split targets in the normal Windows/MSBuild lane.
+2. Launch `WARServer.exe`.
+3. Confirm `Runtime/Saves/authoritative_world_primary.txt` is created after autosave or shutdown.
+4. Relaunch `WARServer.exe` and confirm persisted state is loaded.
+5. Launch `WAR.exe` against the host and review overlay/bgfx persistence diagnostics.
+6. Run the staged M37 persistence drill with `scripts/acceptance_m37_persistence_win64.bat`.
+7. Re-run the staged local demo package, staged headless host smoke test, and staged M36 acceptance lane to confirm no regression.
 
-That is acceptable for M36.
-It would not be acceptable to carry these limits forward unchanged into hosted beta work.
+## Known limits
+- localhost/file-backed authority only
+- no final network transport
+- single authoritative save slot for this increment
+- no broad gameplay-state persistence beyond the current world, entity, path, and event surface
+- migrations currently support `schema_version=1` forward into `schema_version=2`
 
-
-Automated note:
-- the batch acceptance lane does not synthesize gameplay input
-- correction and divergence counters are therefore validated for visibility and reporting, and may remain zero unless the client is actively driven during the run
-
-## Acceptance criteria before M37
-M36 is not signed off until all of the following are true:
-- the headless host heartbeat cannot report online when the file is missing or malformed
-- host acknowledgements and snapshots preserve original publication timestamps through delayed delivery
-- authoritative snapshots are written atomically
-- snapshot read failures show up in diagnostics and event log instead of disappearing silently
-- queue visibility is available for inbound intents, outbound acknowledgements, and pending snapshots
-- the acceptance script produces a pass/fail report covering heartbeat, snapshot age growth, correction count visibility, divergence count visibility, and queue visibility
-- the local Windows package/build lane no longer assumes `msbuild` is on `PATH`
-
-## Current audit status
-Audit date: 2026-03-20
-
-M36 is signed off.
-
-Verified on the real Windows/MSBuild lane:
-- `WAR.vcxproj` `Debug|x64` rebuild passes with `0 warnings` and `0 errors`
-- the local demo package stages successfully under `out/local_demo/WAR_M36_Debug`
-- the staged local demo smoke test passes
-- the staged headless-host smoke test passes
-- the staged acceptance script passes and writes a final `PASS` report under `runtime/Logs/m36_acceptance_report.txt`
-- the split targets `WAR`, `WARShared`, `WARServer`, and `WARLegacy` all build successfully
-- the staged bundle now carries `WAR.exe` and `WARServer.exe` as separate client and host outputs
-
-M37 is unblocked from the M36 sign-off perspective.
-The pre-M37 workspace split baseline is also validated.
-
-## Public Repo Hygiene
-- only `assets/shaders/` is treated as canonical source-controlled asset content
-- local textures and images under `assets/textures/` remain on disk for development but are not part of the public Git payload
-- runtime data, packaged bundles, and build outputs remain ignored and disposable
-
-## Demo controls
-- `LMB`: move / set movement target
-- `RMB`: interact
-- `Shift + RMB`: inspect
-- `MMB drag`: pan camera
-- `Mouse wheel`: zoom
-- `O`: toggle region boundary overlay
-- `H`: toggle authored hotspot overlay
-- `7 / 8 / 9`: Default / Muted / Vivid palette modes
-- `J`: toggle replication latency harness
-- `K`: cycle latency preset
-- `L`: cycle jitter preset
+These limits are acceptable for M37 because the goal is a safe persistence foundation, not the final shipping save system.
 
 ## Why this matters
-M36 is the finish line for the authority subsection, not the start of a networking sprawl pass.
+Persistence can no longer wait.
 
-The project now has:
-- shared simulation ownership
-- a separate headless host runtime
-- host-owned movement and interaction resolution
-- observable localhost replication behavior under stress
-- a repeatable validation lane for authority review
-
-That is the correct base before versioned persistence enters the runtime in M37.
+Phase 3 depends on save/load correctness before inventory, hazards, and combat harden around the wrong ownership model.
+M37 puts persistence into the shared/server side of the split architecture now, while the repo is still flexible enough to do it cleanly.
 
 ## Requirements
 The bgfx textured path expects compiled shader binaries at:
@@ -115,17 +58,10 @@ assets/shaders/dx11/vs_texture.bin
 assets/shaders/dx11/fs_texture.bin
 ```
 
-And the shared sprite atlas at:
-
-```text
-assets/textures/world_atlas.bmp
-```
-
-The texture atlas is a local development asset and is intentionally not versioned in Git.
-Only the shader pipeline under `assets/shaders/` is treated as canonical source-controlled asset content in this public repo.
+Local textures under `assets/textures/` remain machine-local only and must not be committed.
 
 ## Next Milestone
-### M37 — Persistence Schema / Save-Load / Versioned Migration
-- introduce versioned save schema and migration rules
-- persist authoritative slice state safely
-- prepare the runtime for hosted persistence work instead of transient demo-only state
+### M38 — Actor Runtime / Inventory / Equipment / Loot
+- extend the authoritative persistent surface to actor inventory and equipment state
+- keep shared/server ownership clean while the split workspace continues to settle
+- preserve the M36 authority acceptance lane and M37 persistence correctness while gameplay breadth expands

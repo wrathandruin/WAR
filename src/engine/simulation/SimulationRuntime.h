@@ -24,6 +24,10 @@ namespace war
             uint32_t snapshotLatencyMilliseconds,
             uint32_t jitterMilliseconds,
             uint64_t snapshotAgeMilliseconds);
+        void setPersistenceState(bool persistenceActive, const std::string& slotName);
+        void notePersistenceSave(uint32_t schemaVersion, uint64_t saveEpochMilliseconds);
+        void notePersistenceLoad(uint32_t loadedSchemaVersion, uint32_t migratedFromSchemaVersion, uint64_t loadEpochMilliseconds);
+        void notePersistenceFailure(const std::string& error, bool duringLoad);
 
         [[nodiscard]] uint64_t enqueueIntent(SimulationIntentType type, TileCoord target);
         [[nodiscard]] SimulationIntentAck submitAuthoritativeIntent(const SimulationIntent& intent);
@@ -37,6 +41,11 @@ namespace war
             const AuthoritativeWorldSnapshot& snapshot,
             uint64_t snapshotAgeMilliseconds,
             std::string& outCorrectionReason);
+        void applyPersistedSnapshot(
+            const AuthoritativeWorldSnapshot& snapshot,
+            uint32_t loadedSchemaVersion,
+            uint32_t migratedFromSchemaVersion,
+            uint64_t loadEpochMilliseconds);
         [[nodiscard]] AuthoritativeWorldSnapshot buildAuthoritativeSnapshot(uint64_t lastProcessedIntentSequence) const;
 
         [[nodiscard]] const WorldState& worldState() const;
@@ -62,6 +71,7 @@ namespace war
         void advanceAuthoritativePlayer(float stepSeconds);
         void refreshPresentedPlayerPosition();
         void trimEventLog();
+        void applySnapshotState(const AuthoritativeWorldSnapshot& snapshot);
 
         WorldState m_worldState{};
         ActionQueue m_actions{};

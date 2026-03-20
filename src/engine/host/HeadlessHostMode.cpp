@@ -37,6 +37,9 @@ namespace war
             uint64_t dueEpochMilliseconds = 0;
         };
 
+        constexpr uint64_t kPersistenceSchemaVersion = 2;
+        constexpr uint64_t kAutoSaveIntervalMilliseconds = 5000ull;
+
         uint32_t parseOptionValue(const std::wstring& commandLine, const std::wstring& key, uint32_t fallback)
         {
             const size_t start = commandLine.find(key);
@@ -96,9 +99,10 @@ namespace war
         SimulationRuntime simulationRuntime{};
         simulationRuntime.initializeForLocalAuthority();
         simulationRuntime.setAuthorityMode(false, true, false);
-        simulationRuntime.appendEvent("Headless host authoritative lane active");
-        simulationRuntime.appendEvent("Client movement and interaction requests are resolved here");
-        simulationRuntime.appendEvent("Replication latency harness and divergence diagnostics active for M36");
+        simulationRuntime.setPersistenceState(true, "primary");
+        simulationRuntime.appendEvent("Milestone 37 authoritative persistence lane active");
+        simulationRuntime.appendEvent("Versioned persistence schema and migration-safe load/save flow active");
+        simulationRuntime.appendEvent("Client movement and interaction requests continue to resolve here");
 
         AuthoritativeHostProtocolReport protocolReport = AuthoritativeHostProtocol::buildReport(runtimeBoundaryReport);
         AuthoritativeHostProtocol::ensureDirectories(protocolReport);
@@ -118,8 +122,86 @@ namespace war
         appendLogLine(logPath, std::string("Intent queue: ") + protocolReport.intentQueueDirectory.generic_string());
         appendLogLine(logPath, std::string("Ack queue: ") + protocolReport.acknowledgementQueueDirectory.generic_string());
         appendLogLine(logPath, std::string("Snapshot path: ") + protocolReport.snapshotPath.generic_string());
+        appendLogLine(logPath, std::string("Persistent save path: ") + protocolReport.persistentSavePath.generic_string());
         appendLogLine(logPath, std::string("Harness enabled: ") + (harnessConfig.enabled ? "yes" : "no"));
         appendLogLine(logPath, "State: running");
+
+        const uint64_t startupEpochMilliseconds = ReplicationHarness::currentEpochMilliseconds();
+        uint32_t loadedSchemaVersion = 0;
+        uint32_t migratedFromSchemaVersion = 0;
+        std::string persistenceLoadError;
+        const AuthoritativeWorldSnapshot persistedSnapshot =
+            AuthoritativeHostProtocol::readPersistentWorldSave(
+                runtimeBoundaryReport,
+                loadedSchemaVersion,
+                migratedFromSchemaVersion,
+                persistenceLoadError);
+
+        if (persistenceLoadError.empty() && persistedSnapshot.valid)
+        {
+            simulationRuntime.applyPersistedSnapshot(
+                persistedSnapshot,
+                loadedSchemaVersion,
+                migratedFromSchemaVersion,
+                startupEpochMilliseconds);
+
+            appendLogLine(
+                logPath,
+                std::string("Loaded authoritative persistence save. schema=")
+                + std::to_string(loadedSchemaVersion)
+                + " migrated_from="
+                + std::to_string(migratedFromSchemaVersion));
+            simulationRuntime.appendEvent(
+                std::string("Authoritative save loaded. schema=")
+                + std::to_string(loadedSchemaVersion)
+                + (migratedFromSchemaVersion > 0
+                    ? std::string(" migrated-from=") + std::to_string(migratedFromSchemaVersion)
+                    : std::string{}));
+        }
+        else if (persistenceLoadError == "Persistent save not present.")
+        {
+            appendLogLine(logPath, "No authoritative persistent save present. Starting fresh world.");
+            simulationRuntime.appendEvent("No authoritative persistent save present. Starting fresh world.");
+        }
+        else
+        {
+            simulationRuntime.notePersistenceFailure(persistenceLoadError, true);
+            appendLogLine(logPath, std::string("Persistence load failed: ") + persistenceLoadError);
+            simulationRuntime.appendEvent(std::string("Persistence load failed: ") + persistenceLoadError);
+        }
+
+        auto persistAuthoritativeState = [&](const std::string& reason, uint64_t epochMilliseconds)
+        {
+            AuthoritativeWorldSnapshot saveSnapshot =
+                simulationRuntime.buildAuthoritativeSnapshot(simulationRuntime.diagnostics().lastIntentSequence);
+            saveSnapshot.persistenceSchemaVersion = static_cast<uint32_t>(kPersistenceSchemaVersion);
+            saveSnapshot.persistenceMigratedFromSchemaVersion = 0;
+            saveSnapshot.persistenceEpochMilliseconds = epochMilliseconds;
+            saveSnapshot.persistenceSlotName = simulationRuntime.diagnostics().persistenceSlotName;
+
+            std::string persistenceSaveError;
+            if (AuthoritativeHostProtocol::writePersistentWorldSave(runtimeBoundaryReport, saveSnapshot, persistenceSaveError))
+            {
+                simulationRuntime.notePersistenceSave(static_cast<uint32_t>(kPersistenceSchemaVersion), epochMilliseconds);
+                appendLogLine(
+                    logPath,
+                    std::string("Persistence save published [") + reason + "] epoch_ms=" + std::to_string(epochMilliseconds));
+                return true;
+            }
+
+            simulationRuntime.notePersistenceFailure(persistenceSaveError, false);
+            appendLogLine(
+                logPath,
+                std::string("Persistence save failed [") + reason + "]: " + persistenceSaveError);
+            simulationRuntime.appendEvent(
+                std::string("Persistence save failed [") + reason + "]: " + persistenceSaveError);
+            return false;
+        };
+
+        if (migratedFromSchemaVersion > 0)
+        {
+            (void)persistAuthoritativeState("post-migration", startupEpochMilliseconds);
+        }
 
         std::deque<PendingIntentArrival> pendingIntentArrivals{};
         std::deque<PendingAcknowledgementDelivery> pendingAcknowledgementDeliveries{};
@@ -130,6 +212,7 @@ namespace war
         const auto startedAt = std::chrono::steady_clock::now();
         auto nextTick = startedAt;
         auto nextHeartbeat = startedAt;
+        uint64_t lastPersistenceSaveEpochMilliseconds = simulationRuntime.diagnostics().lastPersistenceSaveEpochMilliseconds;
 
         for (;;)
         {
@@ -226,6 +309,15 @@ namespace war
                 pendingSnapshotDelivery.reset();
             }
 
+            if (lastPersistenceSaveEpochMilliseconds == 0
+                || nowEpochMilliseconds - lastPersistenceSaveEpochMilliseconds >= kAutoSaveIntervalMilliseconds)
+            {
+                if (persistAuthoritativeState("autosave", nowEpochMilliseconds))
+                {
+                    lastPersistenceSaveEpochMilliseconds = nowEpochMilliseconds;
+                }
+            }
+
             if (nowSteady >= nextHeartbeat)
             {
                 HeadlessHostPresence::writeStatus(
@@ -242,6 +334,9 @@ namespace war
             }
         }
 
+        const uint64_t shutdownEpochMilliseconds = ReplicationHarness::currentEpochMilliseconds();
+        (void)persistAuthoritativeState("shutdown", shutdownEpochMilliseconds);
+
         HeadlessHostPresence::writeStatus(
             runtimeBoundaryReport,
             simulationRuntime.diagnostics(),
@@ -255,13 +350,15 @@ namespace war
 
         AuthoritativeWorldSnapshot finalSnapshot =
             simulationRuntime.buildAuthoritativeSnapshot(simulationRuntime.diagnostics().lastIntentSequence);
-        finalSnapshot.publishedEpochMilliseconds = ReplicationHarness::currentEpochMilliseconds();
+        finalSnapshot.publishedEpochMilliseconds = shutdownEpochMilliseconds;
         std::string snapshotError;
         (void)AuthoritativeHostProtocol::writeAuthoritativeSnapshot(runtimeBoundaryReport, finalSnapshot, snapshotError);
 
         appendLogLine(logPath, std::string("Simulation ticks: ") + std::to_string(simulationRuntime.diagnostics().simulationTicks));
         appendLogLine(logPath, std::string("Last processed intent: ") + std::to_string(simulationRuntime.diagnostics().lastIntentSequence));
         appendLogLine(logPath, std::string("Divergence corrections observed: ") + std::to_string(simulationRuntime.diagnostics().correctionsApplied));
+        appendLogLine(logPath, std::string("Persistence saves: ") + std::to_string(simulationRuntime.diagnostics().persistenceSaveCount));
+        appendLogLine(logPath, std::string("Persistence loads: ") + std::to_string(simulationRuntime.diagnostics().persistenceLoadCount));
         appendLogLine(logPath, "State: stopped");
         return 0;
     }
