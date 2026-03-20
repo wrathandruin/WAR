@@ -119,13 +119,13 @@ namespace war
         updateReplicationDiagnostics();
         writeClientReplicationStatus();
 
-        auto pushM37StartupEvents = [this]()
+        auto pushM38StartupEvents = [this]()
         {
-            pushEvent("Milestone 37 initialized");
-            pushEvent("persistence schema / save-load / versioned migration active");
+            pushEvent("Milestone 38 initialized");
+            pushEvent("actor runtime / inventory / equipment / loot active");
             pushEvent("Simulation owner: SharedSimulationRuntime with authoritative localhost host lane");
+            pushEvent("Persistence baseline from M37 remains active under WARServer.exe");
             pushEvent("Headless host launch: WARServer.exe");
-            pushEvent("Authoritative persistence save path: Runtime/Saves/authoritative_world_primary.txt");
             pushEvent(std::string("Build: ")
                 + m_localDemoDiagnosticsReport.buildConfiguration
                 + " | "
@@ -149,15 +149,6 @@ namespace war
                 pushEvent("No external headless host heartbeat detected yet");
             }
 
-            if (m_headlessHostPresenceReport.persistenceSavePresent)
-            {
-                pushEvent("Authoritative persistence save detected");
-            }
-            else
-            {
-                pushEvent("No authoritative persistence save detected yet");
-            }
-
             pushEvent("Press O / H / 7 / 8 / 9 for review overlays and palette modes");
             pushEvent("Press J / K / L for harness toggle, latency preset, and jitter preset");
         };
@@ -166,7 +157,7 @@ namespace war
         if (preferred->initialize(m_window->getHandle()))
         {
             m_renderDevice = std::move(preferred);
-            pushM37StartupEvents();
+            pushM38StartupEvents();
             pushEvent(std::string("Active backend: ") + m_renderDevice->name());
             return;
         }
@@ -175,7 +166,7 @@ namespace war
         const bool fallbackReady = fallback->initialize(m_window->getHandle());
         m_renderDevice = std::move(fallback);
 
-        pushM37StartupEvents();
+        pushM38StartupEvents();
         pushEvent("bgfx unavailable, falling back to GDI");
         pushEvent(std::string("Active backend: ") + m_renderDevice->name());
         if (!fallbackReady)
@@ -654,7 +645,7 @@ namespace war
         const SharedSimulationDiagnostics& diagnostics = m_simulationRuntime.diagnostics();
         std::ostringstream output;
         output
-            << "version=2\n"
+            << "version=1\n"
             << "authority_mode=" << (m_useHeadlessHostAuthority ? "headless-host" : "local") << "\n"
             << "runtime_mode=" << (m_runtimeBoundaryReport.runningFromSourceTree ? "source-tree" : "packaged") << "\n"
             << "host_online=" << (m_headlessHostPresenceReport.hostOnline ? "yes" : "no") << "\n"
@@ -663,7 +654,6 @@ namespace war
             << "local_bootstrap_lane_ready=" << (m_headlessHostPresenceReport.localBootstrapLaneReady ? "yes" : "no") << "\n"
             << "protocol_lane_ready=" << (m_authoritativeHostProtocolReport.authorityLaneReady ? "yes" : "no") << "\n"
             << "snapshot_present=" << (m_authoritativeHostProtocolReport.snapshotPresent ? "yes" : "no") << "\n"
-            << "persistent_save_present=" << (m_authoritativeHostProtocolReport.persistentSavePresent ? "yes" : "no") << "\n"
             << "latency_harness_enabled=" << (m_replicationHarnessConfig.enabled ? "yes" : "no") << "\n"
             << "intent_latency_ms=" << m_replicationHarnessConfig.intentLatencyMilliseconds << "\n"
             << "ack_latency_ms=" << m_replicationHarnessConfig.acknowledgementLatencyMilliseconds << "\n"
@@ -677,33 +667,26 @@ namespace war
             << "snapshot_read_failures=" << diagnostics.snapshotReadFailures << "\n"
             << "last_snapshot_read_failed=" << (diagnostics.lastSnapshotReadFailed ? "yes" : "no") << "\n"
             << "last_snapshot_read_error=" << sanitizeSingleLine(diagnostics.lastSnapshotReadError) << "\n"
-            << "persistence_active=" << (diagnostics.persistenceActive ? "yes" : "no") << "\n"
-            << "persistence_slot=" << sanitizeSingleLine(diagnostics.persistenceSlotName) << "\n"
             << "persistence_schema_version=" << diagnostics.persistenceSchemaVersion << "\n"
-            << "persistence_loaded_schema_version=" << diagnostics.persistenceLoadedSchemaVersion << "\n"
-            << "persistence_migrated_from_version=" << diagnostics.persistenceMigratedFromSchemaVersion << "\n"
-            << "persistence_data_loaded=" << (diagnostics.persistenceDataLoaded ? "yes" : "no") << "\n"
-            << "persistence_migration_applied=" << (diagnostics.persistenceMigrationApplied ? "yes" : "no") << "\n"
-            << "persistence_save_count=" << diagnostics.persistenceSaveCount << "\n"
+            << "loaded_persistence_schema_version=" << diagnostics.loadedPersistenceSchemaVersion << "\n"
+            << "migrated_from_persistence_schema_version=" << diagnostics.migratedFromPersistenceSchemaVersion << "\n"
             << "persistence_load_count=" << diagnostics.persistenceLoadCount << "\n"
-            << "persistence_last_save_succeeded=" << (diagnostics.lastPersistenceSaveSucceeded ? "yes" : "no") << "\n"
-            << "persistence_last_load_succeeded=" << (diagnostics.lastPersistenceLoadSucceeded ? "yes" : "no") << "\n"
-            << "persistence_last_save_epoch_ms=" << diagnostics.lastPersistenceSaveEpochMilliseconds << "\n"
-            << "persistence_last_load_epoch_ms=" << diagnostics.lastPersistenceLoadEpochMilliseconds << "\n"
-            << "persistence_last_error=" << sanitizeSingleLine(diagnostics.lastPersistenceError) << "\n"
+            << "persistence_save_count=" << diagnostics.persistenceSaveCount << "\n"
+            << "last_persistence_epoch_ms=" << diagnostics.lastPersistenceEpochMilliseconds << "\n"
+            << "last_persistence_succeeded=" << (diagnostics.lastPersistenceSucceeded ? "yes" : "no") << "\n"
+            << "last_persistence_error=" << sanitizeSingleLine(diagnostics.lastPersistenceError) << "\n"
+            << "player_health_current=" << diagnostics.playerHealthCurrent << "\n"
+            << "player_health_max=" << diagnostics.playerHealthMax << "\n"
+            << "player_armor_rating=" << diagnostics.playerArmorRating << "\n"
+            << "inventory_stack_count=" << diagnostics.inventoryStackCount << "\n"
+            << "inventory_item_count=" << diagnostics.inventoryItemCount << "\n"
+            << "loot_collections=" << diagnostics.lootCollections << "\n"
+            << "equipped_weapon=" << sanitizeSingleLine(diagnostics.equippedWeaponName) << "\n"
+            << "equipped_suit=" << sanitizeSingleLine(diagnostics.equippedSuitName) << "\n"
+            << "equipped_tool=" << sanitizeSingleLine(diagnostics.equippedToolName) << "\n"
             << "host_pending_inbound_intents=" << m_headlessHostPresenceReport.pendingInboundIntentCount << "\n"
             << "host_pending_outbound_acks=" << m_headlessHostPresenceReport.pendingOutboundAcknowledgementCount << "\n"
             << "host_pending_snapshots=" << m_headlessHostPresenceReport.pendingSnapshotCount << "\n"
-            << "host_persistence_save_present=" << (m_headlessHostPresenceReport.persistenceSavePresent ? "yes" : "no") << "\n"
-            << "host_persistence_save_count=" << m_headlessHostPresenceReport.persistenceSaveCount << "\n"
-            << "host_persistence_load_count=" << m_headlessHostPresenceReport.persistenceLoadCount << "\n"
-            << "host_persistence_schema_version=" << m_headlessHostPresenceReport.persistenceSchemaVersion << "\n"
-            << "host_persistence_loaded_schema_version=" << m_headlessHostPresenceReport.persistenceLoadedSchemaVersion << "\n"
-            << "host_persistence_migrated_from_version=" << m_headlessHostPresenceReport.persistenceMigratedFromSchemaVersion << "\n"
-            << "host_persistence_last_save_succeeded=" << (m_headlessHostPresenceReport.persistenceLastSaveSucceeded ? "yes" : "no") << "\n"
-            << "host_persistence_last_load_succeeded=" << (m_headlessHostPresenceReport.persistenceLastLoadSucceeded ? "yes" : "no") << "\n"
-            << "host_persistence_last_save_epoch_ms=" << m_headlessHostPresenceReport.lastPersistenceSaveEpochMilliseconds << "\n"
-            << "host_persistence_last_load_epoch_ms=" << m_headlessHostPresenceReport.lastPersistenceLoadEpochMilliseconds << "\n"
             << "intents_queued=" << diagnostics.intentsQueued << "\n"
             << "intents_processed=" << diagnostics.intentsProcessed << "\n"
             << "intents_acknowledged=" << diagnostics.intentsAcknowledged << "\n"

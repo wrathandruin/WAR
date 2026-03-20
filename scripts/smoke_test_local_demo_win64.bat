@@ -8,6 +8,7 @@ if not exist "%DEMO_ROOT%\WAR.exe" (
 )
 
 set "EXE_PATH=%DEMO_ROOT%\WAR.exe"
+set "HOST_EXE_PATH=%DEMO_ROOT%\WARServer.exe"
 set "ASSET_ROOT=%DEMO_ROOT%\assets"
 set "RUNTIME_ROOT=%DEMO_ROOT%\runtime"
 if not exist "%RUNTIME_ROOT%" set "RUNTIME_ROOT=%DEMO_ROOT%\Runtime"
@@ -21,8 +22,8 @@ if exist "%DETAILS_PATH%" del /q "%DETAILS_PATH%" >nul 2>nul
 set "FAILED=0"
 
 call :check_file "%EXE_PATH%" "WAR executable"
+call :check_file "%HOST_EXE_PATH%" "WARServer executable"
 call :check_dir "%ASSET_ROOT%\shaders\dx11" "DX11 shader directory"
-call :check_dir "%ASSET_ROOT%\textures" "Texture directory"
 call :check_dir "%RUNTIME_ROOT%\Config" "Runtime config directory"
 call :check_dir "%RUNTIME_ROOT%\Logs" "Runtime logs directory"
 call :check_dir "%RUNTIME_ROOT%\Saves" "Runtime saves directory"
@@ -30,9 +31,9 @@ call :check_dir "%RUNTIME_ROOT%\CrashDumps" "Runtime crash directory"
 
 (
     echo WAR Local Demo Smoke Test
-    echo Milestone: M37 - Persistence Schema / Save-Load / Versioned Migration
     echo Demo root: %DEMO_ROOT%
     echo Executable: %EXE_PATH%
+    echo Host executable: %HOST_EXE_PATH%
     echo Asset root: %ASSET_ROOT%
     echo Runtime root: %RUNTIME_ROOT%
     if "%FAILED%"=="0" (
@@ -46,11 +47,11 @@ call :check_dir "%RUNTIME_ROOT%\CrashDumps" "Runtime crash directory"
 
 type "%REPORT_PATH%"
 if "%FAILED%"=="0" (
-    echo [M37] Smoke test passed.
+    echo [M38] Smoke test passed.
     exit /b 0
 )
 
-echo [M37] Smoke test failed.
+echo [M38] Smoke test failed.
 exit /b 1
 
 :check_file

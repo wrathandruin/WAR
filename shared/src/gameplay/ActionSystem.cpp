@@ -1,8 +1,11 @@
 #include "engine/gameplay/ActionSystem.h"
 
+#include <cstddef>
 #include <cstdio>
+#include <sstream>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "engine/gameplay/Action.h"
 #include "engine/world/Pathfinding.h"
@@ -21,13 +24,25 @@ namespace war
             switch (entity.type)
             {
             case EntityType::Crate:
+                if (entity.isLocked)
+                {
+                    return entity.lootClaimed ? "locked, looted" : "locked";
+                }
+                if (entity.lootClaimed)
+                {
+                    return entity.isOpen ? "open, looted" : "looted";
+                }
                 return entity.isOpen ? "open" : "closed";
             case EntityType::Terminal:
                 return entity.isPowered ? "powered" : "offline";
             case EntityType::Locker:
                 if (entity.isLocked)
                 {
-                    return "locked";
+                    return entity.lootClaimed ? "locked, looted" : "locked";
+                }
+                if (entity.lootClaimed)
+                {
+                    return entity.isOpen ? "open, looted" : "looted";
                 }
                 return entity.isOpen ? "open" : "closed";
             default:
@@ -57,6 +72,158 @@ namespace war
         const char* hotspotStateToText(const WorldAuthoringHotspot& hotspot)
         {
             return hotspot.encounterReady ? "encounter-ready" : "staged";
+        }
+
+        InventoryItemStack* findInventoryStack(PlayerActorRuntimeState& playerActorState, InventoryItemId id)
+        {
+            for (InventoryItemStack& stack : playerActorState.inventory)
+            {
+                if (stack.id == id)
+                {
+                    return &stack;
+                }
+            }
+
+            return nullptr;
+        }
+
+        void addInventoryItem(PlayerActorRuntimeState& playerActorState, InventoryItemId id, uint32_t quantity)
+        {
+            if (id == InventoryItemId::None || quantity == 0)
+            {
+                return;
+            }
+
+            InventoryItemStack* existing = findInventoryStack(playerActorState, id);
+            if (existing != nullptr)
+            {
+                existing->quantity += quantity;
+                return;
+            }
+
+            InventoryItemStack stack{};
+            stack.id = id;
+            stack.quantity = quantity;
+            playerActorState.inventory.push_back(stack);
+        }
+
+        void considerAutoEquip(PlayerActorRuntimeState& playerActorState, InventoryItemId id, std::vector<std::string>& eventLog)
+        {
+            if (inventoryItemIsWeapon(id))
+            {
+                if (playerActorState.equipment.weapon == InventoryItemId::None)
+                {
+                    playerActorState.equipment.weapon = id;
+                    eventLog.push_back(std::string("Equipped weapon: ") + inventoryItemText(id) + ".");
+                }
+                return;
+            }
+
+            if (inventoryItemIsSuit(id))
+            {
+                const int incomingArmor = inventoryItemArmorBonus(id);
+                const int currentArmor = inventoryItemArmorBonus(playerActorState.equipment.suit);
+                if (playerActorState.equipment.suit == InventoryItemId::None || incomingArmor > currentArmor)
+                {
+                    playerActorState.equipment.suit = id;
+                    eventLog.push_back(std::string("Equipped suit: ") + inventoryItemText(id) + ".");
+                }
+                return;
+            }
+
+            if (inventoryItemIsTool(id) && playerActorState.equipment.tool == InventoryItemId::None)
+            {
+                playerActorState.equipment.tool = id;
+                eventLog.push_back(std::string("Equipped tool: ") + inventoryItemText(id) + ".");
+            }
+        }
+
+        std::vector<InventoryItemStack> lootProfileItems(const std::string& lootProfileId)
+        {
+            if (lootProfileId == "cargo_supplies")
+            {
+                return { { InventoryItemId::RationPack, 2 }, { InventoryItemId::ScrapBundle, 1 } };
+            }
+            if (lootProfileId == "dockside_personal")
+            {
+                return { { InventoryItemId::AccessBadge, 1 }, { InventoryItemId::MedInjector, 1 } };
+            }
+            if (lootProfileId == "maintenance_cache")
+            {
+                return { { InventoryItemId::MaintenanceKey, 1 }, { InventoryItemId::SealantKit, 1 } };
+            }
+            if (lootProfileId == "medical_supplies")
+            {
+                return { { InventoryItemId::MedInjector, 2 }, { InventoryItemId::SealantKit, 1 } };
+            }
+            if (lootProfileId == "command_secure")
+            {
+                return { { InventoryItemId::ShockPistol, 1 }, { InventoryItemId::AccessBadge, 1 } };
+            }
+            if (lootProfileId == "response_gear")
+            {
+                return { { InventoryItemId::ContainmentMask, 1 }, { InventoryItemId::SealantKit, 1 } };
+            }
+            if (lootProfileId == "service_cache")
+            {
+                return { { InventoryItemId::SurveyScanner, 1 }, { InventoryItemId::ScrapBundle, 1 } };
+            }
+
+            return {};
+        }
+
+        std::string lootListText(const std::vector<InventoryItemStack>& items)
+        {
+            if (items.empty())
+            {
+                return "nothing";
+            }
+
+            std::ostringstream stream;
+            for (size_t i = 0; i < items.size(); ++i)
+            {
+                if (i > 0)
+                {
+                    stream << ", ";
+                }
+
+                stream << inventoryItemText(items[i].id) << " x" << items[i].quantity;
+            }
+
+            return stream.str();
+        }
+
+        void grantEntityLoot(Entity& entity, PlayerActorRuntimeState& playerActorState, std::vector<std::string>& eventLog)
+        {
+            if (entity.lootClaimed)
+            {
+                eventLog.push_back(entity.name + std::string(" has already been cleared out."));
+                return;
+            }
+
+            const std::vector<InventoryItemStack> items = lootProfileItems(entity.lootProfileId);
+            if (items.empty())
+            {
+                entity.lootClaimed = true;
+                eventLog.push_back(entity.name + std::string(" contains no salvageable gear."));
+                return;
+            }
+
+            for (const InventoryItemStack& item : items)
+            {
+                addInventoryItem(playerActorState, item.id, item.quantity);
+                considerAutoEquip(playerActorState, item.id, eventLog);
+            }
+
+            ++playerActorState.lootCollections;
+            entity.lootClaimed = true;
+
+            eventLog.push_back(
+                std::string("Recovered ")
+                + lootListText(items)
+                + " from "
+                + entity.name
+                + ".");
         }
     }
 
@@ -123,6 +290,7 @@ namespace war
     void ActionSystem::processPending(
         WorldState& worldState,
         ActionQueue& actions,
+        PlayerActorRuntimeState& playerActorState,
         const Vec2& playerPosition,
         std::vector<TileCoord>& currentPath,
         size_t& pathIndex,
@@ -176,6 +344,10 @@ namespace war
                     message += ", ";
                     message += stateText(*entity);
                     message += "]";
+                    message += ", loot_profile=";
+                    message += entity->lootProfileId.empty() ? "none" : entity->lootProfileId;
+                    message += ", loot_claimed=";
+                    message += boolText(entity->lootClaimed);
                 }
                 else
                 {
@@ -215,15 +387,20 @@ namespace war
                     switch (entity->type)
                     {
                     case EntityType::Crate:
+                    case EntityType::Locker:
+                        if (entity->isLocked)
+                        {
+                            pushEvent(eventLog, entity->name + std::string(" is locked."));
+                            break;
+                        }
+
                         if (!entity->isOpen)
                         {
                             entity->isOpen = true;
                             pushEvent(eventLog, std::string("You open ") + entity->name + ".");
                         }
-                        else
-                        {
-                            pushEvent(eventLog, entity->name + std::string(" is already open."));
-                        }
+
+                        grantEntityLoot(*entity, playerActorState, eventLog);
                         break;
 
                     case EntityType::Terminal:
@@ -235,22 +412,6 @@ namespace war
                         else
                         {
                             pushEvent(eventLog, std::string("You power down ") + entity->name + ".");
-                        }
-                        break;
-
-                    case EntityType::Locker:
-                        if (entity->isLocked)
-                        {
-                            pushEvent(eventLog, entity->name + std::string(" is locked."));
-                        }
-                        else if (!entity->isOpen)
-                        {
-                            entity->isOpen = true;
-                            pushEvent(eventLog, std::string("You open ") + entity->name + ".");
-                        }
-                        else
-                        {
-                            pushEvent(eventLog, entity->name + std::string(" is already open."));
                         }
                         break;
 
@@ -289,7 +450,7 @@ namespace war
                     message += ". This is a future routing and traversal anchor.";
                     break;
                 case WorldAuthoringHotspotType::Loot:
-                    message += ". This is a future inventory and recovery anchor.";
+                    message += ". This lane now pairs with nearby container loot and future inventory beats.";
                     break;
                 case WorldAuthoringHotspotType::Hazard:
                     message += ". This is a future environmental hazard and consequence anchor.";

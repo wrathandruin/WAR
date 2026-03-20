@@ -151,29 +151,33 @@ namespace war
 
             std::ostringstream status;
             status
-                << "M37 persistence | sim ticks: " << simulationDiagnostics.simulationTicks
-                << " | save/load: "
-                << simulationDiagnostics.persistenceSaveCount << "/"
-                << simulationDiagnostics.persistenceLoadCount
-                << " | schema: " << simulationDiagnostics.persistenceSchemaVersion
-                << " loaded: " << simulationDiagnostics.persistenceLoadedSchemaVersion
-                << " migrated-from: " << simulationDiagnostics.persistenceMigratedFromSchemaVersion
-                << " | last save/load ok: "
-                << (simulationDiagnostics.lastPersistenceSaveSucceeded ? "y" : "n") << "/"
-                << (simulationDiagnostics.lastPersistenceLoadSucceeded ? "y" : "n")
+                << "M38 actor runtime | hp: "
+                << simulationDiagnostics.playerHealthCurrent << "/"
+                << simulationDiagnostics.playerHealthMax
+                << " | inv: " << simulationDiagnostics.inventoryStackCount << "/"
+                << simulationDiagnostics.inventoryItemCount
+                << " | eq: " << simulationDiagnostics.equippedWeaponName << ", "
+                << simulationDiagnostics.equippedSuitName << ", "
+                << simulationDiagnostics.equippedToolName
+                << " | loot: " << simulationDiagnostics.lootCollections
+                << " | persistence schema: " << simulationDiagnostics.persistenceSchemaVersion
+                << " | sim ticks: " << simulationDiagnostics.simulationTicks
                 << " | snapshot age ms: " << simulationDiagnostics.lastSnapshotAgeMilliseconds
                 << " | corr/div: "
                 << simulationDiagnostics.correctionsApplied << "/"
                 << simulationDiagnostics.divergenceEvents
-                << " | intents q/p/pending: "
-                << simulationDiagnostics.intentsQueued << "/"
-                << simulationDiagnostics.intentsProcessed << "/"
-                << simulationDiagnostics.pendingIntentCount
+                << " | harness ms: "
+                << simulationDiagnostics.intentLatencyMilliseconds << "/"
+                << simulationDiagnostics.acknowledgementLatencyMilliseconds << "/"
+                << simulationDiagnostics.snapshotLatencyMilliseconds
                 << " | runtime: " << (runtimeBoundaryReport.runningFromSourceTree ? "source-tree" : "packaged")
                 << " | packaged lane: " << (localDemoDiagnosticsReport.packagedLaneReady ? "ready" : "not staged")
                 << " | host online: " << (headlessHostPresenceReport.hostOnline ? "yes" : "no")
-                << " | host save present: " << (headlessHostPresenceReport.persistenceSavePresent ? "yes" : "no")
-                << " | protocol save present: " << (authoritativeHostProtocolReport.persistentSavePresent ? "yes" : "no")
+                << " | host q: "
+                << headlessHostPresenceReport.pendingInboundIntentCount << "/"
+                << headlessHostPresenceReport.pendingOutboundAcknowledgementCount << "/"
+                << headlessHostPresenceReport.pendingSnapshotCount
+                << " | protocol lane: " << (authoritativeHostProtocolReport.authorityLaneReady ? "ready" : "not ready")
                 << " | hover: " << hovered
                 << " | prompt: " << contextPrompt(worldState, hasHoveredTile, hoveredTile)
                 << " | selected: " << selected

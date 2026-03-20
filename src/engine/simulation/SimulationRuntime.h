@@ -24,10 +24,6 @@ namespace war
             uint32_t snapshotLatencyMilliseconds,
             uint32_t jitterMilliseconds,
             uint64_t snapshotAgeMilliseconds);
-        void setPersistenceState(bool persistenceActive, const std::string& slotName);
-        void notePersistenceSave(uint32_t schemaVersion, uint64_t saveEpochMilliseconds);
-        void notePersistenceLoad(uint32_t loadedSchemaVersion, uint32_t migratedFromSchemaVersion, uint64_t loadEpochMilliseconds);
-        void notePersistenceFailure(const std::string& error, bool duringLoad);
 
         [[nodiscard]] uint64_t enqueueIntent(SimulationIntentType type, TileCoord target);
         [[nodiscard]] SimulationIntentAck submitAuthoritativeIntent(const SimulationIntent& intent);
@@ -41,11 +37,11 @@ namespace war
             const AuthoritativeWorldSnapshot& snapshot,
             uint64_t snapshotAgeMilliseconds,
             std::string& outCorrectionReason);
-        void applyPersistedSnapshot(
+        [[nodiscard]] bool applyPersistedSnapshot(
             const AuthoritativeWorldSnapshot& snapshot,
-            uint32_t loadedSchemaVersion,
-            uint32_t migratedFromSchemaVersion,
-            uint64_t loadEpochMilliseconds);
+            std::string& outMessage);
+        void notePersistenceLoad(uint32_t loadedSchemaVersion, uint32_t migratedFromSchemaVersion, bool success, const std::string& error);
+        void notePersistenceSave(uint32_t persistedSchemaVersion, bool success, const std::string& error, uint64_t epochMilliseconds);
         [[nodiscard]] AuthoritativeWorldSnapshot buildAuthoritativeSnapshot(uint64_t lastProcessedIntentSequence) const;
 
         [[nodiscard]] const WorldState& worldState() const;
@@ -57,6 +53,7 @@ namespace war
         [[nodiscard]] size_t pathIndex() const;
         [[nodiscard]] const std::vector<std::string>& eventLog() const;
         [[nodiscard]] const SharedSimulationDiagnostics& diagnostics() const;
+        [[nodiscard]] const PlayerActorRuntimeState& playerActorState() const;
 
         [[nodiscard]] bool hasMovementTarget() const;
         [[nodiscard]] TileCoord movementTargetTile() const;
@@ -70,8 +67,9 @@ namespace war
         void processQueuedIntents();
         void advanceAuthoritativePlayer(float stepSeconds);
         void refreshPresentedPlayerPosition();
+        void refreshActorDiagnostics();
+        [[nodiscard]] PlayerActorRuntimeState buildDefaultPlayerActorState() const;
         void trimEventLog();
-        void applySnapshotState(const AuthoritativeWorldSnapshot& snapshot);
 
         WorldState m_worldState{};
         ActionQueue m_actions{};
@@ -83,6 +81,8 @@ namespace war
         Vec2 m_authoritativePlayerPosition{ 0.0f, 0.0f };
         Vec2 m_previousAuthoritativePlayerPosition{ 0.0f, 0.0f };
         Vec2 m_presentedPlayerPosition{ 0.0f, 0.0f };
+
+        PlayerActorRuntimeState m_playerActorState{};
 
         float m_accumulatorSeconds = 0.0f;
         uint64_t m_nextIntentSequence = 1;

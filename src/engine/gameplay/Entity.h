@@ -23,5 +23,8 @@ namespace war
         bool isOpen = false;
         bool isLocked = false;
         bool isPowered = false;
+
+        std::string lootProfileId;
+        bool lootClaimed = false;
     };
 }

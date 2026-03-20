@@ -1,52 +1,77 @@
-# WAR — Milestone 37 (Persistence Schema / Save-Load / Versioned Migration)
+# WAR — Milestone 38 (Actor Runtime / Inventory / Equipment / Loot)
 
-> Current development milestone: M37 — Persistence Schema / Save-Load / Versioned Migration
+> Current development milestone: M38 — Actor Runtime / Inventory / Equipment / Loot
 
 ## Focus
-Begin Phase 3 by giving the authoritative localhost lane a versioned persistence surface that can survive restart, migrate older save payloads forward safely, and keep persistence ownership in the correct shared/server runtime boundaries.
+Turn the player runtime into a real authored gameplay surface on top of the signed-off authority and persistence base.
 
-M36 signed off the localhost authority and replication hardening pass.
-M37 builds on that by introducing authoritative save/load flow, versioned persistence schema handling, and migration-safe read behavior without regressing the split workspace baseline.
+M37 established versioned persistence and authoritative save/load direction.
+M38 builds on that base by introducing a durable player actor runtime, inventory state, starter equipment, container loot profiles, and replicated actor-state visibility without regressing the localhost authority lane or the split workspace baseline.
 
 ## What this milestone does
-- introduces a versioned authoritative persistence save under `Runtime/Saves/authoritative_world_primary.txt`
-- loads authoritative world state from the save file during host boot when present
-- writes authoritative save state atomically from the host during autosave and shutdown
-- records persistence diagnostics in shared simulation state so desktop and server can both surface the same truth
-- supports migration-safe loading from schema version `1` into canonical schema version `2`
-- preserves the M36 localhost authority lane and keeps persistence out of desktop-only ownership
+- adds a real player actor runtime with health, armor, inventory, and equipped weapon / suit / tool state
+- seeds the player with a small starter loadout so actor state is visible immediately
+- extends world entities with authored loot profiles and one-time loot-claimed state
+- turns crates and lockers into real loot carriers instead of only open/closed props
+- auto-equips compatible gear in safe first-pass fashion when the player recovers it
+- extends authoritative snapshots so actor runtime and loot state replicate cleanly through the localhost host lane
+- keeps authoritative save/load on the host side and persists actor runtime into the versioned save payload
+- adds an M38 persistence and migration acceptance drill while keeping the M36 regression lane staged
 
-## Persistence behavior after M37
-The current localhost authority stack should now read as:
+## Manual review lane
+1. Build or stage with `scripts/build_local_demo_package_win64.bat Release`
+2. Launch the host with `scripts/launch_headless_host_win64.bat`
+3. Launch the client with `scripts/launch_local_client_against_host_win64.bat`
+4. Open nearby crates and lockers in Cargo Bay, Med Lab, and Hazard Containment
+5. Confirm the overlay updates health, armor, inventory counts, equipped items, and loot collections
+6. Restart the host and confirm the saved authoritative world restores actor runtime and looted container state
 
-- `WARShared`: owns persistence-facing simulation state and diagnostics
-- `WARServer.exe`: owns authoritative load/save decisions and file publication
-- `WAR.exe`: presents persistence status, snapshot status, and authority diagnostics
-- `WARLegacy`: remains available only as fallback during transition
+## Automated validation
+- run `scripts/acceptance_m36_localhost_authority_win64.bat` as the regression authority lane
+- run `scripts/acceptance_m38_persistence_inventory_win64.bat` to validate save migration, tick restoration, sequence restoration, and staged persistence wiring
 
-## Validation procedure
-1. Build the split targets in the normal Windows/MSBuild lane.
-2. Launch `WARServer.exe`.
-3. Confirm `Runtime/Saves/authoritative_world_primary.txt` is created after autosave or shutdown.
-4. Relaunch `WARServer.exe` and confirm persisted state is loaded.
-5. Launch `WAR.exe` against the host and review overlay/bgfx persistence diagnostics.
-6. Run the staged M37 persistence drill with `scripts/acceptance_m37_persistence_win64.bat`.
-7. Re-run the staged local demo package, staged headless host smoke test, and staged M36 acceptance lane to confirm no regression.
+## Current limits
+This is still an intentionally narrow actor-runtime milestone.
 
-## Known limits
-- localhost/file-backed authority only
-- no final network transport
-- single authoritative save slot for this increment
-- no broad gameplay-state persistence beyond the current world, entity, path, and event surface
-- migrations currently support `schema_version=1` forward into `schema_version=2`
+Current limits:
+- no explicit inventory UI shell yet beyond diagnostics
+- no player-driven equip/unequip controls yet
+- no weight or encumbrance penalties yet
+- no combat use of equipped items yet
+- no item rarity, economy, vendor, or crafting model yet
 
-These limits are acceptable for M37 because the goal is a safe persistence foundation, not the final shipping save system.
+Those are acceptable for M38.
+They should not be solved by dragging desktop-only logic back into shared/server ownership.
+
+## Public Repo Hygiene
+- only `assets/shaders/` is treated as canonical source-controlled asset content
+- local textures and images under `assets/textures/` remain on disk for development but are not part of the public Git payload
+- runtime data, packaged bundles, and build outputs remain ignored and disposable
+
+## Demo controls
+- `LMB`: move / set movement target
+- `RMB`: interact / loot / use
+- `Shift + RMB`: inspect
+- `MMB drag`: pan camera
+- `Mouse wheel`: zoom
+- `O`: toggle region boundary overlay
+- `H`: toggle authored hotspot overlay
+- `7 / 8 / 9`: Default / Muted / Vivid palette modes
+- `J`: toggle replication latency harness
+- `K`: cycle latency preset
+- `L`: cycle jitter preset
 
 ## Why this matters
-Persistence can no longer wait.
+M38 makes the first persistent player-facing state loop real.
 
-Phase 3 depends on save/load correctness before inventory, hazards, and combat harden around the wrong ownership model.
-M37 puts persistence into the shared/server side of the split architecture now, while the repo is still flexible enough to do it cleanly.
+The project now has:
+- signed-off localhost authority and replication diagnostics
+- authoritative save/load direction
+- a real player actor runtime
+- recoverable loot
+- equipped gear that can carry forward into hazards and combat work
+
+That is the correct base before survival, terrain consequence, and six-second combat expand in M39 and M40.
 
 ## Requirements
 The bgfx textured path expects compiled shader binaries at:
@@ -58,10 +83,11 @@ assets/shaders/dx11/vs_texture.bin
 assets/shaders/dx11/fs_texture.bin
 ```
 
-Local textures under `assets/textures/` remain machine-local only and must not be committed.
+The texture atlas remains a local development asset and is intentionally not versioned in Git.
+Only the shader pipeline under `assets/shaders/` is treated as canonical source-controlled asset content in this public repo.
 
 ## Next Milestone
-### M38 — Actor Runtime / Inventory / Equipment / Loot
-- extend the authoritative persistent surface to actor inventory and equipment state
-- keep shared/server ownership clean while the split workspace continues to settle
-- preserve the M36 authority acceptance lane and M37 persistence correctness while gameplay breadth expands
+### M39 — Survival Hazards / Terrain Consequence / World State
+- make environmental pressure matter
+- bind actor runtime and persistence into hazard consequences
+- prepare the gameplay loop for six-second encounter resolution

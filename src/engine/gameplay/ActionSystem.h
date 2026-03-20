@@ -5,6 +5,7 @@
 
 #include "engine/gameplay/ActionQueue.h"
 #include "engine/math/Vec2.h"
+#include "engine/simulation/SimulationIntent.h"
 #include "engine/world/WorldState.h"
 
 namespace war
@@ -15,6 +16,7 @@ namespace war
         static void processPending(
             WorldState& worldState,
             ActionQueue& actions,
+            PlayerActorRuntimeState& playerActorState,
             const Vec2& playerPosition,
             std::vector<TileCoord>& currentPath,
             size_t& pathIndex,

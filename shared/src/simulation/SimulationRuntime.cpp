@@ -12,6 +12,8 @@ namespace war
 {
     namespace
     {
+        constexpr uint32_t kCurrentPersistenceSchemaVersion = 3u;
+
         float clampAccumulator(float value)
         {
             constexpr float kFixedStepSeconds = 0.05f;
@@ -42,7 +44,51 @@ namespace war
                 && entity.tile == replicated.tile
                 && entity.isOpen == replicated.isOpen
                 && entity.isLocked == replicated.isLocked
-                && entity.isPowered == replicated.isPowered;
+                && entity.isPowered == replicated.isPowered
+                && entity.lootProfileId == replicated.lootProfileId
+                && entity.lootClaimed == replicated.lootClaimed;
+        }
+
+        bool actorStateMatches(const PlayerActorRuntimeState& lhs, const PlayerActorRuntimeState& rhs)
+        {
+            if (lhs.healthCurrent != rhs.healthCurrent
+                || lhs.healthMax != rhs.healthMax
+                || lhs.carryCapacity != rhs.carryCapacity
+                || lhs.armorRating != rhs.armorRating
+                || lhs.lootCollections != rhs.lootCollections
+                || lhs.equipment.weapon != rhs.equipment.weapon
+                || lhs.equipment.suit != rhs.equipment.suit
+                || lhs.equipment.tool != rhs.equipment.tool
+                || lhs.inventory.size() != rhs.inventory.size())
+            {
+                return false;
+            }
+
+            for (size_t i = 0; i < lhs.inventory.size(); ++i)
+            {
+                if (lhs.inventory[i].id != rhs.inventory[i].id || lhs.inventory[i].quantity != rhs.inventory[i].quantity)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        uint32_t totalInventoryItemCount(const PlayerActorRuntimeState& playerActorState)
+        {
+            uint32_t total = 0;
+            for (const InventoryItemStack& stack : playerActorState.inventory)
+            {
+                total += stack.quantity;
+            }
+
+            return total;
+        }
+
+        int equippedArmorRating(const PlayerActorRuntimeState& playerActorState)
+        {
+            return inventoryItemArmorBonus(playerActorState.equipment.suit);
         }
     }
 
@@ -64,6 +110,8 @@ namespace war
         m_previousAuthoritativePlayerPosition = m_authoritativePlayerPosition;
         m_presentedPlayerPosition = m_authoritativePlayerPosition;
 
+        m_playerActorState = buildDefaultPlayerActorState();
+
         m_diagnostics = SharedSimulationDiagnostics{};
         m_diagnostics.fixedStepSeconds = kFixedStepSeconds;
         m_diagnostics.fixedStepEnabled = true;
@@ -73,14 +121,8 @@ namespace war
         m_diagnostics.lastSnapshotReadFailed = false;
         m_diagnostics.lastSnapshotReadError.clear();
         m_diagnostics.snapshotReadFailures = 0;
-        m_diagnostics.persistenceSchemaVersion = 2;
-        m_diagnostics.persistenceSlotName = "primary";
-        m_diagnostics.persistenceActive = false;
-        m_diagnostics.persistenceDataLoaded = false;
-        m_diagnostics.persistenceMigrationApplied = false;
-        m_diagnostics.lastPersistenceSaveSucceeded = false;
-        m_diagnostics.lastPersistenceLoadSucceeded = false;
-        m_diagnostics.lastPersistenceError.clear();
+        m_diagnostics.persistenceSchemaVersion = kCurrentPersistenceSchemaVersion;
+        refreshActorDiagnostics();
     }
 
     void SimulationRuntime::setAuthorityMode(bool localAuthorityActive, bool hostAuthorityActive, bool clientPredictionEnabled)
@@ -104,53 +146,6 @@ namespace war
         m_diagnostics.snapshotLatencyMilliseconds = snapshotLatencyMilliseconds;
         m_diagnostics.jitterMilliseconds = jitterMilliseconds;
         m_diagnostics.lastSnapshotAgeMilliseconds = snapshotAgeMilliseconds;
-    }
-
-    void SimulationRuntime::setPersistenceState(bool persistenceActive, const std::string& slotName)
-    {
-        m_diagnostics.persistenceActive = persistenceActive;
-        m_diagnostics.persistenceSlotName = slotName.empty() ? "primary" : slotName;
-    }
-
-    void SimulationRuntime::notePersistenceSave(uint32_t schemaVersion, uint64_t saveEpochMilliseconds)
-    {
-        m_diagnostics.persistenceSchemaVersion = schemaVersion;
-        m_diagnostics.lastPersistenceSaveSucceeded = true;
-        ++m_diagnostics.persistenceSaveCount;
-        m_diagnostics.lastPersistenceSaveEpochMilliseconds = saveEpochMilliseconds;
-        m_diagnostics.lastPersistenceError.clear();
-    }
-
-    void SimulationRuntime::notePersistenceLoad(
-        uint32_t loadedSchemaVersion,
-        uint32_t migratedFromSchemaVersion,
-        uint64_t loadEpochMilliseconds)
-    {
-        m_diagnostics.persistenceLoadedSchemaVersion = loadedSchemaVersion;
-        m_diagnostics.persistenceMigratedFromSchemaVersion = migratedFromSchemaVersion;
-        m_diagnostics.persistenceMigrationApplied = migratedFromSchemaVersion > 0;
-        m_diagnostics.lastPersistenceLoadSucceeded = true;
-        m_diagnostics.persistenceDataLoaded = true;
-        ++m_diagnostics.persistenceLoadCount;
-        m_diagnostics.lastPersistenceLoadEpochMilliseconds = loadEpochMilliseconds;
-        m_diagnostics.lastPersistenceError.clear();
-    }
-
-    void SimulationRuntime::notePersistenceFailure(const std::string& error, bool duringLoad)
-    {
-        if (duringLoad)
-        {
-            m_diagnostics.lastPersistenceLoadSucceeded = false;
-        }
-        else
-        {
-            m_diagnostics.lastPersistenceSaveSucceeded = false;
-        }
-
-        if (!error.empty())
-        {
-            m_diagnostics.lastPersistenceError = error;
-        }
     }
 
     uint64_t SimulationRuntime::enqueueIntent(SimulationIntentType type, TileCoord target)
@@ -202,6 +197,7 @@ namespace war
             ActionSystem::processPending(
                 m_worldState,
                 m_actions,
+                m_playerActorState,
                 m_authoritativePlayerPosition,
                 m_currentPath,
                 m_pathIndex,
@@ -233,6 +229,7 @@ namespace war
         m_diagnostics.pendingIntentCount = m_pendingIntents.size();
         m_diagnostics.movementTargetActive = m_hasMovementTarget;
         refreshPresentedPlayerPosition();
+        refreshActorDiagnostics();
     }
 
     void SimulationRuntime::appendEvent(const std::string& message)
@@ -309,6 +306,7 @@ namespace war
         bool playerCorrected = false;
         bool pathCorrected = false;
         bool entityCorrected = false;
+        bool actorCorrected = false;
 
         const float dx = m_authoritativePlayerPosition.x - snapshot.authoritativePlayerPosition.x;
         const float dy = m_authoritativePlayerPosition.y - snapshot.authoritativePlayerPosition.y;
@@ -317,6 +315,7 @@ namespace war
         m_diagnostics.lastSnapshotAgeMilliseconds = snapshotAgeMilliseconds;
         m_diagnostics.lastPathDivergence = false;
         m_diagnostics.lastEntityDivergence = false;
+        m_diagnostics.lastActorDivergence = false;
 
         if (!nearlyEqual(m_authoritativePlayerPosition.x, snapshot.authoritativePlayerPosition.x)
             || !nearlyEqual(m_authoritativePlayerPosition.y, snapshot.authoritativePlayerPosition.y))
@@ -365,9 +364,55 @@ namespace war
             }
         }
 
-        applySnapshotState(snapshot);
+        if (!actorStateMatches(m_playerActorState, snapshot.playerActor))
+        {
+            corrected = true;
+            actorCorrected = true;
+        }
+
+        m_authoritativePlayerPosition = snapshot.authoritativePlayerPosition;
+        m_previousAuthoritativePlayerPosition = snapshot.authoritativePlayerPosition;
+        m_presentedPlayerPosition = snapshot.authoritativePlayerPosition;
+        m_currentPath = snapshot.currentPath;
+        m_pathIndex = snapshot.pathIndex;
+        m_hasMovementTarget = snapshot.movementTargetActive;
+        m_movementTargetTile = snapshot.movementTargetTile;
+        m_nextIntentSequence = snapshot.nextIntentSequence > snapshot.lastProcessedIntentSequence
+            ? snapshot.nextIntentSequence
+            : snapshot.lastProcessedIntentSequence + 1;
+
+        m_worldState.entities().clear();
+        for (const ReplicatedEntityState& replicated : snapshot.entities)
+        {
+            Entity entity{};
+            entity.id = replicated.id;
+            entity.name = replicated.name;
+            entity.type = replicated.type;
+            entity.tile = replicated.tile;
+            entity.isOpen = replicated.isOpen;
+            entity.isLocked = replicated.isLocked;
+            entity.isPowered = replicated.isPowered;
+            entity.lootProfileId = replicated.lootProfileId;
+            entity.lootClaimed = replicated.lootClaimed;
+            m_worldState.entities().add(entity);
+        }
+
+        m_playerActorState = snapshot.playerActor;
+        m_playerActorState.armorRating = equippedArmorRating(m_playerActorState);
+
+        m_eventLog = snapshot.eventLog;
+        trimEventLog();
+
+        m_diagnostics.lastSnapshotSequence = snapshot.lastProcessedIntentSequence;
+        m_diagnostics.lastSnapshotSimulationTicks = snapshot.simulationTicks;
+        m_diagnostics.simulationTicks = snapshot.simulationTicks;
+        m_diagnostics.lastIntentSequence = snapshot.lastProcessedIntentSequence;
+        m_diagnostics.pendingIntentCount = m_pendingIntents.size();
+        m_diagnostics.movementTargetActive = m_hasMovementTarget;
         m_diagnostics.lastPathDivergence = pathCorrected;
         m_diagnostics.lastEntityDivergence = entityCorrected;
+        m_diagnostics.lastActorDivergence = actorCorrected;
+        refreshActorDiagnostics();
 
         if (!corrected)
         {
@@ -390,65 +435,146 @@ namespace war
         {
             outCorrectionReason += (playerCorrected || pathCorrected) ? ", entities" : " entities";
         }
+        if (actorCorrected)
+        {
+            outCorrectionReason += (playerCorrected || pathCorrected || entityCorrected) ? ", actor" : " actor";
+        }
         outCorrectionReason += " | drift=" + std::to_string(positionDistance);
         outCorrectionReason += " | snapshot age ms=" + std::to_string(snapshotAgeMilliseconds);
 
         return true;
     }
 
-    void SimulationRuntime::applyPersistedSnapshot(
+    bool SimulationRuntime::applyPersistedSnapshot(
         const AuthoritativeWorldSnapshot& snapshot,
-        uint32_t loadedSchemaVersion,
-        uint32_t migratedFromSchemaVersion,
-        uint64_t loadEpochMilliseconds)
+        std::string& outMessage)
     {
+        outMessage.clear();
         if (!snapshot.valid)
         {
-            return;
+            outMessage = "Persistence load rejected: snapshot invalid.";
+            return false;
         }
 
-        m_actions = ActionQueue{};
-        m_pendingIntents.clear();
+        m_authoritativePlayerPosition = snapshot.authoritativePlayerPosition;
+        m_previousAuthoritativePlayerPosition = snapshot.authoritativePlayerPosition;
+        m_presentedPlayerPosition = snapshot.authoritativePlayerPosition;
+        m_currentPath = snapshot.currentPath;
+        m_pathIndex = snapshot.pathIndex;
+        m_hasMovementTarget = snapshot.movementTargetActive;
+        m_movementTargetTile = snapshot.movementTargetTile;
         m_accumulatorSeconds = 0.0f;
-        applySnapshotState(snapshot);
+        m_pendingIntents.clear();
+        m_actions = ActionQueue{};
+
+        m_worldState.entities().clear();
+        for (const ReplicatedEntityState& replicated : snapshot.entities)
+        {
+            Entity entity{};
+            entity.id = replicated.id;
+            entity.name = replicated.name;
+            entity.type = replicated.type;
+            entity.tile = replicated.tile;
+            entity.isOpen = replicated.isOpen;
+            entity.isLocked = replicated.isLocked;
+            entity.isPowered = replicated.isPowered;
+            entity.lootProfileId = replicated.lootProfileId;
+            entity.lootClaimed = replicated.lootClaimed;
+            m_worldState.entities().add(entity);
+        }
+
+        m_eventLog = snapshot.eventLog;
+        trimEventLog();
+
+        const uint32_t loadedSchemaVersion = snapshot.schemaVersion == 0 ? 1u : snapshot.schemaVersion;
+        const uint32_t migratedFromVersion = loadedSchemaVersion < kCurrentPersistenceSchemaVersion
+            ? loadedSchemaVersion
+            : snapshot.migratedFromSchemaVersion;
+
+        if (loadedSchemaVersion < kCurrentPersistenceSchemaVersion
+            || snapshot.playerActor.healthMax <= 0
+            || snapshot.playerActor.inventory.empty())
+        {
+            m_playerActorState = buildDefaultPlayerActorState();
+        }
+        else
+        {
+            m_playerActorState = snapshot.playerActor;
+            m_playerActorState.armorRating = equippedArmorRating(m_playerActorState);
+        }
 
         m_diagnostics.simulationTicks = snapshot.simulationTicks;
         m_diagnostics.lastIntentSequence = snapshot.lastProcessedIntentSequence;
         m_diagnostics.lastSnapshotSequence = snapshot.lastProcessedIntentSequence;
         m_diagnostics.lastSnapshotSimulationTicks = snapshot.simulationTicks;
-        m_nextIntentSequence = snapshot.lastProcessedIntentSequence + 1;
-        if (m_nextIntentSequence == 0)
+        m_nextIntentSequence = snapshot.nextIntentSequence > snapshot.lastProcessedIntentSequence
+            ? snapshot.nextIntentSequence
+            : snapshot.lastProcessedIntentSequence + 1;
+        m_diagnostics.pendingIntentCount = 0;
+        m_diagnostics.movementTargetActive = m_hasMovementTarget;
+
+        refreshActorDiagnostics();
+        notePersistenceLoad(loadedSchemaVersion, migratedFromVersion, true, "");
+
+        outMessage = "Persistence load complete";
+        outMessage += " | schema=" + std::to_string(kCurrentPersistenceSchemaVersion);
+        if (migratedFromVersion > 0)
         {
-            m_nextIntentSequence = 1;
+            outMessage += " | migrated from=" + std::to_string(migratedFromVersion);
+        }
+        outMessage += " | sim ticks=" + std::to_string(m_diagnostics.simulationTicks);
+        outMessage += " | last intent=" + std::to_string(m_diagnostics.lastIntentSequence);
+        return true;
+    }
+
+    void SimulationRuntime::notePersistenceLoad(
+        uint32_t loadedSchemaVersion,
+        uint32_t migratedFromSchemaVersion,
+        bool success,
+        const std::string& error)
+    {
+        ++m_diagnostics.persistenceLoadCount;
+        m_diagnostics.persistenceSchemaVersion = kCurrentPersistenceSchemaVersion;
+        m_diagnostics.loadedPersistenceSchemaVersion = loadedSchemaVersion;
+        m_diagnostics.migratedFromPersistenceSchemaVersion = migratedFromSchemaVersion;
+        m_diagnostics.lastPersistenceSucceeded = success;
+        m_diagnostics.lastPersistenceError = error;
+        refreshActorDiagnostics();
+    }
+
+    void SimulationRuntime::notePersistenceSave(
+        uint32_t persistedSchemaVersion,
+        bool success,
+        const std::string& error,
+        uint64_t epochMilliseconds)
+    {
+        if (success)
+        {
+            ++m_diagnostics.persistenceSaveCount;
         }
 
-        m_diagnostics.accumulatorSeconds = 0.0f;
-        m_diagnostics.presentationAlpha = 0.0f;
-        m_diagnostics.lastSnapshotAgeMilliseconds = 0;
-        m_diagnostics.lastPositionDivergenceDistance = 0.0f;
-        m_diagnostics.lastPathDivergence = false;
-        m_diagnostics.lastEntityDivergence = false;
-        m_diagnostics.lastPersistenceSaveEpochMilliseconds = snapshot.persistenceEpochMilliseconds;
-        m_diagnostics.lastPersistenceSaveSucceeded = snapshot.persistenceEpochMilliseconds > 0;
-        notePersistenceLoad(loadedSchemaVersion, migratedFromSchemaVersion, loadEpochMilliseconds);
+        m_diagnostics.persistenceSchemaVersion = persistedSchemaVersion;
+        m_diagnostics.lastPersistenceSucceeded = success;
+        m_diagnostics.lastPersistenceError = error;
+        m_diagnostics.lastPersistenceEpochMilliseconds = epochMilliseconds;
     }
 
     AuthoritativeWorldSnapshot SimulationRuntime::buildAuthoritativeSnapshot(uint64_t lastProcessedIntentSequence) const
     {
         AuthoritativeWorldSnapshot snapshot{};
         snapshot.valid = true;
+        snapshot.schemaVersion = kCurrentPersistenceSchemaVersion;
+        snapshot.migratedFromSchemaVersion = 0;
         snapshot.simulationTicks = m_diagnostics.simulationTicks;
         snapshot.lastProcessedIntentSequence = lastProcessedIntentSequence;
+        snapshot.nextIntentSequence = m_nextIntentSequence;
         snapshot.authoritativePlayerPosition = m_authoritativePlayerPosition;
         snapshot.movementTargetActive = m_hasMovementTarget;
         snapshot.movementTargetTile = m_movementTargetTile;
         snapshot.currentPath = m_currentPath;
         snapshot.pathIndex = m_pathIndex;
         snapshot.eventLog = m_eventLog;
-        snapshot.persistenceSchemaVersion = m_diagnostics.persistenceSchemaVersion;
-        snapshot.persistenceMigratedFromSchemaVersion = m_diagnostics.persistenceMigratedFromSchemaVersion;
-        snapshot.persistenceEpochMilliseconds = m_diagnostics.lastPersistenceSaveEpochMilliseconds;
-        snapshot.persistenceSlotName = m_diagnostics.persistenceSlotName;
+        snapshot.playerActor = m_playerActorState;
 
         snapshot.entities.reserve(m_worldState.entities().all().size());
         for (const Entity& entity : m_worldState.entities().all())
@@ -461,6 +587,8 @@ namespace war
             replicated.isOpen = entity.isOpen;
             replicated.isLocked = entity.isLocked;
             replicated.isPowered = entity.isPowered;
+            replicated.lootProfileId = entity.lootProfileId;
+            replicated.lootClaimed = entity.lootClaimed;
             snapshot.entities.push_back(replicated);
         }
 
@@ -505,6 +633,11 @@ namespace war
     const SharedSimulationDiagnostics& SimulationRuntime::diagnostics() const
     {
         return m_diagnostics;
+    }
+
+    const PlayerActorRuntimeState& SimulationRuntime::playerActorState() const
+    {
+        return m_playerActorState;
     }
 
     bool SimulationRuntime::hasMovementTarget() const
@@ -676,6 +809,39 @@ namespace war
             + m_authoritativePlayerPosition * alpha;
     }
 
+    void SimulationRuntime::refreshActorDiagnostics()
+    {
+        m_playerActorState.armorRating = equippedArmorRating(m_playerActorState);
+        m_diagnostics.actorRuntimeActive = true;
+        m_diagnostics.playerHealthCurrent = m_playerActorState.healthCurrent;
+        m_diagnostics.playerHealthMax = m_playerActorState.healthMax;
+        m_diagnostics.playerArmorRating = m_playerActorState.armorRating;
+        m_diagnostics.inventoryStackCount = m_playerActorState.inventory.size();
+        m_diagnostics.inventoryItemCount = totalInventoryItemCount(m_playerActorState);
+        m_diagnostics.lootCollections = m_playerActorState.lootCollections;
+        m_diagnostics.equippedWeaponName = inventoryItemText(m_playerActorState.equipment.weapon);
+        m_diagnostics.equippedSuitName = inventoryItemText(m_playerActorState.equipment.suit);
+        m_diagnostics.equippedToolName = inventoryItemText(m_playerActorState.equipment.tool);
+    }
+
+    PlayerActorRuntimeState SimulationRuntime::buildDefaultPlayerActorState() const
+    {
+        PlayerActorRuntimeState actorState{};
+        actorState.healthCurrent = 100;
+        actorState.healthMax = 100;
+        actorState.carryCapacity = 12;
+        actorState.inventory.push_back({ InventoryItemId::MedInjector, 1 });
+        actorState.inventory.push_back({ InventoryItemId::RationPack, 2 });
+        actorState.inventory.push_back({ InventoryItemId::UtilityHarness, 1 });
+        actorState.inventory.push_back({ InventoryItemId::SurveyScanner, 1 });
+        actorState.equipment.suit = InventoryItemId::UtilityHarness;
+        actorState.equipment.tool = InventoryItemId::SurveyScanner;
+        actorState.equipment.weapon = InventoryItemId::None;
+        actorState.lootCollections = 0;
+        actorState.armorRating = equippedArmorRating(actorState);
+        return actorState;
+    }
+
     void SimulationRuntime::trimEventLog()
     {
         constexpr size_t kMaxEvents = 10;
@@ -685,43 +851,5 @@ namespace war
                 m_eventLog.begin(),
                 m_eventLog.begin() + static_cast<std::ptrdiff_t>(m_eventLog.size() - kMaxEvents));
         }
-    }
-
-    void SimulationRuntime::applySnapshotState(const AuthoritativeWorldSnapshot& snapshot)
-    {
-        m_authoritativePlayerPosition = snapshot.authoritativePlayerPosition;
-        m_previousAuthoritativePlayerPosition = snapshot.authoritativePlayerPosition;
-        m_presentedPlayerPosition = snapshot.authoritativePlayerPosition;
-        m_currentPath = snapshot.currentPath;
-        m_pathIndex = snapshot.pathIndex;
-        m_hasMovementTarget = snapshot.movementTargetActive;
-        m_movementTargetTile = snapshot.movementTargetTile;
-
-        m_worldState.entities().clear();
-        for (const ReplicatedEntityState& replicated : snapshot.entities)
-        {
-            Entity entity{};
-            entity.id = replicated.id;
-            entity.name = replicated.name;
-            entity.type = replicated.type;
-            entity.tile = replicated.tile;
-            entity.isOpen = replicated.isOpen;
-            entity.isLocked = replicated.isLocked;
-            entity.isPowered = replicated.isPowered;
-            m_worldState.entities().add(entity);
-        }
-
-        m_eventLog = snapshot.eventLog;
-        trimEventLog();
-
-        if (!snapshot.persistenceSlotName.empty())
-        {
-            m_diagnostics.persistenceSlotName = snapshot.persistenceSlotName;
-        }
-
-        m_diagnostics.lastSnapshotSequence = snapshot.lastProcessedIntentSequence;
-        m_diagnostics.lastSnapshotSimulationTicks = snapshot.simulationTicks;
-        m_diagnostics.pendingIntentCount = m_pendingIntents.size();
-        m_diagnostics.movementTargetActive = m_hasMovementTarget;
     }
 }

@@ -91,7 +91,8 @@ namespace war
             const char* name,
             bool isOpen,
             bool isLocked,
-            bool isPowered)
+            bool isPowered,
+            const char* lootProfileId)
         {
             TileCoord resolved{};
             if (!tryResolvePlacement(worldState, expectedRegion, desired, false, true, resolved))
@@ -107,6 +108,8 @@ namespace war
             entity.isOpen = isOpen;
             entity.isLocked = isLocked;
             entity.isPowered = isPowered;
+            entity.lootProfileId = lootProfileId != nullptr ? lootProfileId : "";
+            entity.lootClaimed = false;
             worldState.entities().add(entity);
         }
 
@@ -146,11 +149,11 @@ namespace war
         int nextEntityId = 1;
         int nextHotspotId = 1;
 
-        addEntity(worldState, nextEntityId, WorldRegionTagId::CargoBay, { 6, 24 }, EntityType::Crate, "Cargo Pallet Crate", false, false, false);
-        addEntity(worldState, nextEntityId, WorldRegionTagId::CargoBay, { 10, 26 }, EntityType::Crate, "Freight Container", false, false, false);
-        addEntity(worldState, nextEntityId, WorldRegionTagId::CargoBay, { 12, 21 }, EntityType::Crate, "Supply Bin", false, false, false);
-        addEntity(worldState, nextEntityId, WorldRegionTagId::CargoBay, { 4, 28 }, EntityType::Locker, "Dockside Locker", false, false, false);
-        addEntity(worldState, nextEntityId, WorldRegionTagId::CargoBay, { 15, 24 }, EntityType::Crate, "Stacked Cargo Cage", false, true, false);
+        addEntity(worldState, nextEntityId, WorldRegionTagId::CargoBay, { 6, 24 }, EntityType::Crate, "Cargo Pallet Crate", false, false, false, "cargo_supplies");
+        addEntity(worldState, nextEntityId, WorldRegionTagId::CargoBay, { 10, 26 }, EntityType::Crate, "Freight Container", false, false, false, "cargo_supplies");
+        addEntity(worldState, nextEntityId, WorldRegionTagId::CargoBay, { 12, 21 }, EntityType::Crate, "Supply Bin", false, false, false, "medical_supplies");
+        addEntity(worldState, nextEntityId, WorldRegionTagId::CargoBay, { 4, 28 }, EntityType::Locker, "Dockside Locker", false, false, false, "dockside_personal");
+        addEntity(worldState, nextEntityId, WorldRegionTagId::CargoBay, { 15, 24 }, EntityType::Crate, "Stacked Cargo Cage", false, true, false, "cargo_supplies");
 
         addHotspot(
             worldState,
@@ -171,10 +174,10 @@ namespace war
             "A clean access lane that can later support traversal, routing, or escort logic.",
             false);
 
-        addEntity(worldState, nextEntityId, WorldRegionTagId::TransitSpine, { 21, 16 }, EntityType::Terminal, "Transit Service Terminal", true, false, true);
-        addEntity(worldState, nextEntityId, WorldRegionTagId::TransitSpine, { 20, 14 }, EntityType::Locker, "Route Maintenance Locker", false, false, false);
-        addEntity(worldState, nextEntityId, WorldRegionTagId::TransitSpine, { 24, 17 }, EntityType::Terminal, "Route Junction Panel", false, false, false);
-        addEntity(worldState, nextEntityId, WorldRegionTagId::TransitSpine, { 18, 18 }, EntityType::Locker, "Service Cache", false, true, false);
+        addEntity(worldState, nextEntityId, WorldRegionTagId::TransitSpine, { 21, 16 }, EntityType::Terminal, "Transit Service Terminal", true, false, true, "");
+        addEntity(worldState, nextEntityId, WorldRegionTagId::TransitSpine, { 20, 14 }, EntityType::Locker, "Route Maintenance Locker", false, false, false, "maintenance_cache");
+        addEntity(worldState, nextEntityId, WorldRegionTagId::TransitSpine, { 24, 17 }, EntityType::Terminal, "Route Junction Panel", false, false, false, "");
+        addEntity(worldState, nextEntityId, WorldRegionTagId::TransitSpine, { 18, 18 }, EntityType::Locker, "Service Cache", false, true, false, "service_cache");
 
         addHotspot(
             worldState,
@@ -195,11 +198,11 @@ namespace war
             "A service hold point suited to authored control or inspection beats.",
             false);
 
-        addEntity(worldState, nextEntityId, WorldRegionTagId::MedLab, { 18, 7 }, EntityType::Terminal, "Diagnostic Station", true, false, true);
-        addEntity(worldState, nextEntityId, WorldRegionTagId::MedLab, { 23, 9 }, EntityType::Locker, "Med Supply Locker", false, false, false);
-        addEntity(worldState, nextEntityId, WorldRegionTagId::MedLab, { 15, 6 }, EntityType::Terminal, "Sterile Intake Console", false, false, false);
-        addEntity(worldState, nextEntityId, WorldRegionTagId::MedLab, { 24, 6 }, EntityType::Locker, "Sealed Recovery Cabinet", false, true, false);
-        addEntity(worldState, nextEntityId, WorldRegionTagId::MedLab, { 17, 10 }, EntityType::Crate, "Clean Supply Case", false, false, false);
+        addEntity(worldState, nextEntityId, WorldRegionTagId::MedLab, { 18, 7 }, EntityType::Terminal, "Diagnostic Station", true, false, true, "");
+        addEntity(worldState, nextEntityId, WorldRegionTagId::MedLab, { 23, 9 }, EntityType::Locker, "Med Supply Locker", false, false, false, "medical_supplies");
+        addEntity(worldState, nextEntityId, WorldRegionTagId::MedLab, { 15, 6 }, EntityType::Terminal, "Sterile Intake Console", false, false, false, "");
+        addEntity(worldState, nextEntityId, WorldRegionTagId::MedLab, { 24, 6 }, EntityType::Locker, "Sealed Recovery Cabinet", false, true, false, "medical_supplies");
+        addEntity(worldState, nextEntityId, WorldRegionTagId::MedLab, { 17, 10 }, EntityType::Crate, "Clean Supply Case", false, false, false, "medical_supplies");
 
         addHotspot(
             worldState,
@@ -220,11 +223,11 @@ namespace war
             "A small staging space suited to item transfer, medical recovery, or mission pickup logic.",
             false);
 
-        addEntity(worldState, nextEntityId, WorldRegionTagId::CommandDeck, { 35, 8 }, EntityType::Terminal, "Command Console", true, false, true);
-        addEntity(worldState, nextEntityId, WorldRegionTagId::CommandDeck, { 39, 10 }, EntityType::Locker, "Secure Command Locker", false, true, false);
-        addEntity(worldState, nextEntityId, WorldRegionTagId::CommandDeck, { 31, 6 }, EntityType::Terminal, "Operations Readout", true, false, true);
-        addEntity(worldState, nextEntityId, WorldRegionTagId::CommandDeck, { 41, 9 }, EntityType::Locker, "Command Archive Cabinet", false, false, false);
-        addEntity(worldState, nextEntityId, WorldRegionTagId::CommandDeck, { 30, 11 }, EntityType::Crate, "Secured Briefing Cache", false, true, false);
+        addEntity(worldState, nextEntityId, WorldRegionTagId::CommandDeck, { 35, 8 }, EntityType::Terminal, "Command Console", true, false, true, "");
+        addEntity(worldState, nextEntityId, WorldRegionTagId::CommandDeck, { 39, 10 }, EntityType::Locker, "Secure Command Locker", false, true, false, "command_secure");
+        addEntity(worldState, nextEntityId, WorldRegionTagId::CommandDeck, { 31, 6 }, EntityType::Terminal, "Operations Readout", true, false, true, "");
+        addEntity(worldState, nextEntityId, WorldRegionTagId::CommandDeck, { 41, 9 }, EntityType::Locker, "Command Archive Cabinet", false, false, false, "command_secure");
+        addEntity(worldState, nextEntityId, WorldRegionTagId::CommandDeck, { 30, 11 }, EntityType::Crate, "Secured Briefing Cache", false, true, false, "command_secure");
 
         addHotspot(
             worldState,
@@ -245,12 +248,12 @@ namespace war
             "A narrow high-value crossing that already reads like encounter space.",
             true);
 
-        addEntity(worldState, nextEntityId, WorldRegionTagId::HazardContainment, { 33, 27 }, EntityType::Locker, "Containment Locker", false, true, false);
-        addEntity(worldState, nextEntityId, WorldRegionTagId::HazardContainment, { 29, 25 }, EntityType::Terminal, "Quarantine Control Terminal", false, false, false);
-        addEntity(worldState, nextEntityId, WorldRegionTagId::HazardContainment, { 38, 29 }, EntityType::Crate, "Sealed Sample Crate", false, true, false);
-        addEntity(worldState, nextEntityId, WorldRegionTagId::HazardContainment, { 41, 27 }, EntityType::Terminal, "Containment Sensor Mast", true, false, true);
-        addEntity(worldState, nextEntityId, WorldRegionTagId::HazardContainment, { 24, 26 }, EntityType::Locker, "Emergency Washdown Cabinet", false, false, false);
-        addEntity(worldState, nextEntityId, WorldRegionTagId::HazardContainment, { 35, 23 }, EntityType::Crate, "Response Gear Case", false, false, false);
+        addEntity(worldState, nextEntityId, WorldRegionTagId::HazardContainment, { 33, 27 }, EntityType::Locker, "Containment Locker", false, true, false, "response_gear");
+        addEntity(worldState, nextEntityId, WorldRegionTagId::HazardContainment, { 29, 25 }, EntityType::Terminal, "Quarantine Control Terminal", false, false, false, "");
+        addEntity(worldState, nextEntityId, WorldRegionTagId::HazardContainment, { 38, 29 }, EntityType::Crate, "Sealed Sample Crate", false, true, false, "response_gear");
+        addEntity(worldState, nextEntityId, WorldRegionTagId::HazardContainment, { 41, 27 }, EntityType::Terminal, "Containment Sensor Mast", true, false, true, "");
+        addEntity(worldState, nextEntityId, WorldRegionTagId::HazardContainment, { 24, 26 }, EntityType::Locker, "Emergency Washdown Cabinet", false, false, false, "response_gear");
+        addEntity(worldState, nextEntityId, WorldRegionTagId::HazardContainment, { 35, 23 }, EntityType::Crate, "Response Gear Case", false, false, false, "response_gear");
 
         addHotspot(
             worldState,
