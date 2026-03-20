@@ -33,6 +33,7 @@ namespace war
         [[nodiscard]] BgfxThemePaletteMode paletteMode() const;
 
     private:
+        void fillRegionRect(int minX, int minY, int maxX, int maxY, WorldRegionTagId tag);
         [[nodiscard]] size_t index(TileCoord tile) const;
 
         WorldGrid m_world;

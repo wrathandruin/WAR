@@ -6,9 +6,11 @@ namespace war
 {
     enum class WorldRegionTagId
     {
-        IndustrialZone,
-        SterileZone,
-        EmergencyZone
+        CargoBay,
+        TransitSpine,
+        MedLab,
+        CommandDeck,
+        HazardContainment
     };
 
     class WorldRegionTags

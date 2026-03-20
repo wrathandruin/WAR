@@ -6,13 +6,19 @@ namespace war
     {
         switch (tag)
         {
-        case WorldRegionTagId::IndustrialZone:
+        case WorldRegionTagId::CargoBay:
             return BgfxWorldThemeId::Industrial;
 
-        case WorldRegionTagId::SterileZone:
+        case WorldRegionTagId::TransitSpine:
+            return BgfxWorldThemeId::Industrial;
+
+        case WorldRegionTagId::MedLab:
             return BgfxWorldThemeId::Sterile;
 
-        case WorldRegionTagId::EmergencyZone:
+        case WorldRegionTagId::CommandDeck:
+            return BgfxWorldThemeId::Sterile;
+
+        case WorldRegionTagId::HazardContainment:
             return BgfxWorldThemeId::Emergency;
 
         default:
@@ -24,14 +30,20 @@ namespace war
     {
         switch (tag)
         {
-        case WorldRegionTagId::IndustrialZone:
-            return "IndustrialZone";
+        case WorldRegionTagId::CargoBay:
+            return "CargoBay";
 
-        case WorldRegionTagId::SterileZone:
-            return "SterileZone";
+        case WorldRegionTagId::TransitSpine:
+            return "TransitSpine";
 
-        case WorldRegionTagId::EmergencyZone:
-            return "EmergencyZone";
+        case WorldRegionTagId::MedLab:
+            return "MedLab";
+
+        case WorldRegionTagId::CommandDeck:
+            return "CommandDeck";
+
+        case WorldRegionTagId::HazardContainment:
+            return "HazardContainment";
 
         default:
             return "Unknown";

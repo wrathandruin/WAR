@@ -26,8 +26,9 @@ namespace war
             if (preferred->initialize(m_window->getHandle()))
             {
                 m_renderDevice = std::move(preferred);
-                pushEvent("Milestone 26 initialized");
-                pushEvent("bgfx region authoring overlay / palette hooks active");
+                pushEvent("Milestone 27 initialized");
+                pushEvent("bgfx region data expansion / scene semantics active");
+                pushEvent("Semantic regions: Cargo Bay | Transit Spine | Med Lab | Command Deck | Hazard Containment");
                 pushEvent("Region boundary overlay is enabled by default");
                 pushEvent("Press O to toggle region boundary overlay");
                 pushEvent("Press 7 / 8 / 9 for Default / Muted / Vivid palette");
@@ -39,8 +40,9 @@ namespace war
                 const bool fallbackReady = fallback->initialize(m_window->getHandle());
                 m_renderDevice = std::move(fallback);
 
-                pushEvent("Milestone 26 initialized");
+                pushEvent("Milestone 27 initialized");
                 pushEvent("bgfx unavailable, falling back to GDI");
+                pushEvent("Semantic regions: Cargo Bay | Transit Spine | Med Lab | Command Deck | Hazard Containment");
                 pushEvent("Region boundary overlay is enabled by default");
                 pushEvent("Press O to toggle region boundary overlay");
                 pushEvent("Press 7 / 8 / 9 for Default / Muted / Vivid palette");
