@@ -1,15 +1,16 @@
 #include "game/GameLayer.h"
 
+#include <memory>
 #include <windows.h>
 
 #include "engine/gameplay/Action.h"
 #include "engine/gameplay/ActionSystem.h"
+#include "engine/render/BgfxRenderDevice.h"
 #include "engine/render/GdiRenderDevice.h"
-#include "platform/win32/Win32Window.h"
 
 namespace war
 {
-    void GameLayer::initialize(Win32Window& window)
+    void GameLayer::initialize(IWindow& window)
     {
         m_window = &window;
         m_camera.setViewportSize(window.getWidth(), window.getHeight());
@@ -20,15 +21,29 @@ namespace war
         const TileCoord spawnTile{ 2, 2 };
         m_playerPosition = m_worldState.world().tileToWorldCenter(spawnTile);
 
-        m_renderDevice = std::make_unique<GdiRenderDevice>();
-        const bool backendReady = m_renderDevice->initialize(m_window->getHandle());
-
-        pushEvent("Milestone 9 initialized");
-        pushEvent("Render backend abstraction ready");
-        pushEvent(std::string("Active backend: ") + m_renderDevice->name());
-        if (!backendReady)
         {
-            pushEvent("Warning: active backend failed to initialize");
+            auto preferred = std::make_unique<BgfxRenderDevice>();
+            if (preferred->initialize(m_window->getHandle()))
+            {
+                m_renderDevice = std::move(preferred);
+                pushEvent("Milestones 14 + 15 + 16 initialized");
+                pushEvent("bgfx geometry path ready");
+                pushEvent(std::string("Active backend: ") + m_renderDevice->name());
+            }
+            else
+            {
+                auto fallback = std::make_unique<GdiRenderDevice>();
+                const bool fallbackReady = fallback->initialize(m_window->getHandle());
+                m_renderDevice = std::move(fallback);
+
+                pushEvent("Milestones 14 + 15 + 16 initialized");
+                pushEvent("bgfx unavailable, falling back to GDI");
+                pushEvent(std::string("Active backend: ") + m_renderDevice->name());
+                if (!fallbackReady)
+                {
+                    pushEvent("Warning: fallback backend failed to initialize");
+                }
+            }
         }
     }
 
@@ -62,35 +77,51 @@ namespace war
         }
 
         HDC dc = m_renderDevice->getDrawContext();
-        if (dc == nullptr)
+        if (dc != nullptr)
         {
-            m_renderDevice->endFrame(m_window->getHandle());
-            return;
+            m_worldRenderer.render(
+                dc,
+                clientRect,
+                m_worldState,
+                m_camera,
+                m_playerPosition,
+                m_currentPath,
+                m_pathIndex,
+                m_hasHoveredTile,
+                m_hoveredTile);
+
+            m_debugOverlayRenderer.render(
+                dc,
+                m_worldState,
+                m_camera,
+                m_playerPosition,
+                m_currentPath,
+                m_pathIndex,
+                m_hasHoveredTile,
+                m_hoveredTile,
+                m_eventLog,
+                m_lastDeltaTime,
+                m_window->getMousePosition());
         }
+        else
+        {
+            const bool worldRendered = m_bgfxWorldRenderer.render(
+                m_worldState,
+                m_camera,
+                m_playerPosition,
+                m_currentPath,
+                m_pathIndex,
+                m_hasHoveredTile,
+                m_hoveredTile);
 
-        m_worldRenderer.render(
-            dc,
-            clientRect,
-            m_worldState,
-            m_camera,
-            m_playerPosition,
-            m_currentPath,
-            m_pathIndex,
-            m_hasHoveredTile,
-            m_hoveredTile);
-
-        m_debugOverlayRenderer.render(
-            dc,
-            m_worldState,
-            m_camera,
-            m_playerPosition,
-            m_currentPath,
-            m_pathIndex,
-            m_hasHoveredTile,
-            m_hoveredTile,
-            m_eventLog,
-            m_lastDeltaTime,
-            m_window->getMousePosition());
+            m_bgfxDebugFrameRenderer.render(
+                m_worldState,
+                m_playerPosition,
+                m_eventLog,
+                m_lastDeltaTime,
+                worldRendered,
+                m_bgfxWorldRenderer.statusMessage());
+        }
 
         m_renderDevice->endFrame(m_window->getHandle());
     }

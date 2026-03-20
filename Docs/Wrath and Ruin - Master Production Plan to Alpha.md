@@ -1,440 +1,596 @@
-# Wrath and Ruin — Master Production Plan to Alpha
+# Wrath and Ruin - Master Production Plan to Alpha
+
+## 1. Executive Summary
+
+Wrath and Ruin is a top-down hard-science-fiction RPG roguelike sandbox built around persistent world simulation, text-supported roleplay, consequential combat, editable terrain, and multiplayer continuity.
+
+This document defines the delivery path from the current milestone state to a disciplined first alpha.
+
+The project has already completed Milestones M1-M16, which prove:
+
+- application shell and runtime loop
+- camera, movement, interaction, and world-state prototype flow
+- stateful world objects
+- renderer abstraction
+- bgfx world rendering and shader pipeline bootstrap
+
+The project has not yet proven the systems that actually define alpha:
+
+- server authority
+- persistence
+- six-second combat
+- inventory and progression
+- ship runtime
+- planetary and space layer transition
+- data-driven content
+- multiplayer playtest operations
+
+The central production decision is therefore simple:
+
+**Do not scale breadth. Finish one complete playable slice that includes both planets and space, and build the architecture required to support it cleanly.**
+
+Program planning baseline:
+
+- 32 weekly sprints from the current M16 state
+- Windows-first alpha target
+- one complete playable slice rather than broad feature spread
+- multiplayer-capable, server-hosted internal alpha
+
+AI-assisted development may compress implementation time, but planning, integration, review, testing, and milestone sign-off should still follow a weekly operating cadence.
 
 ---
 
-# 1. Overview
+## 2. Alpha Product Definition
 
-Wrath and Ruin is a simulation-heavy, multiplayer, terrain-deforming roguelike RPG. This plan defines a **production-grade roadmap to Alpha**, including:
+### 2.1 Alpha Promise
 
-* Milestones
-* Weekly sprint structure
-* Technical sequencing
-* Keystone system architectures
+At alpha, a player should be able to:
 
-Estimated Timeline: **12–18 months**
+- join a server-hosted session
+- explore a planetary surface location
+- interact with world objects, containers, terminals, and hazards
+- survive oxygen and environmental pressure
+- fight through at least one full six-second combat encounter
+- modify terrain through flattening and horizontal digging
+- board a ship, transition into a space or orbital layer, and travel to another destination
+- dock or land at a second destination
+- complete a short mission chain with persistent consequences
+- log out and return to a world that has remembered meaningful state
+
+### 2.2 Alpha Included Scope
+
+- one planetary surface biome with authored points of interest
+- one orbital or local space traversal layer
+- one second destination such as a station, wreck, moon outpost, or asteroid site
+- one player ship class
+- one mission chain spanning surface and space
+- one six-second combat loop
+- basic inventory, equipment, loot, and containers
+- terrain flattening and horizontal digging
+- limited survival model appropriate to the slice
+- persistent world state
+- 4-8 concurrent internal players, with a stretch target of 12
+- functional UI sufficient to play, test, and debug the slice
+
+### 2.3 Alpha Explicitly Excluded
+
+- full solar-system breadth
+- broad faction campaign coverage
+- large-scale economy simulation
+- advanced crafting breadth
+- deep social systems beyond basic speech and party-style coordination
+- large content volume
+- web or cross-platform release
+- full live-service backend stack
+
+### 2.4 Alpha Success Criteria
+
+Alpha is successful when the team can repeatedly run:
+
+- one dedicated server
+- multiple clients in the same persistent session
+- one complete planet-to-space-to-destination gameplay loop
+- one stable combat encounter with consequences
+- one reproducible onboarding flow for new testers
 
 ---
 
-# 2. Milestones
+## 3. Current State Review
 
-## 2.1 Pre-Production (4–6 weeks)
+### 3.1 Confirmed Completed Through M1-M16
+
+- Win32 client runtime and application loop
+- camera pan and zoom
+- tile-based world representation
+- A* pathfinding and click-to-move
+- action queue and intent flow
+- inspect and interact verbs
+- lightweight entity model and stateful interactables
+- render and simulation separation
+- backend rendering abstraction
+- bgfx initialization path
+- bgfx frame path
+- bgfx tile, entity, player, path, and hover rendering
+- repo-owned shader source and runtime shader loading
+
+### 3.2 Major Gaps Between Current State and Alpha
+
+- no shared simulation module
+- no authoritative server executable
+- no real replication model
+- no save or load pipeline
+- no content pipeline for maps, prefabs, items, or missions
+- no inventory or equipment runtime
+- no formal actor or stat model
+- no six-second combat controller
+- no survival loop worthy of alpha
+- no ship model, travel layer, or transition flow
+- no telemetry, soak testing, or server operations readiness
+
+### 3.3 Planning Implication
+
+The next program phase must stop optimizing the local prototype and instead transition the project into a server-authoritative vertical slice effort. Renderer completion matters, but only to remove client-facing blockers. It cannot remain the main workstream.
+
+---
+
+## 4. Delivery Principles
+
+### 4.1 Product Principles
+
+- Build one complete slice before building a broad sandbox.
+- Preserve the hard-science-fiction identity in all gameplay decisions.
+- Protect the top-down readability and MUD-flavored feedback loop.
+- Keep planets and space in alpha, but keep the number of playable locations intentionally small.
+
+### 4.2 Technical Principles
+
+- Server authority begins before combat, persistence, and progression scale up.
+- Gameplay systems should become data-driven before content volume expands.
+- The trunk must remain playable and debuggable every week.
+- Windows-first is acceptable for alpha. Cross-platform readiness is a design constraint, not an immediate delivery requirement.
+- New architecture must reduce risk for replication, save versioning, and mission scripting.
+
+### 4.3 Scope Principles
+
+- Cut breadth before cutting stability.
+- Do not build “placeholder forever” systems that will be thrown away during the server pivot.
+- Do not add a second major biome, faction arc, or ship class until the first one is proven.
+- Do not let the space layer become a separate game. It must support the same alpha loop, not replace it.
+
+---
+
+## 5. Program Workstreams and What We Must Consider
+
+### 5.1 Game Direction and Design
+
+- alpha pillars and player fantasy
+- onboarding clarity
+- mission arc and progression pacing
+- risk of feature spread versus slice integrity
+- planet-to-space loop cohesion
+- systemic consistency with hard-sci-fi constraints
+
+### 5.2 Client Runtime and Rendering
+
+- bgfx as the default runtime path
+- camera and projection correctness
+- sprite and texture-capable rendering
+- UI rendering and interaction prompts
+- asset packaging and shader automation
+- debug overlays, diagnostics, and asset validation
+
+### 5.3 Shared Simulation and Networking
+
+- fixed-step simulation ownership
+- client, shared, and server code boundaries
+- command protocol and serialization
+- server authority and validation
+- replication strategy and divergence detection
+- local prediction only where it meaningfully improves feel
+
+### 5.4 Core Gameplay Systems
+
+- actor state and stats
+- six-second combat declaration and resolution
+- inventory, equipment, and containers
+- terrain modification and pathfinding consequence
+- survival pressures such as oxygen and radiation
+- ship ownership, travel, and destination state
+
+### 5.5 World, Content, and Tooling
+
+- map and location data
+- chunk or region persistence
+- prefabs and archetypes
+- item, loot, and NPC definitions
+- mission graphs and terminal scripts
+- content validation tools and reproducible build packaging
+
+### 5.6 Persistence and Operations
+
+- world save format
+- versioning and migration strategy
+- dedicated server packaging
+- admin commands and diagnostics
+- backups and session recovery
+- crash capture and telemetry
+
+### 5.7 UX, UI, and Accessibility
+
+- navigation readability
+- combat readability
+- inventory and equipment usability
+- ship travel view clarity
+- mission tracking
+- text console integration without overwhelming the player
+
+### 5.8 QA, Performance, and Production Discipline
+
+- weekly smoke tests
+- milestone acceptance criteria
+- playtest issue triage
+- memory and frame-time budgets
+- replication soak tests
+- document maintenance and decision logging
+
+### 5.9 Art and Audio Readiness
+
+- surface and space visual differentiation
+- silhouette clarity for actors and interactables
+- readable terrain states
+- combat and hazard feedback
+- ambient sound support for mood and legibility
+- content budgets appropriate to alpha
+
+---
+
+## 6. Phase Plan
+
+## Phase 1 - Renderer Completion and Client Runtime Closure
+
+Duration: Weeks 1-4
 
 ### Objectives
 
-* Lock architecture
-* Validate high-risk systems
-* Define data models
+- remove renderer ambiguity
+- make bgfx the normal runtime backend
+- finish basic sprite-capable client rendering
+- make assets, shaders, and debug instrumentation production-safe
 
 ### Deliverables
 
-* ECS schema
-* Terrain data model (heightmap + delta)
-* Networking model (authoritative intent pipeline)
-* Terrain prototype (flatten + dig)
+- batched render submission path
+- camera and projection cleanup
+- texture and sprite-capable pipeline
+- shader compilation and packaging workflow
+- UI shell and runtime diagnostics
 
-### Risks
+### Exit Criteria
 
-* Terrain scalability
-* ECS inefficiency
+- bgfx is the expected runtime backend
+- sprites or textured quads are supported
+- build artifacts package shaders and runtime assets reliably
+- debug overlays identify asset, render, and pipeline failures cleanly
 
-### Validation
+### Primary Risks
 
-* Terrain supports flatten + cliff carving
-* ECS handles 5k+ entities
+- spending too long polishing visuals instead of finishing runtime readiness
+- carrying GDI as a hidden second production path
 
 ---
 
-## 2.2 Engine Foundation (8–12 weeks)
+## Phase 2 - Server-Authoritative Foundation
+
+Duration: Weeks 5-10
 
 ### Objectives
 
-Build simulation-capable engine core
+- split local prototype code into client, shared, and server responsibilities
+- establish authority boundaries before combat and persistence scale up
+- prove a localhost authoritative gameplay loop
 
 ### Deliverables
 
-* bgfx rendering
-* EnTT ECS base
-* Input system (click + raycast)
-* Fixed timestep loop
-* Save/load v1 (chunk-based)
+- shared simulation module
+- headless dedicated server
+- protocol and serialization layer
+- authoritative movement and interaction flow
+- replication harness with latency and loss simulation
 
-### Validation
+### Exit Criteria
 
-* Click-to-move works
-* World persists
+- client connects to headless server
+- movement and interaction resolve through server authority
+- replicated state drives presentation
+- packet loss and latency test tools exist
+
+### Primary Risks
+
+- attempting to preserve local-only assumptions
+- overbuilding networking technology before the slice needs it
 
 ---
 
-## 2.3 Vertical Slice (10–14 weeks)
+## Phase 3 - Planetary Sandbox Core
+
+Duration: Weeks 11-18
 
 ### Objectives
 
-Prove core gameplay loop
+- make the on-foot slice real
+- add persistence, inventory, actors, combat, hazards, and AI
+- move from prototype interactions to an actual game loop
 
 ### Deliverables
 
-* Terrain (flatten + horizontal dig)
-* Pathfinding
-* Turn-based combat
-* Survival (oxygen)
-* Basic AI
-* MUD console v1
+- save and load pipeline
+- map, prefab, and item data loading
+- actor stats and equipment runtime
+- six-second combat controller
+- survival hazards
+- NPC AI and encounter scripting support
 
-### Validation
+### Exit Criteria
 
-* Player can move, dig, fight, survive
+- player can explore, loot, fight, survive, and persist progress in one planetary zone
+- the zone is data-driven, not hardcoded
+- one meaningful encounter can be authored and replayed
+
+### Primary Risks
+
+- designing too much combat depth before the controller is stable
+- delaying persistence until too many systems depend on it
 
 ---
 
-## 2.4 Core Systems (12–20 weeks)
+## Phase 4 - Space Layer and Vertical Slice Completion
+
+Duration: Weeks 19-26
 
 ### Objectives
 
-Expand into full sandbox
+- connect the planetary game to a playable space layer
+- make ship travel part of the same persistent experience
+- complete the first end-to-end mission slice
 
 ### Deliverables
 
-* Terrain delta system
-* Construction + interiors
-* Atmosphere simulation
-* Combat v2 (cover + ballistics)
-* AI v2 (task-based)
-* Character + skills
-* Inventory + economy
-* Narrative system
-* Save/load v2 (delta persistence)
+- player ship runtime
+- orbital or local space traversal layer
+- docking, landing, and transition flow
+- mission, dialogue, and terminal framework
+- progression and economy-lite support
+- multiplayer session and onboarding flow
+
+### Exit Criteria
+
+- one player can move from planet to ship to space to second destination and back
+- one mission chain spans both planetary and space gameplay
+- multiple players can perform the slice in the same session
+
+### Primary Risks
+
+- turning travel into a disconnected minigame
+- underestimating transition-state complexity between layers
 
 ---
 
-## 2.5 Multiplayer (10–16 weeks)
+## Phase 5 - Alpha Hardening and External Playtest Readiness
+
+Duration: Weeks 27-32
 
 ### Objectives
 
-Authoritative server implementation
+- make the slice usable, testable, and supportable
+- finish the minimum UI and diagnostics required for external alpha-style testing
+- lock scope and stabilize
 
 ### Deliverables
 
-* Intent-based networking
-* ECS replication
-* Terrain delta sync
-* Combat sync
-* Persistence server
+- polished functional UI pass
+- performance and memory budget pass
+- telemetry, crash capture, and admin tooling
+- dedicated server packaging and deployment workflow
+- alpha balance, bug burn-down, and content lock
+
+### Exit Criteria
+
+- the slice is stable for repeated multi-hour internal sessions
+- build and server deployment are reproducible
+- alpha test documentation and acceptance checklist exist
+
+### Primary Risks
+
+- opening scope during stabilization
+- discovering late that ops, telemetry, or onboarding are missing
 
 ---
 
-## 2.6 Alpha (8–12 weeks)
+## 7. Milestone Pass
 
-### Objectives
+The completed milestone history ends at M16. The alpha roadmap continues from M17 forward.
 
-Stable, complete gameplay loop
+## Block A - Client Runtime Completion
 
-### Deliverables
+- M17: Render data cleanup and batching
+- M18: Camera, projection, and sprite-material pass
+- M19: Asset packaging, shader automation, and build reproducibility
+- M20: Client UX shell, diagnostics, and debug tooling
 
-* All core systems integrated
-* Multiplayer stable (5–20 players)
-* UI v2
-* Death system (permadeath + backup)
+## Block B - Authority and Architecture
 
----
+- M21: Shared-client-server code split
+- M22: Fixed-step simulation and authority boundaries
+- M23: Command protocol and serialization
+- M24: Headless dedicated server runtime
+- M25: Localhost authoritative movement and interactions
+- M26: Replication, latency simulation, and divergence diagnostics
 
-# 3. Weekly Sprint Plan (High-Level)
+## Block C - Planetary Sandbox Core
 
-## Phase 1: Pre-Production (Weeks 1–6)
+- M27: Save, load, and persistent world state
+- M28: Data-driven maps, prefabs, items, and interactables
+- M29: Actor model, stats, inventory, and equipment foundation
+- M30: Six-second combat controller and action resolution
+- M31: Survival hazards, terrain consequences, and environmental state
+- M32: NPC AI, faction reactions, and authored encounters
 
-### Week 1–2
+## Block D - Space Layer and Mission Slice
 
-* Finalize architecture
-* Define ECS components
+- M33: Ship runtime and player vessel state
+- M34: Orbital or local space traversal layer
+- M35: Landing, docking, and cross-layer transition flow
+- M36: Mission scripting, dialogue, and terminal framework
+- M37: Economy-lite, loot, and progression slice
+- M38: Multiplayer session flow and onboarding
 
-### Week 3–4
+## Block E - Alpha Readiness
 
-* Terrain prototype
-* Digging + flattening spike
-
-### Week 5–6
-
-* Networking model design
-* Save system planning
-
----
-
-## Phase 2: Engine Foundation (Weeks 7–18)
-
-### Week 7–10
-
-* Rendering (bgfx)
-* ECS core systems
-
-### Week 11–14
-
-* Input + raycasting
-* Movement system
-
-### Week 15–18
-
-* Save/load v1
-* Debug tooling
+- M39: Interaction, inventory, combat, and travel UI pass
+- M40: Performance, memory, and soak-test pass
+- M41: Telemetry, crash capture, admin tools, and server packaging
+- M42: Alpha content lock, stabilization, and sign-off
 
 ---
 
-## Phase 3: Vertical Slice (Weeks 19–32)
+## 8. Weekly Sprint Plan
 
-### Week 19–22
+Every sprint week must end with:
 
-* Terrain system v1
+- a green build
+- updated documentation
+- a runnable demo or captured evidence
+- a risk review
+- a clear next-week objective
 
-### Week 23–26
+### Weeks 1-4: Phase 1
 
-* Pathfinding
-* Navigation
+- Week 1: Stabilize bgfx as the default runtime backend and close remaining renderer parity issues.
+- Week 2: Implement render batching and formalize the client render-data path.
+- Week 3: Complete camera and projection cleanup and add sprite or textured-quad support.
+- Week 4: Automate shader and asset packaging and finalize client diagnostics gate review.
 
-### Week 27–30
+### Weeks 5-10: Phase 2
 
-* Combat v1
-* Turn system
+- Week 5: Establish client, shared, and server module boundaries.
+- Week 6: Move simulation update ownership into a fixed-step shared runtime.
+- Week 7: Define command protocol, message schema, and serialization formats.
+- Week 8: Boot a headless dedicated server and complete initial client connection flow.
+- Week 9: Route movement and interaction through authority on localhost.
+- Week 10: Add replication harnesses, latency simulation, and Phase 2 gate review.
 
-### Week 31–32
+### Weeks 11-18: Phase 3
 
-* AI basic
-* UI + MUD console
+- Week 11: Build the save format, world chunk persistence, and migration strategy.
+- Week 12: Implement load flow and server-owned persistent world startup.
+- Week 13: Convert maps, items, and interactables to data-driven definitions.
+- Week 14: Add actor data, stats, inventory slots, and equipment skeleton.
+- Week 15: Implement six-second combat turn ownership and action declaration.
+- Week 16: Add damage resolution, cover rules, and combat feedback.
+- Week 17: Implement survival hazards, oxygen pressure, and terrain consequence rules.
+- Week 18: Add NPC encounter logic and complete the on-foot slice gate review.
 
----
+### Weeks 19-26: Phase 4
 
-## Phase 4: Core Systems (Weeks 33–52)
+- Week 19: Add player ship state, ship interaction, and ship ownership rules.
+- Week 20: Build the orbital or local space traversal layer and movement rules.
+- Week 21: Implement landing, docking, embark, and disembark transitions.
+- Week 22: Add mission scripting, terminal interactions, and narrative state flow.
+- Week 23: Add loot flow, resource exchange, and progression-lite support.
+- Week 24: Build multiplayer session flow, reconnect basics, and tester onboarding.
+- Week 25: Run the first full planet-to-space-to-destination mission rehearsal.
+- Week 26: Close slice blockers and complete the vertical-slice gate review.
 
-### Week 33–38
+### Weeks 27-32: Phase 5
 
-* Terrain delta system
-* Chunk streaming
-
-### Week 39–44
-
-* Construction + interiors
-* Atmosphere simulation
-
-### Week 45–48
-
-* Combat v2
-* Equipment + damage
-
-### Week 49–52
-
-* Character + skills
-* Inventory + economy
-
----
-
-## Phase 5: Multiplayer (Weeks 53–68)
-
-### Week 53–56
-
-* Networking core
-
-### Week 57–60
-
-* Entity replication
-
-### Week 61–64
-
-* Terrain sync
-
-### Week 65–68
-
-* Multiplayer testing + fixes
+- Week 27: Complete HUD and interaction UI pass.
+- Week 28: Complete inventory, combat, mission, and travel interface pass.
+- Week 29: Profile client and server performance and enforce budget targets.
+- Week 30: Add telemetry, crash capture, admin commands, and soak-test reporting.
+- Week 31: Lock content, run bug burn-down, and execute alpha rehearsal sessions.
+- Week 32: Produce alpha candidate build, server package, and sign-off materials.
 
 ---
 
-## Phase 6: Alpha (Weeks 69–80)
+## 9. Phase Gates and Acceptance Standards
 
-### Week 69–72
+### Gate 1 - Client Runtime Ready
 
-* Integration + stability
+- bgfx is the standard runtime backend
+- client render path is asset-driven and diagnosable
+- no critical renderer dependency remains on GDI
 
-### Week 73–76
+### Gate 2 - Authoritative Runtime Proven
 
-* UI polish
-* Social systems
+- client-server loop works locally
+- server owns movement and interactions
+- replication and loss testing are operational
 
-### Week 77–80
+### Gate 3 - On-Foot Slice Proven
 
-* Performance optimization
-* Bug fixing
+- player can explore, survive, fight, loot, and persist in one planetary location
+- authored encounter content can be shipped through data
 
----
+### Gate 4 - Planet and Space Slice Proven
 
-# 4. Keystone System Architectures
+- player can transition between surface, ship, and space
+- one mission chain spans multiple layers
+- multiplayer session supports the slice end to end
 
-## 4.1 Terrain System (CRITICAL)
+### Gate 5 - Alpha Candidate
 
-### Structure
-
-* Base Heightmap (immutable seed)
-* Delta Layer:
-
-  * modifications
-  * digging
-  * construction
-
-### Tile States
-
-* Solid
-* Flattened
-* Excavated
-* Reinforced
-
-### Chunking
-
-* World divided into chunks (e.g. 32x32)
-* Each chunk stores:
-
-  * height data
-  * delta modifications
-
-### Key Systems
-
-* Terrain Query System
-* Terrain Modification System
-* Pathfinding Integration
-
-### Critical Rules
-
-* Never mutate base terrain
-* Always apply delta layer
+- repeatable internal playtests complete successfully
+- critical crash rate is acceptable
+- server deployment and support workflow are documented
+- alpha content is locked and signed off
 
 ---
 
-## 4.2 ECS Architecture (EnTT)
+## 10. Risk Register
 
-### Core Components
+### High Risks
 
-* Transform
-* Actor
-* TerrainTile
-* Physics
-* Inventory
+- Renderer work continuing to consume the schedule after runtime closure.
+- Server pivot uncovering major assumptions hidden in the local prototype.
+- Combat design expanding faster than the team can test and tune it.
+- Persistence schema churn causing repeated save breakage.
+- Space layer scope growing into a second major game.
+- Content remaining hardcoded too long and slowing all future milestones.
 
-### Systems
+### Mitigation Strategy
 
-* Movement System
-* Combat System
-* Terrain System
-* AI System
-* Networking System
-
-### Execution Model
-
-* Fixed order update
-* Deterministic
+- enforce milestone exit criteria strictly
+- require data-driven content before content expansion
+- keep planet and space slice count intentionally narrow
+- treat save versioning, telemetry, and diagnostics as milestone work, not polish
+- hold weekly integration reviews against alpha scope, not wish-list scope
 
 ---
 
-## 4.3 Networking Architecture
+## 11. Alpha Exit Criteria
 
-### Model
+Wrath and Ruin is ready for alpha when all of the following are true:
 
-Authoritative server
-
-### Flow
-
-1. Client sends intent
-2. Server validates
-3. Server simulates
-4. Server sends snapshot
-
-### Key Concepts
-
-* No client authority
-* Deterministic simulation
-* Delta replication
+- one dedicated server package can be launched by a non-programmer with documented steps
+- multiple clients can complete the intended gameplay loop in the same persistent world
+- the surface-to-space loop is stable and understandable
+- six-second combat is complete enough to test balance meaningfully
+- persistence survives server restart and version-controlled content changes
+- top-priority crash and data-loss bugs are closed
+- the build has sufficient telemetry and logging to support external playtest feedback
 
 ---
 
-## 4.4 Combat System
+## 12. Final Direction
 
-### Turn Model
+The correct path to alpha is not “more prototype features.”
 
-* 6-second turns
-* Action queue
+The correct path is:
 
-### Systems
+1. finish the client runtime cleanly
+2. pivot into server-authoritative architecture
+3. prove one on-foot planetary sandbox loop
+4. connect that loop to one space-travel layer
+5. stabilize the result like a product, not a prototype
 
-* Ballistics
-* Cover evaluation
-* Damage resolution
-
----
-
-## 4.5 AI Architecture
-
-### Model
-
-* Task-based system
-
-### Layers
-
-* Perception
-* Decision
-* Execution
-
----
-
-## 4.6 Save/Load System
-
-### Structure
-
-* Chunk-based persistence
-* Delta storage
-
-### Requirements
-
-* Fast load
-* Partial streaming
-
----
-
-# 5. Technical Sequencing
-
-## Must Come First
-
-1. ECS + simulation loop
-2. Terrain system
-3. Save/load
-
-## Parallelizable
-
-* UI
-* Narrative
-* AI behaviors
-
----
-
-# 6. Alpha Definition
-
-## Playable
-
-* Full gameplay loop
-* Multiplayer interaction
-* Terrain editing
-
-## Incomplete
-
-* Content depth
-* Advanced AI
-
-## Stable
-
-* Core systems
-* Multiplayer (small scale)
-
----
-
-# 7. Final Notes
-
-* Terrain is the keystone system
-* Determinism is mandatory
-* Vertical slice must validate digging + combat
-* Multiplayer should not be rushed early
-
----
-
-End of Document
+If the team protects that sequence, alpha is achievable without diluting the game’s identity.

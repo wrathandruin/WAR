@@ -64,13 +64,20 @@
       <PreprocessorDefinitions>WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party\bgfx\include;$(ProjectDir)third_party\bx\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>user32.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>user32.lib;gdi32.lib;bgfxDebug.lib;bxDebug.lib;bimgDebug.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)third_party\bgfx\lib\win64\debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>if not exist "$(OutDir)assets\shaders\dx11" mkdir "$(OutDir)assets\shaders\dx11"
+copy /Y "$(ProjectDir)assets\shaders\dx11\vs_color.bin" "$(OutDir)assets\shaders\dx11\vs_color.bin"
+copy /Y "$(ProjectDir)assets\shaders\dx11\fs_color.bin" "$(OutDir)assets\shaders\dx11\fs_color.bin"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
 
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -82,15 +89,22 @@
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party\bgfx\include;$(ProjectDir)third_party\bx\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>user32.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>user32.lib;gdi32.lib;bgfxRelease.lib;bxRelease.lib;bimgRelease.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)third_party\bgfx\lib\win64\release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>if not exist "$(OutDir)assets\shaders\dx11" mkdir "$(OutDir)assets\shaders\dx11"
+copy /Y "$(ProjectDir)assets\shaders\dx11\vs_color.bin" "$(OutDir)assets\shaders\dx11\vs_color.bin"
+copy /Y "$(ProjectDir)assets\shaders\dx11\fs_color.bin" "$(OutDir)assets\shaders\dx11\fs_color.bin"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
 
   <ItemGroup>
@@ -104,6 +118,8 @@
     <ClCompile Include="src\engine\render\DebugOverlayRenderer.cpp" />
     <ClCompile Include="src\engine\render\GdiRenderDevice.cpp" />
     <ClCompile Include="src\engine\render\BgfxRenderDevice.cpp" />
+    <ClCompile Include="src\engine\render\BgfxWorldRenderer.cpp" />
+    <ClCompile Include="src\engine\render\BgfxDebugFrameRenderer.cpp" />
     <ClCompile Include="src\engine\world\WorldGrid.cpp" />
     <ClCompile Include="src\engine\world\Pathfinding.cpp" />
     <ClCompile Include="src\engine\world\WorldState.cpp" />
@@ -120,11 +136,13 @@
     <ClInclude Include="src\engine\math\Vec2.h" />
     <ClInclude Include="src\engine\render\Camera2D.h" />
     <ClInclude Include="src\engine\render\WorldRenderer.h" />
+    <ClInclude Include="src\engine\render\BgfxWorldRenderer.h" />
     <ClInclude Include="src\engine\render\DebugOverlayRenderer.h" />
     <ClInclude Include="src\engine\render\RenderBackendType.h" />
     <ClInclude Include="src\engine\render\IRenderDevice.h" />
     <ClInclude Include="src\engine\render\GdiRenderDevice.h" />
     <ClInclude Include="src\engine\render\BgfxRenderDevice.h" />
+    <ClInclude Include="src\engine\render\BgfxDebugFrameRenderer.h" />
     <ClInclude Include="src\engine\world\WorldGrid.h" />
     <ClInclude Include="src\engine\world\Pathfinding.h" />
     <ClInclude Include="src\engine\world\WorldState.h" />
@@ -133,6 +151,7 @@
     <ClInclude Include="src\engine\gameplay\Entity.h" />
     <ClInclude Include="src\engine\gameplay\EntityManager.h" />
     <ClInclude Include="src\engine\gameplay\ActionSystem.h" />
+    <ClInclude Include="src\platform\IWindow.h" />
     <ClInclude Include="src\platform\win32\Win32Window.h" />
     <ClInclude Include="src\game\GameLayer.h" />
   </ItemGroup>

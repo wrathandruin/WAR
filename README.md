@@ -1,29 +1,46 @@
-# WAR — Milestone 9 (Render Backend Abstraction)
+# WAR — Milestones 14 + 15 + 16 (First bgfx Geometry Pass)
 
-> Current development milestone: M9 — Render Backend Abstraction
+> Current development milestone: M16 — bgfx Shader Pipeline & Geometry Pass  
+> This package combines **M14**, **M15**, and **M16** so the bgfx path makes a meaningful jump.
 
-Milestone 9 for **Wrath and Ruin (WAR)**.
+## Focus of these milestones
 
-## Focus of this milestone
-This milestone introduces a render backend abstraction so the project can move from GDI toward bgfx without touching gameplay systems.
+### M14 — First bgfx Tile Renderer
+- render the tile grid through bgfx
+- use colored quad submission instead of GDI rectangles
+- keep the GDI path as a safe fallback
 
-- `GameLayer` no longer owns frame buffer setup
-- rendering now goes through an `IRenderDevice`
-- current backend is `GdiRenderDevice`
-- a compile-safe `BgfxRenderDevice` stub is included as the next integration target
+### M15 — bgfx Entities, Player, and Path
+- render entities through bgfx
+- render a player placeholder through bgfx
+- render path nodes and hovered-tile highlight through bgfx
 
-## Why this milestone exists
-A true bgfx integration requires adding bgfx itself to the repo and build configuration. This milestone prepares the architecture safely so that swap can happen cleanly.
+### M16 — Shader Pipeline & Runtime Fallback
+- add shader source files to the repo
+- load compiled shader binaries at runtime
+- show bgfx debug text when shaders are missing instead of leaving you blind
 
-## Current Backends
+## Important note
+This package does **not** bundle precompiled shader binaries.
 
-### GdiRenderDevice
-- active backend
-- preserves current rendering behavior
+To see the full bgfx world rendering, you must compile the included shader source into:
 
-### BgfxRenderDevice
-- compile-safe stub
-- placeholder for real bgfx hookup in the next milestone
+```text
+assets/shaders/dx11/vs_color.bin
+assets/shaders/dx11/fs_color.bin
+```
+
+Until those binaries exist:
+- bgfx can still be the active backend
+- you will see bgfx debug text
+- the world geometry path will report that shaders are missing
+
+## What this package changes
+- introduces `BgfxWorldRenderer`
+- upgrades `BgfxDebugFrameRenderer`
+- updates `GameLayer` to route bgfx rendering through real world renderers
+- updates the Visual Studio project files
+- adds shader source files to the repo
 
 ## Controls
 - **Left click**: Move
@@ -32,21 +49,9 @@ A true bgfx integration requires adding bgfx itself to the repo and build config
 - **Middle mouse drag**: Pan camera
 - **Mouse wheel**: Zoom
 
-## What changed from M8
-- introduced render backend interface
-- moved frame setup / presentation out of `GameLayer`
-- added active GDI backend implementation
-- added bgfx-ready backend stub
-
-## Current Status
-WAR now has:
-- separated gameplay systems
-- separated renderers
-- separated render backend lifecycle
-
 ## Next Milestone
 
-### M10 — bgfx Integration
-- wire real bgfx init into Win32
-- replace GDI frame device with bgfx device
-- keep gameplay and renderer orchestration unchanged
+### M17 — bgfx Batching & Render Data
+- reduce draw-call count
+- move render data generation out of renderer code
+- prepare the renderer for texture/material work

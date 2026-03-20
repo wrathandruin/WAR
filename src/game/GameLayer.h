@@ -8,21 +8,22 @@
 
 #include "engine/gameplay/ActionQueue.h"
 #include "engine/math/Vec2.h"
+#include "engine/render/BgfxDebugFrameRenderer.h"
+#include "engine/render/BgfxWorldRenderer.h"
 #include "engine/render/Camera2D.h"
 #include "engine/render/DebugOverlayRenderer.h"
 #include "engine/render/IRenderDevice.h"
 #include "engine/render/WorldRenderer.h"
 #include "engine/world/WorldGrid.h"
 #include "engine/world/WorldState.h"
+#include "platform/IWindow.h"
 
 namespace war
 {
-    class Win32Window;
-
     class GameLayer
     {
     public:
-        void initialize(Win32Window& window);
+        void initialize(IWindow& window);
         void update(float dt);
         void render();
         void shutdown();
@@ -34,12 +35,14 @@ namespace war
 
         [[nodiscard]] RECT getClientRect() const;
 
-        Win32Window* m_window = nullptr;
+        IWindow* m_window = nullptr;
         Camera2D m_camera{};
         WorldState m_worldState{};
         ActionQueue m_actions{};
         WorldRenderer m_worldRenderer{};
         DebugOverlayRenderer m_debugOverlayRenderer{};
+        BgfxWorldRenderer m_bgfxWorldRenderer{};
+        BgfxDebugFrameRenderer m_bgfxDebugFrameRenderer{};
         std::unique_ptr<IRenderDevice> m_renderDevice{};
 
         Vec2 m_playerPosition{ 0.0f, 0.0f };

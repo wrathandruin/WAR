@@ -36,6 +36,14 @@
 
 ---
 
+## Space & Travel
+- Player ship runtime
+- Orbital or local space traversal
+- Landing and docking transitions
+- Ship-to-surface and ship-to-station travel flow
+
+---
+
 ## Character System
 - Attributes
 - Skills

@@ -339,11 +339,17 @@ Dynamic text generation based on:
 ## 18. Technical Architecture
 
 - C++ custom engine
-- SDL3 (platform)
-- bgfx (rendering)
-- EnTT (ECS)
-- Emscripten (web)
-- React (tooling)
+- Win32 client path for alpha delivery
+- bgfx rendering
+- shared simulation / client / server architecture
+- dedicated server runtime for multiplayer sessions
+- data-driven content pipeline for maps, items, missions, and world objects
+
+Targeted post-alpha or only when justified:
+- broader platform abstraction such as SDL3
+- ECS framework adoption where it materially improves shared simulation
+- Emscripten or web-facing tooling
+- React-based external tools or operations panels
 
 ---
 

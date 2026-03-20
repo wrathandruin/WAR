@@ -2,25 +2,27 @@
 
 #include <windows.h>
 
+#include "platform/IWindow.h"
+
 namespace war
 {
-    class Win32Window
+    class Win32Window final : public IWindow
     {
     public:
         bool create(int width, int height, const wchar_t* title);
-        void pollEvents();
-        [[nodiscard]] bool shouldClose() const;
+        void pollEvents() override;
+        [[nodiscard]] bool shouldClose() const override;
 
-        [[nodiscard]] HWND getHandle() const;
-        [[nodiscard]] int getWidth() const;
-        [[nodiscard]] int getHeight() const;
+        [[nodiscard]] HWND getHandle() const override;
+        [[nodiscard]] int getWidth() const override;
+        [[nodiscard]] int getHeight() const override;
 
-        [[nodiscard]] POINT getMousePosition() const;
-        [[nodiscard]] bool consumeLeftClick(POINT& outPoint);
-        [[nodiscard]] bool consumeRightClick(POINT& outPoint);
-        [[nodiscard]] int consumeMouseWheelDelta();
-        [[nodiscard]] bool isMiddleMouseDown() const;
-        [[nodiscard]] POINT consumeMouseDelta();
+        [[nodiscard]] POINT getMousePosition() const override;
+        [[nodiscard]] bool consumeLeftClick(POINT& outPoint) override;
+        [[nodiscard]] bool consumeRightClick(POINT& outPoint) override;
+        [[nodiscard]] int consumeMouseWheelDelta() override;
+        [[nodiscard]] bool isMiddleMouseDown() const override;
+        [[nodiscard]] POINT consumeMouseDelta() override;
 
     private:
         static LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);

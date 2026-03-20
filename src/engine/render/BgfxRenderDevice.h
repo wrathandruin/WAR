@@ -14,5 +14,10 @@ namespace war
         void shutdown() override;
 
         [[nodiscard]] const char* name() const override;
+
+    private:
+        bool m_initialized = false;
+        unsigned int m_width = 0;
+        unsigned int m_height = 0;
     };
 }
