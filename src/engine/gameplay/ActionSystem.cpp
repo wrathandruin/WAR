@@ -8,6 +8,33 @@
 
 namespace war
 {
+    namespace
+    {
+        const char* boolText(bool value)
+        {
+            return value ? "yes" : "no";
+        }
+
+        const char* stateText(const Entity& entity)
+        {
+            switch (entity.type)
+            {
+            case EntityType::Crate:
+                return entity.isOpen ? "open" : "closed";
+            case EntityType::Terminal:
+                return entity.isPowered ? "powered" : "offline";
+            case EntityType::Locker:
+                if (entity.isLocked)
+                {
+                    return "locked";
+                }
+                return entity.isOpen ? "open" : "closed";
+            default:
+                return "unknown";
+            }
+        }
+    }
+
     const char* ActionSystem::entityTypeToText(EntityType type)
     {
         switch (type)
@@ -103,7 +130,7 @@ namespace war
                     continue;
                 }
 
-                char buffer[192]{};
+                char buffer[256]{};
                 const Entity* entity = worldState.entities().getAt(action.target);
 
                 if (entity != nullptr)
@@ -111,12 +138,13 @@ namespace war
                     std::snprintf(
                         buffer,
                         sizeof(buffer),
-                        "Inspect (%d, %d): blocked=%s, entity=%s [%s]",
+                        "Inspect (%d, %d): blocked=%s, entity=%s [%s], state=%s",
                         action.target.x,
                         action.target.y,
-                        worldState.world().isBlocked(action.target) ? "yes" : "no",
+                        boolText(worldState.world().isBlocked(action.target)),
                         entity->name.c_str(),
-                        entityTypeToText(entity->type));
+                        entityTypeToText(entity->type),
+                        stateText(*entity));
                 }
                 else
                 {
@@ -126,7 +154,7 @@ namespace war
                         "Inspect (%d, %d): blocked=%s, entity=none",
                         action.target.x,
                         action.target.y,
-                        worldState.world().isBlocked(action.target) ? "yes" : "no");
+                        boolText(worldState.world().isBlocked(action.target)));
                 }
 
                 pushEvent(eventLog, buffer);
@@ -149,15 +177,43 @@ namespace war
                 switch (entity->type)
                 {
                 case EntityType::Crate:
-                    pushEvent(eventLog, "You open the cargo crate.");
+                    if (!entity->isOpen)
+                    {
+                        entity->isOpen = true;
+                        pushEvent(eventLog, "You open the cargo crate.");
+                    }
+                    else
+                    {
+                        pushEvent(eventLog, "The cargo crate is already open.");
+                    }
                     break;
 
                 case EntityType::Terminal:
-                    pushEvent(eventLog, "Accessing operations terminal...");
+                    entity->isPowered = !entity->isPowered;
+                    if (entity->isPowered)
+                    {
+                        pushEvent(eventLog, "The operations terminal powers on.");
+                    }
+                    else
+                    {
+                        pushEvent(eventLog, "The operations terminal powers down.");
+                    }
                     break;
 
                 case EntityType::Locker:
-                    pushEvent(eventLog, "The maintenance locker is sealed.");
+                    if (entity->isLocked)
+                    {
+                        pushEvent(eventLog, "The maintenance locker is locked.");
+                    }
+                    else if (!entity->isOpen)
+                    {
+                        entity->isOpen = true;
+                        pushEvent(eventLog, "You open the maintenance locker.");
+                    }
+                    else
+                    {
+                        pushEvent(eventLog, "The maintenance locker is already open.");
+                    }
                     break;
 
                 default:

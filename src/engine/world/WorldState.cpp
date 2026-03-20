@@ -14,9 +14,36 @@ namespace war
         m_world.generateTestMap();
 
         m_entities.clear();
-        m_entities.add({ 1, "Cargo Crate", EntityType::Crate, { 10, 10 } });
-        m_entities.add({ 2, "Operations Terminal", EntityType::Terminal, { 18, 8 } });
-        m_entities.add({ 3, "Maintenance Locker", EntityType::Locker, { 30, 24 } });
+
+        Entity crate{};
+        crate.id = 1;
+        crate.name = "Cargo Crate";
+        crate.type = EntityType::Crate;
+        crate.tile = { 10, 10 };
+        crate.isOpen = false;
+        crate.isLocked = false;
+        crate.isPowered = false;
+        m_entities.add(crate);
+
+        Entity terminal{};
+        terminal.id = 2;
+        terminal.name = "Operations Terminal";
+        terminal.type = EntityType::Terminal;
+        terminal.tile = { 18, 8 };
+        terminal.isOpen = false;
+        terminal.isLocked = false;
+        terminal.isPowered = false;
+        m_entities.add(terminal);
+
+        Entity locker{};
+        locker.id = 3;
+        locker.name = "Maintenance Locker";
+        locker.type = EntityType::Locker;
+        locker.tile = { 30, 24 };
+        locker.isOpen = false;
+        locker.isLocked = true;
+        locker.isPowered = false;
+        m_entities.add(locker);
     }
 
     WorldGrid& WorldState::world()

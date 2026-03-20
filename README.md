@@ -1,19 +1,17 @@
-# WAR — Milestone 7 (Render / Simulation Separation)
+# WAR — Milestone 8 (Stateful World Objects)
 
-> Current development milestone: M7 — Render / Simulation Separation
+> Current development milestone: M8 — Stateful World Objects
 
-Milestone 7 for **Wrath and Ruin (WAR)**.
+Milestone 8 for **Wrath and Ruin (WAR)**.
 
 ## Focus of this milestone
-This milestone separates rendering from simulation and gameplay orchestration.
+This milestone makes world objects stateful so interactions have consequences.
 
-- `GameLayer` no longer owns world drawing logic
-- world rendering now lives in `WorldRenderer`
-- debug/UI rendering now lives in `DebugOverlayRenderer`
-- M6 gameplay behavior is preserved:
-  - Left click = move
-  - Right click = interact
-  - Shift + Right click = inspect
+- crates can be opened once
+- terminals toggle power state
+- lockers have lock/open state
+- inspect reflects current object state
+- entity visuals now reflect their current state
 
 ## Core Systems
 
@@ -33,6 +31,7 @@ Resolves:
 - Move
 - Inspect
 - Interact
+- object state changes
 
 ### WorldRenderer
 Handles:
@@ -41,6 +40,7 @@ Handles:
 - path rendering
 - entity rendering
 - player rendering
+- state-based entity visuals
 
 ### DebugOverlayRenderer
 Handles:
@@ -49,7 +49,7 @@ Handles:
 - event log
 
 ### GameLayer
-Now responsible for:
+Responsible for:
 - input collection
 - system coordination
 - presentation orchestration
@@ -68,7 +68,7 @@ Now responsible for:
 - Entity system
 - Contextual interaction
 - Centralized world state
-- Separated render systems
+- Stateful world objects
 
 ---
 
@@ -82,34 +82,35 @@ Now responsible for:
 
 ---
 
-## What changed from M6
+## What changed from M7
 
-- introduced `WorldRenderer`
-- introduced `DebugOverlayRenderer`
-- removed rendering logic from `GameLayer`
-- formalized read-only rendering inputs
-- improved separation between:
-  - simulation
-  - gameplay logic
-  - presentation
+- entities now carry state:
+  - `isOpen`
+  - `isLocked`
+  - `isPowered`
+- crates open once
+- terminals toggle on/off
+- lockers can be locked/opened
+- inspect now reports current object state
+- entity visuals reflect current state
 
 ---
 
 ## Current Status
 
-WAR is now a structured gameplay prototype with:
-- modular backend systems
-- separated renderer layer
-- a cleaner frame flow ready for future renderer replacement
+WAR now has a stateful interaction loop:
+- movement
+- inspect
+- interact
+- persistent object state during runtime
+- separated simulation and presentation layers
 
 ---
 
 ## Next Milestone
 
-### M8 — Stateful World Objects
+### M9 — bgfx Rendering Backend
 
-- interactions should change object state
-- crate can be opened once
-- locker can be locked/unlocked
-- terminal can toggle state
-- event log should reflect persistent consequences
+- replace GDI renderer implementation with bgfx
+- preserve renderer interfaces
+- keep gameplay systems unchanged

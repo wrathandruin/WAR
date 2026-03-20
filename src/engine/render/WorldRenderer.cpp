@@ -2,6 +2,53 @@
 
 namespace war
 {
+    namespace
+    {
+        COLORREF entityFillColor(const Entity& entity)
+        {
+            switch (entity.type)
+            {
+            case EntityType::Crate:
+                return entity.isOpen ? RGB(110, 110, 110) : RGB(120, 255, 150);
+
+            case EntityType::Terminal:
+                return entity.isPowered ? RGB(90, 170, 255) : RGB(70, 110, 150);
+
+            case EntityType::Locker:
+                if (entity.isLocked)
+                {
+                    return RGB(220, 110, 110);
+                }
+                return entity.isOpen ? RGB(160, 160, 210) : RGB(190, 190, 240);
+
+            default:
+                return RGB(120, 255, 150);
+            }
+        }
+
+        COLORREF entityOutlineColor(const Entity& entity)
+        {
+            switch (entity.type)
+            {
+            case EntityType::Crate:
+                return entity.isOpen ? RGB(170, 170, 170) : RGB(200, 255, 210);
+
+            case EntityType::Terminal:
+                return entity.isPowered ? RGB(180, 220, 255) : RGB(120, 160, 190);
+
+            case EntityType::Locker:
+                if (entity.isLocked)
+                {
+                    return RGB(255, 180, 180);
+                }
+                return entity.isOpen ? RGB(220, 220, 255) : RGB(240, 240, 255);
+
+            default:
+                return RGB(200, 255, 210);
+            }
+        }
+    }
+
     void WorldRenderer::render(
         HDC dc,
         const RECT& clientRect,
@@ -125,13 +172,13 @@ namespace war
 
     void WorldRenderer::drawEntities(HDC dc, const WorldState& worldState, const Camera2D& camera) const
     {
-        HBRUSH brush = CreateSolidBrush(RGB(120, 255, 150));
-        HBRUSH oldBrush = static_cast<HBRUSH>(SelectObject(dc, brush));
-        HPEN pen = CreatePen(PS_SOLID, 1, RGB(200, 255, 210));
-        HPEN oldPen = static_cast<HPEN>(SelectObject(dc, pen));
-
         for (const Entity& entity : worldState.entities().all())
         {
+            HBRUSH brush = CreateSolidBrush(entityFillColor(entity));
+            HBRUSH oldBrush = static_cast<HBRUSH>(SelectObject(dc, brush));
+            HPEN pen = CreatePen(PS_SOLID, 1, entityOutlineColor(entity));
+            HPEN oldPen = static_cast<HPEN>(SelectObject(dc, pen));
+
             const Vec2 screen = camera.worldToScreen(worldState.world().tileToWorldCenter(entity.tile));
             const int halfSize = static_cast<int>(8.0f * camera.getZoom());
 
@@ -140,12 +187,12 @@ namespace war
                 static_cast<int>(screen.y) - halfSize,
                 static_cast<int>(screen.x) + halfSize,
                 static_cast<int>(screen.y) + halfSize);
-        }
 
-        SelectObject(dc, oldBrush);
-        SelectObject(dc, oldPen);
-        DeleteObject(brush);
-        DeleteObject(pen);
+            SelectObject(dc, oldBrush);
+            SelectObject(dc, oldPen);
+            DeleteObject(brush);
+            DeleteObject(pen);
+        }
     }
 
     void WorldRenderer::drawPlayer(HDC dc, const Camera2D& camera, const Vec2& playerPosition) const

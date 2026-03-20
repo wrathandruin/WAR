@@ -19,5 +19,9 @@ namespace war
         std::string name;
         EntityType type{};
         TileCoord tile{};
+
+        bool isOpen = false;
+        bool isLocked = false;
+        bool isPowered = false;
     };
 }

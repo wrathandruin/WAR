@@ -5,6 +5,31 @@
 
 namespace war
 {
+    namespace
+    {
+        const char* entityStateText(const Entity& entity)
+        {
+            switch (entity.type)
+            {
+            case EntityType::Crate:
+                return entity.isOpen ? "open" : "closed";
+
+            case EntityType::Terminal:
+                return entity.isPowered ? "powered" : "offline";
+
+            case EntityType::Locker:
+                if (entity.isLocked)
+                {
+                    return "locked";
+                }
+                return entity.isOpen ? "open" : "closed";
+
+            default:
+                return "unknown";
+            }
+        }
+    }
+
     const char* DebugOverlayRenderer::entityTypeToText(EntityType type) const
     {
         switch (type)
@@ -46,11 +71,11 @@ namespace war
                 ? worldState.entities().getAt(hoveredTile)
                 : nullptr;
 
-        char buffer[896]{};
+        char buffer[1024]{};
         std::snprintf(
             buffer,
             sizeof(buffer),
-            "WAR Milestone 7\n"
+            "WAR Milestone 8\n"
             "LMB: move    RMB: interact    Shift+RMB: inspect    MMB drag: pan    Wheel: zoom\n"
             "Player world: (%.1f, %.1f)\n"
             "Player tile: (%d, %d)\n"
@@ -58,6 +83,7 @@ namespace war
             "Hovered blocked: %s\n"
             "Hovered entity: %s\n"
             "Hovered entity type: %s\n"
+            "Hovered entity state: %s\n"
             "Camera: (%.1f, %.1f)  Zoom: %.2f\n"
             "Path nodes remaining: %zu\n"
             "Entities: %zu\n"
@@ -71,6 +97,7 @@ namespace war
             hoveredBlocked ? "yes" : "no",
             hoveredEntity ? hoveredEntity->name.c_str() : "none",
             hoveredEntity ? entityTypeToText(hoveredEntity->type) : "none",
+            hoveredEntity ? entityStateText(*hoveredEntity) : "none",
             camera.getPosition().x,
             camera.getPosition().y,
             camera.getZoom(),
@@ -80,7 +107,7 @@ namespace war
 
         TextOutA(dc, 16, 16, buffer, static_cast<int>(std::strlen(buffer)));
 
-        int y = 208;
+        int y = 240;
         TextOutA(dc, 16, y, "Event Log:", 10);
         y += 22;
 
