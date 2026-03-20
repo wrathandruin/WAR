@@ -1,33 +1,99 @@
-# WAR Milestone 2.1
+# WAR — Milestone 6 (Architecture Pass 1)
 
-Milestone 2.1 for **Wrath and Ruin (WAR)**.
+Milestone 6 for **Wrath and Ruin (WAR)**.
 
-## Focus of this patch
-This package is a stabilization pass on Milestone 2:
+## Focus of this milestone
+This milestone introduces the first backend architecture pass, separating gameplay systems from the prototype layer.
 
-- safer `WorldGrid` construction and indexing
-- safer test-map generation
-- clearer blocked-tile visuals
-- hover blocked state in overlay
-- same real-time pathfinding shell as Milestone 2
+- World state is centralized
+- Entities are managed through a dedicated system
+- Actions are processed through a gameplay system
+- `GameLayer` is no longer a god object
+
+## Core Systems
+
+### WorldState
+Owns simulation data:
+- `WorldGrid`
+- `EntityManager`
+
+### EntityManager
+Handles:
+- entity storage
+- tile-based lookup
+- entity queries
+
+### ActionSystem
+Resolves:
+- Move
+- Inspect
+- Interact
+
+### GameLayer
+Now responsible for:
+- input collection
+- system coordination
+- rendering
+
+---
 
 ## Scope
+
 - Win32 window
 - Real-time main loop
 - Backbuffered GDI rendering
-- `WorldGrid` tile model
-- Blocked / walkable tiles
+- Camera pan + zoom
+- Tile-based world (`WorldGrid`)
 - A* pathfinding
-- Real-time path following
-- Debug/event log
+- Action queue system
+- Entity system
+- Contextual interaction
+- Centralized world state
+- Modular gameplay systems
+
+---
 
 ## Controls
-- **Left click**: issue move order to clicked tile
-- **Middle mouse drag**: pan camera
-- **Mouse wheel**: zoom
 
-## What changed from M2
-- blocked tiles are much more visible
-- `WorldGrid::index` now uses `size_t`
-- grid generation uses bounds-safe helpers
-- overlay shows whether hovered tile is blocked
+- **Left click**: Move
+- **Right click**: Interact
+- **Shift + Right click**: Inspect
+- **Middle mouse drag**: Pan camera
+- **Mouse wheel**: Zoom
+
+---
+
+## What changed from M5
+
+- introduced `WorldState`
+- introduced `EntityManager`
+- introduced `ActionSystem`
+- refactored `GameLayer` into coordinator
+- removed direct gameplay logic from `GameLayer`
+- improved separation between:
+  - simulation
+  - gameplay logic
+  - rendering
+
+---
+
+## Current Status
+
+WAR is now a **structured gameplay prototype** with:
+- a working interaction loop
+- modular backend systems
+- a foundation ready for:
+  - stateful objects
+  - persistence
+  - combat systems
+
+---
+
+## Next Milestone
+
+### M7 — Render / Simulation Separation
+
+- introduce `WorldRenderer`
+- move rendering out of `GameLayer`
+- separate debug/UI rendering
+- clean up frame pipeline

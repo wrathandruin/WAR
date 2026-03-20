@@ -102,6 +102,9 @@
     <ClCompile Include="src\engine\render\Camera2D.cpp" />
     <ClCompile Include="src\engine\world\WorldGrid.cpp" />
     <ClCompile Include="src\engine\world\Pathfinding.cpp" />
+    <ClCompile Include="src\engine\world\WorldState.cpp" />
+    <ClCompile Include="src\engine\gameplay\EntityManager.cpp" />
+    <ClCompile Include="src\engine\gameplay\ActionSystem.cpp" />
     <ClCompile Include="src\platform\win32\Win32Window.cpp" />
     <ClCompile Include="src\game\GameLayer.cpp" />
   </ItemGroup>
@@ -114,9 +117,12 @@
     <ClInclude Include="src\engine\render\Camera2D.h" />
     <ClInclude Include="src\engine\world\WorldGrid.h" />
     <ClInclude Include="src\engine\world\Pathfinding.h" />
+    <ClInclude Include="src\engine\world\WorldState.h" />
     <ClInclude Include="src\engine\gameplay\Action.h" />
     <ClInclude Include="src\engine\gameplay\ActionQueue.h" />
     <ClInclude Include="src\engine\gameplay\Entity.h" />
+    <ClInclude Include="src\engine\gameplay\EntityManager.h" />
+    <ClInclude Include="src\engine\gameplay\ActionSystem.h" />
     <ClInclude Include="src\platform\win32\Win32Window.h" />
     <ClInclude Include="src\game\GameLayer.h" />
   </ItemGroup>
