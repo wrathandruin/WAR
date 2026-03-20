@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(WAR
-    VERSION 0.1.0
-    DESCRIPTION "Wrath and Ruin starter project"
+    VERSION 0.2.0
+    DESCRIPTION "Wrath and Ruin milestone 1"
     LANGUAGES CXX
 )
 
@@ -10,17 +10,24 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-option(WAR_BUILD_TESTS "Build WAR tests" ON)
-
-add_executable(WAR
+add_executable(WAR WIN32
     src/main.cpp
     src/engine/core/Application.cpp
+    src/engine/core/Timer.cpp
     src/engine/core/Log.cpp
-    src/game/Game.cpp
+    src/engine/math/Vec2.cpp
+    src/engine/render/Camera2D.cpp
+    src/platform/win32/Win32Window.cpp
+    src/game/GameLayer.cpp
 )
 
 target_include_directories(WAR PRIVATE
     src
+)
+
+target_link_libraries(WAR PRIVATE
+    user32
+    gdi32
 )
 
 if(MSVC)
@@ -32,7 +39,3 @@ endif()
 set_target_properties(WAR PROPERTIES
     OUTPUT_NAME "WAR"
 )
-
-if(WAR_BUILD_TESTS)
-    enable_testing()
-endif()

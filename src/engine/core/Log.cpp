@@ -1,21 +1,16 @@
 #include "engine/core/Log.h"
 
-#include <iostream>
+#include <windows.h>
+
+#include <string>
 
 namespace war
 {
     void Log::info(std::string_view message)
     {
-        std::cout << "[INFO] " << message << '\n';
-    }
-
-    void Log::warn(std::string_view message)
-    {
-        std::cout << "[WARN] " << message << '\n';
-    }
-
-    void Log::error(std::string_view message)
-    {
-        std::cerr << "[ERROR] " << message << '\n';
+        std::string text = "[INFO] ";
+        text += message;
+        text += "\n";
+        OutputDebugStringA(text.c_str());
     }
 }

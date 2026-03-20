@@ -61,14 +61,15 @@
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>user32.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 
@@ -78,30 +79,39 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_CONSOLE;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>user32.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 
   <ItemGroup>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\engine\core\Application.cpp" />
+    <ClCompile Include="src\engine\core\Timer.cpp" />
     <ClCompile Include="src\engine\core\Log.cpp" />
-    <ClCompile Include="src\game\Game.cpp" />
+    <ClCompile Include="src\engine\math\Vec2.cpp" />
+    <ClCompile Include="src\engine\render\Camera2D.cpp" />
+    <ClCompile Include="src\platform\win32\Win32Window.cpp" />
+    <ClCompile Include="src\game\GameLayer.cpp" />
   </ItemGroup>
 
   <ItemGroup>
     <ClInclude Include="src\engine\core\Application.h" />
+    <ClInclude Include="src\engine\core\Timer.h" />
     <ClInclude Include="src\engine\core\Log.h" />
-    <ClInclude Include="src\game\Game.h" />
+    <ClInclude Include="src\engine\math\Vec2.h" />
+    <ClInclude Include="src\engine\render\Camera2D.h" />
+    <ClInclude Include="src\platform\win32\Win32Window.h" />
+    <ClInclude Include="src\game\GameLayer.h" />
   </ItemGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

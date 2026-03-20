@@ -1,22 +1,37 @@
 #include "engine/core/Application.h"
 
-#include <iostream>
+#include <windows.h>
 
-#include "engine/core/Log.h"
-#include "game/Game.h"
+#include "engine/core/Timer.h"
+#include "game/GameLayer.h"
+#include "platform/win32/Win32Window.h"
 
 namespace war
 {
     int Application::run()
     {
-        Log::info("WAR bootstrap starting...");
+        Win32Window window;
+        if (!window.create(1600, 900, L"WAR - Milestone 1"))
+        {
+            return -1;
+        }
 
-        Game game;
-        game.initialize();
-        game.tick();
+        GameLayer game;
+        game.initialize(window);
+
+        Timer timer;
+        timer.reset();
+
+        while (!window.shouldClose())
+        {
+            window.pollEvents();
+
+            const float dt = timer.tick();
+            game.update(dt);
+            game.render();
+        }
+
         game.shutdown();
-
-        Log::info("WAR bootstrap shutting down.");
         return 0;
     }
 }
