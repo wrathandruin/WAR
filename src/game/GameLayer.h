@@ -32,6 +32,7 @@ namespace war
         void updateInput();
         void updatePlayer(float dt);
         void pushEvent(const std::string& message);
+        void applyThemeHotkeys();
 
         [[nodiscard]] RECT getClientRect() const;
 
@@ -56,5 +57,9 @@ namespace war
 
         float m_lastDeltaTime = 0.016f;
         std::vector<std::string> m_eventLog;
+
+        bool m_themeKey1WasDown = false;
+        bool m_themeKey2WasDown = false;
+        bool m_themeKey3WasDown = false;
     };
 }

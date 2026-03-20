@@ -147,7 +147,7 @@ namespace war
         submitColorLayer(renderData.hoveredTile);
         submitTexturedLayer(renderData.actors);
 
-        m_statusMessage = "bgfx world rendered with tile variants";
+        m_statusMessage = "bgfx world rendered with theme sets";
         return true;
 #else
         (void)worldState;

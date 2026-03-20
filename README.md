@@ -1,26 +1,26 @@
-# WAR — Milestone 23 (bgfx Tile Variant / Authoring Prep)
+# WAR — Milestone 24 (bgfx Theme Sets / Authoring Hooks)
 
-> Current development milestone: M23 — bgfx Tile Variant / Authoring Prep
+> Current development milestone: M24 — bgfx Theme Sets / Authoring Hooks
 
 ## Focus
-Introduce tile material variants and centralize tile visual selection so the atlas/material path is easier to extend without renderer churn.
+Group tile visuals into explicit scene themes and add lightweight runtime authoring hooks for switching them without rewriting renderer code.
 
-M22 expanded atlas-backed rendering into the world tile layer.
-M23 builds on that by formalizing tile material selection behind a dedicated resolver and by expanding the atlas to support multiple floor and wall variants.
+M23 introduced tile variants and centralized tile visual selection.
+M24 builds on that by introducing theme-oriented material sets and a world-state theme selector so scene styling can change through authored intent instead of renderer churn.
 
 ## What this milestone does
-- introduces `BgfxTileVisuals` as the tile material selection layer
-- expands the shared world atlas with multiple floor and wall regions
-- moves tile visual choice out of render-data construction and into a dedicated authoring-prep helper
+- introduces `BgfxWorldTheme` as the theme/material grouping layer
+- stores the active world visual theme inside `WorldState`
+- updates `BgfxTileVisuals` to resolve tile materials and tints through the active theme
+- adds lightweight runtime theme switching hooks in `GameLayer`
 - keeps actor materials on the shared atlas path
 - preserves the current camera / projection / world-space submission flow
-- keeps path nodes and hovered tile feedback as explicit overlays
 
 ## Renderer architecture
 The bgfx world path is now split into:
 
 1. **Build world-space render data**
-   - tile sprite layer
+   - themed tile sprite layer
    - path overlay
    - hovered tile overlay
    - actor sprite layer
@@ -33,7 +33,7 @@ The bgfx world path is now split into:
 3. **Resolve materials**
    - map sprite material ids to atlas UV regions
    - resolve tile materials through `BgfxTileVisuals`
-   - keep material selection separate from submission code
+   - group tile materials through `BgfxWorldTheme`
 
 4. **Load renderer assets**
    - resolve shader asset paths
@@ -42,13 +42,13 @@ The bgfx world path is now split into:
    - load the shared sprite atlas texture
 
 ## Why this matters
-This is the bridge from “the scene uses an atlas” to “the scene can grow visually without rewriting render code”.
+This is the bridge from “tile visuals can vary” to “scene visuals can be steered by explicit themes”.
 
 It makes the next milestones safer:
-- richer tile variation
-- broader atlas authoring
-- cleaner content expansion
-- less renderer churn when visuals change
+- theme-based content styling
+- richer authoring control
+- broader atlas expansion
+- cleaner visual iteration
 
 ## Requirements
 The bgfx textured path expects compiled shader binaries at:
@@ -67,7 +67,7 @@ assets/textures/world_atlas.bmp
 ```
 
 ## Next Milestone
-### M24 — bgfx Theme Sets / Authoring Hooks
-- introduce theme-oriented material grouping
-- prepare scene visuals for broader content styling
-- make atlas/material expansion easier to direct from authored data
+### M25 — bgfx Content Tagging / Region Hooks
+- introduce map-region visual tagging hooks
+- prepare theme selection to be driven by authored world zones
+- continue reducing hardcoded visual assumptions

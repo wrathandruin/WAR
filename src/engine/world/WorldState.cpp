@@ -12,6 +12,7 @@ namespace war
     void WorldState::initializeTestWorld()
     {
         m_world.generateTestMap();
+        m_visualTheme = BgfxWorldThemeId::Industrial;
 
         m_entities.clear();
 
@@ -64,5 +65,15 @@ namespace war
     const EntityManager& WorldState::entities() const
     {
         return m_entities;
+    }
+
+    void WorldState::setVisualTheme(BgfxWorldThemeId theme)
+    {
+        m_visualTheme = theme;
+    }
+
+    BgfxWorldThemeId WorldState::visualTheme() const
+    {
+        return m_visualTheme;
     }
 }

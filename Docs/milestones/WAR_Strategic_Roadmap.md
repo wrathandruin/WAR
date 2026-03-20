@@ -2,243 +2,254 @@
 
 ## Strategic Intent
 
-Wrath and Ruin must transition from a renderer-forward local prototype into a server-authoritative alpha product.
+Wrath and Ruin must become a **deployable, demoable, server-authoritative vertical-slice product** before it becomes a broad sandbox.
 
-The roadmap is intentionally narrow:
+The project now has two useful histories:
 
-- one complete slice
-- one planet-to-space loop
-- one persistent multiplayer-ready experience
+- the new `WAR` repo proves a cleaner client and roguelike presentation direction
+- the legacy `Wrath-and-Ruin` repo proves production operations, identity flow, runtime discipline, and deployability lessons
 
-The project should not chase broad sandbox breadth until that slice is real.
+The roadmap must merge those strengths.
 
 ---
 
-## Current State
+## Hard Truths
 
-Milestones M1-M16 are complete and prove:
+### The New Repo Currently Proves
 
-- client runtime exists
-- interaction and stateful objects exist
-- bgfx world rendering exists
-- shader pipeline bootstrap exists
+- local prototype gameplay
+- top-down rendering
+- bgfx rendering and shader ownership
+- first sprite and atlas groundwork
 
-The project still lacks the systems that define alpha:
+### The New Repo Does Not Yet Prove
 
-- authority
+- dedicated authoritative server
 - persistence
-- combat
-- inventory and progression
-- data-driven content
-- ships and space travel
-- multiplayer session operations
+- deploy workflow
+- telemetry or crash capture
+- installer/update path
+- market-facing onboarding
 
-This means the next roadmap must optimize for architecture and gameplay proof, not more prototype-side feature breadth.
+### The Legacy Repo Already Proved
+
+- account and portal flow
+- desktop release thinking
+- staging/live runbooks
+- runtime data boundaries
+- smoke, regression, and hotboot culture
+- operational discipline
+
+### Directional Conclusion
+
+Renderer work is no longer the strategic center.
+
+The strategic center is now:
+
+- architecture
+- deployability
+- persistence
+- product usability
+- a narrow but real vertical slice
 
 ---
 
-## Program North Star
+## North Star
 
-Alpha must deliver a playable loop in which a player can:
+The game must ship a first slice in which a player can:
 
-- join a server session
+- join a hosted session
 - explore a planetary location
-- interact, loot, survive, and fight
-- modify terrain in limited but meaningful ways
+- move, inspect, loot, and survive
+- fight through a six-second combat encounter
+- modify terrain in a meaningful but limited way
 - board a ship
-- travel through a local space layer
-- dock or land at a second destination
+- enter a space layer
+- travel to a second destination
 - complete a mission chain
 - return to a persistent world state
 
-If a task does not move the project closer to that loop, it is a lower priority than it appears.
+If work does not move the project toward that loop or make it more deployable and demoable, it is lower priority than it appears.
 
 ---
 
-## Guiding Rules
+## Delivery Ladder
 
-1. Finish what is half-built before adding new surface area.
-2. Build the authoritative server path before expanding combat and progression.
-3. Make content data-driven before attempting content volume.
-4. Keep the first alpha narrow enough to stabilize.
-5. Treat diagnostics, telemetry, and packaging as production work, not polish.
-6. Stay Windows-first until alpha is proven.
-
----
-
-## Phase Stack
-
-## Phase A - Client Runtime Closure
+## Foundation
 
 Goal:
-Make bgfx the clear runtime path and remove rendering ambiguity.
+Give the new repo the production shape required to scale safely.
 
-Includes:
+Must include:
 
-- batching
-- projection cleanup
-- sprite or texture-capable path
-- asset and shader packaging
-- client diagnostics
+- runtime data boundaries
+- build and packaging discipline
+- diagnostics
+- deployability planning
+- clear client/shared/server contract
 
-Exit:
-The renderer no longer blocks architecture or gameplay work.
-
----
-
-## Phase B - Server-Authoritative Foundation
+## Alpha
 
 Goal:
-Move the project from local prototype assumptions into authoritative simulation.
+Prove one complete, hosted, replayable slice that combines planets and space.
 
-Includes:
+Must include:
 
-- shared-client-server split
-- fixed-step ownership
-- protocol and serialization
-- headless server
-- localhost replication
-- latency and divergence testing
-
-Exit:
-The server owns movement and interactions.
-
----
-
-## Phase C - Planetary Sandbox Core
-
-Goal:
-Prove the on-foot game loop in one planetary location.
-
-Includes:
-
+- authoritative server
 - persistence
-- data-driven content
-- actors, stats, inventory, and equipment
 - six-second combat
-- survival hazards
-- NPC encounter logic
+- ship and space transition
+- mission slice
+- internal deploy and playtest flow
 
-Exit:
-A player can explore, survive, fight, loot, and persist progress in one authored zone.
-
----
-
-## Phase D - Space Layer and Vertical Slice
+## Beta
 
 Goal:
-Connect the on-foot loop to a playable ship and space layer.
+Make the product ready for outside testers.
 
-Includes:
+Must include:
 
-- ship runtime
-- orbital or local space traversal
-- landing and docking transitions
-- mission scripting
-- progression-lite support
-- multiplayer session flow
+- onboarding
+- content reliability
+- external support tooling
+- accessibility and UX gains
+- stronger operations and telemetry
 
-Exit:
-One mission chain can move a player from planet to space to a second destination and back.
-
----
-
-## Phase E - Alpha Readiness
+## Market
 
 Goal:
-Stabilize the slice and prepare it for repeatable outside testing.
+Make the product commercially credible.
 
-Includes:
+Must include:
 
-- functional UI pass
-- performance and soak testing
-- telemetry and crash capture
-- dedicated server packaging
-- content lock and bug burn-down
-
-Exit:
-The project can support structured alpha playtests.
+- installer and update lane
+- release management
+- analytics
+- support readiness
+- market-facing onboarding and packaging
 
 ---
 
-## Milestone Blocks
+## Legacy Guide Rails
 
-## Block 1 - Finish the Client Runtime
+These lessons from the old project should guide all new planning:
 
-- M17: Render data cleanup and batching
-- M18: Camera, projection, and sprite-material pass
-- M19: Asset packaging, shader automation, and reproducible builds
-- M20: Client UX shell and diagnostics
-
-## Block 2 - Build the Real Architecture
-
-- M21: Shared-client-server code split
-- M22: Fixed-step simulation and authority boundaries
-- M23: Command protocol and serialization
-- M24: Headless dedicated server
-- M25: Authoritative localhost movement and interactions
-- M26: Replication, latency simulation, and divergence diagnostics
-
-## Block 3 - Prove the Planetary Loop
-
-- M27: Save, load, and persistence
-- M28: Data-driven locations, prefabs, items, and interactables
-- M29: Actor model, stats, inventory, and equipment
-- M30: Six-second combat controller
-- M31: Survival hazards and terrain consequences
-- M32: NPC AI and encounter authoring
-
-## Block 4 - Prove Planets and Space Together
-
-- M33: Ship runtime
-- M34: Orbital or local space traversal
-- M35: Landing, docking, and transitions
-- M36: Mission, dialogue, and terminal framework
-- M37: Economy-lite, loot, and progression slice
-- M38: Multiplayer session flow and onboarding
-
-## Block 5 - Prepare for Alpha
-
-- M39: Interaction, inventory, combat, and travel UI pass
-- M40: Performance and soak-test pass
-- M41: Telemetry, crash capture, admin tools, and server packaging
-- M42: Alpha content lock and stabilization
+1. Server authority is not optional.
+2. Runtime drift must be separated from source control.
+3. Staging and live must be runbook-driven.
+4. Account and identity flow should be intentional, not bolted on late.
+5. Regression and smoke tests are part of shipping, not cleanup.
+6. Desktop packaging and updater strategy should be planned before launch crunch.
 
 ---
 
-## First Alpha Scope
+## Milestone Stack
 
-### Must Be Present
+The renderer-focused groundwork is considered current through M21-level work.
+The forward roadmap should continue from M22.
 
-- one planetary surface location
-- one orbital or local space map
-- one second destination
-- one player ship class
-- one six-second combat encounter set
-- one mission chain
-- persistence
-- multiplayer-capable server session
-- enough UI to play and debug the slice
+## Block 0 - Production Foundation
 
-### Must Not Expand Before Alpha
+- M22: Legacy migration assessment and production contract
+- M23: Runtime boundaries, asset policy, and canonical content rules
+- M24: Local demo lane, reproducible packaging checklist, and observability baseline
 
-- large planetary count
-- broad faction campaign content
-- deep crafting tree
-- large economy simulation
-- broad social feature set
-- cross-platform release support
+## Block 1 - Client Runtime Closure
+
+- M25: bgfx runtime closure and render-path consolidation
+- M26: UI shell, interaction HUD, and diagnostics
+- M27: asset validation and demo-readiness review
+
+## Block 2 - Shared Simulation And Authority
+
+- M28: shared simulation and fixed-step ownership
+- M29: headless dedicated server bootstrap
+- M30: command protocol and authoritative movement/interactions
+- M31: replication, latency simulation, and divergence diagnostics
+
+## Block 3 - Planetary Core Loop
+
+- M32: persistence foundation and save/load versioning
+- M33: content pipeline for zones, prefabs, items, and interactables
+- M34: actor model, inventory, and equipment
+- M35: six-second combat controller
+- M36: survival and environment model
+- M37: NPC encounters and planetary slice gate
+
+## Block 4 - Space Vertical Slice
+
+- M38: ship runtime and boarding
+- M39: local space or orbital traversal
+- M40: landing, docking, and transition flow
+- M41: mission, dialogue, terminal, and session flow
+
+## Block 5 - Alpha Readiness
+
+- M42: deployable server package, telemetry, crash capture, and admin tools
+- M43: alpha content lock, usability pass, and sign-off
+
+## Block 6 - Beta Readiness
+
+- M44: external onboarding and launcher/update direction
+- M45: scalable content authoring and validation pipeline
+- M46: progression, economy-lite, and retention pass
+- M47: beta ops, moderation, support, and analytics
+- M48: accessibility and UX polish
+- M49: beta stability and release-gate review
+
+## Block 7 - Market Readiness
+
+- M50: commercial packaging and installer/update lane
+- M51: market onboarding and first-session polish
+- M52: live-ops tooling and release management
+- M53: compliance, support, and storefront readiness
+- M54: market candidate and launch rehearsal
 
 ---
 
-## Strategic Summary
+## What Must Not Happen
 
-The correct path is:
+- renderer work continuing as the main strategic branch indefinitely
+- broad sandbox expansion before one slice works
+- persistence arriving after too many systems depend on it
+- deployment and packaging deferred until the end
+- runtime/source drift polluting the repo
+- market planning treated as a final-week concern
 
-1. close renderer and client runtime debt
-2. pivot into server authority
-3. prove the planetary on-foot loop
-4. connect that loop to one space layer
-5. harden, instrument, package, and stabilize
+---
 
-This is the shortest credible route to a professional alpha.
+## Success Conditions By Horizon
+
+### Foundation Success
+
+- the repo has clear ownership boundaries
+- demos are repeatable
+- the next architecture steps are safer
+
+### Alpha Success
+
+- one complete hosted slice exists
+- it is deployable and replayable
+- internal testers can use it without constant engineering intervention
+
+### Beta Success
+
+- outside testers can onboard and play repeatedly
+- the project is operationally supportable
+
+### Market Success
+
+- the game can be packaged, updated, supported, and presented commercially
+
+---
+
+## Final Strategic Rule
+
+The project should be run as:
+
+- a new gameplay and client foundation
+- guided by old operational lessons
+- aimed at one excellent slice first
+- extended into beta and market only after the base is strong
+
+That is the most attainable path to an actual product.

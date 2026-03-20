@@ -56,16 +56,20 @@ M21 is the milestone that turns the first textured path from a proof-of-concept 
 
 # What should be coming up in the next milestone
 
-**M22 — bgfx Sprite Expansion / Batch Cleanup**
+**M22 — Production Foundation / Runtime Contract**
 
-The next milestone should take the cleaned-up atlas/material structure and push it further into the scene.
+The next milestone should not continue expanding renderer scope in isolation.
+At this point, the renderer has done enough to stop being the strategic center of the program.
+
+The next milestone should instead lock the project into a production-safe baseline.
 
 That should include:
 
-- expanding atlas-backed sprite usage further into world visuals
-- tightening draw ordering and batch submission behavior
-- reducing unnecessary submission overhead where practical
-- preparing the renderer for broader world visual replacement beyond the first set of key actors
+- clarifying what the repo owns versus what belongs to mutable runtime state
+- formalizing asset, content, and packaging rules
+- making the local demo path reproducible
+- tightening diagnostics and failure reporting
+- documenting how the new roguelike repo inherits production lessons from the legacy Wrath and Ruin project
 
 M21 organizes the atlas/material path.
-M22 should expand and tighten the scene built on top of it.
+M22 should ensure that renderer progress now sits inside a real product foundation rather than an endless rendering branch.
