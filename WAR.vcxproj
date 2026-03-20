@@ -46,6 +46,7 @@
     <IntDir>$(SolutionDir)obj\$(Configuration)\</IntDir>
     <TargetName>WAR</TargetName>
   </PropertyGroup>
+
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
@@ -71,6 +72,7 @@
 if exist "$(ProjectDir)assets\textures" xcopy /Y /I /E "$(ProjectDir)assets\textures" "$(OutDir)assets\textures\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
+
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
@@ -100,6 +102,7 @@ if exist "$(ProjectDir)assets\textures" xcopy /Y /I /E "$(ProjectDir)assets\text
 if exist "$(ProjectDir)assets\textures" xcopy /Y /I /E "$(ProjectDir)assets\textures" "$(OutDir)assets\textures\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
+
   <ItemGroup>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\engine\core\Application.cpp" />
@@ -113,6 +116,7 @@ if exist "$(ProjectDir)assets\textures" xcopy /Y /I /E "$(ProjectDir)assets\text
     <ClCompile Include="src\engine\render\BgfxViewTransform.cpp" />
     <ClCompile Include="src\engine\render\BgfxShaderProgram.cpp" />
     <ClCompile Include="src\engine\render\BgfxTextureAsset.cpp" />
+    <ClCompile Include="src\engine\render\BgfxSpriteMaterial.cpp" />
     <ClCompile Include="src\engine\render\RenderAssetPaths.cpp" />
     <ClCompile Include="src\engine\render\DebugOverlayRenderer.cpp" />
     <ClCompile Include="src\engine\render\GdiRenderDevice.cpp" />
@@ -126,6 +130,7 @@ if exist "$(ProjectDir)assets\textures" xcopy /Y /I /E "$(ProjectDir)assets\text
     <ClCompile Include="src\platform\win32\Win32Window.cpp" />
     <ClCompile Include="src\game\GameLayer.cpp" />
   </ItemGroup>
+
   <ItemGroup>
     <ClInclude Include="src\engine\core\Application.h" />
     <ClInclude Include="src\engine\core\Timer.h" />
@@ -138,6 +143,7 @@ if exist "$(ProjectDir)assets\textures" xcopy /Y /I /E "$(ProjectDir)assets\text
     <ClInclude Include="src\engine\render\BgfxViewTransform.h" />
     <ClInclude Include="src\engine\render\BgfxShaderProgram.h" />
     <ClInclude Include="src\engine\render\BgfxTextureAsset.h" />
+    <ClInclude Include="src\engine\render\BgfxSpriteMaterial.h" />
     <ClInclude Include="src\engine\render\RenderAssetPaths.h" />
     <ClInclude Include="src\engine\render\DebugOverlayRenderer.h" />
     <ClInclude Include="src\engine\render\RenderBackendType.h" />
@@ -157,6 +163,7 @@ if exist "$(ProjectDir)assets\textures" xcopy /Y /I /E "$(ProjectDir)assets\text
     <ClInclude Include="src\platform\win32\Win32Window.h" />
     <ClInclude Include="src\game\GameLayer.h" />
   </ItemGroup>
+
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
 </Project>

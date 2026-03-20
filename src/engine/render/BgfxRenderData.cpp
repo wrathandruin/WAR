@@ -43,19 +43,15 @@ namespace war
             const Vec2& worldPosition,
             float halfSize,
             uint32_t color,
-            BgfxTextureAssetId texture)
+            BgfxSpriteMaterialId material)
         {
             return BgfxTexturedQuad{
                 worldPosition.x - halfSize,
                 worldPosition.y - halfSize,
                 worldPosition.x + halfSize,
                 worldPosition.y + halfSize,
-                0.0f,
-                0.0f,
-                1.0f,
-                1.0f,
                 color,
-                texture
+                material
             };
         }
 
@@ -112,21 +108,21 @@ namespace war
             }
         }
 
-        BgfxTextureAssetId entityTexture(const Entity& entity)
+        BgfxSpriteMaterialId entityMaterial(const Entity& entity)
         {
             switch (entity.type)
             {
             case EntityType::Crate:
-                return BgfxTextureAssetId::Crate;
+                return BgfxSpriteMaterialId::Crate;
 
             case EntityType::Terminal:
-                return BgfxTextureAssetId::Terminal;
+                return BgfxSpriteMaterialId::Terminal;
 
             case EntityType::Locker:
-                return BgfxTextureAssetId::Locker;
+                return BgfxSpriteMaterialId::Locker;
 
             default:
-                return BgfxTextureAssetId::Crate;
+                return BgfxSpriteMaterialId::Crate;
             }
         }
     }
@@ -184,7 +180,7 @@ namespace war
                     worldState.world().tileToWorldCenter(entity.tile),
                     12.0f,
                     entityColor(entity),
-                    entityTexture(entity)));
+                    entityMaterial(entity)));
         }
 
         data.player.quads.push_back(
@@ -192,7 +188,7 @@ namespace war
                 playerPosition,
                 14.0f,
                 playerColor(),
-                BgfxTextureAssetId::Player));
+                BgfxSpriteMaterialId::Player));
 
         return data;
     }

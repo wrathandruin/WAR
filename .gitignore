@@ -1,3 +1,9 @@
+# Private/local assets
+/assets/*
+!/assets/.gitkeep
+!/assets/shaders/
+!/assets/shaders/**
+
 # Build folders
 /build/
 /out/

@@ -13,4 +13,5 @@ namespace war::RenderAssetPaths
     [[nodiscard]] std::string textureFragmentShaderPath();
 
     [[nodiscard]] std::string textureAssetPath(const std::string& fileName);
+    [[nodiscard]] std::string spriteAtlasTexturePath();
 }

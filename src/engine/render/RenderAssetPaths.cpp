@@ -87,4 +87,9 @@ namespace war::RenderAssetPaths
     {
         return "assets/textures/" + fileName;
     }
+
+    std::string spriteAtlasTexturePath()
+    {
+        return textureAssetPath("world_atlas.bmp");
+    }
 }

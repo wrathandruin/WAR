@@ -5,20 +5,13 @@
 #include <vector>
 
 #include "engine/math/Vec2.h"
+#include "engine/render/BgfxSpriteMaterial.h"
 #include "engine/render/Camera2D.h"
 #include "engine/world/WorldGrid.h"
 #include "engine/world/WorldState.h"
 
 namespace war
 {
-    enum class BgfxTextureAssetId
-    {
-        Player,
-        Crate,
-        Terminal,
-        Locker
-    };
-
     struct BgfxQuad
     {
         float left = 0.0f;
@@ -34,12 +27,8 @@ namespace war
         float top = 0.0f;
         float right = 0.0f;
         float bottom = 0.0f;
-        float u0 = 0.0f;
-        float v0 = 0.0f;
-        float u1 = 1.0f;
-        float v1 = 1.0f;
         uint32_t color = 0xffffffff;
-        BgfxTextureAssetId texture = BgfxTextureAssetId::Player;
+        BgfxSpriteMaterialId material = BgfxSpriteMaterialId::Player;
     };
 
     struct BgfxRenderLayer

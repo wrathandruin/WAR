@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(WAR
-    VERSION 0.3.3
-    DESCRIPTION "Wrath and Ruin milestone 20"
+    VERSION 0.3.4
+    DESCRIPTION "Wrath and Ruin milestone 21"
     LANGUAGES CXX
 )
 
@@ -23,6 +23,7 @@ set(WAR_SOURCES
     src/engine/render/BgfxViewTransform.cpp
     src/engine/render/BgfxShaderProgram.cpp
     src/engine/render/BgfxTextureAsset.cpp
+    src/engine/render/BgfxSpriteMaterial.cpp
     src/engine/render/RenderAssetPaths.cpp
     src/engine/render/DebugOverlayRenderer.cpp
     src/engine/render/GdiRenderDevice.cpp

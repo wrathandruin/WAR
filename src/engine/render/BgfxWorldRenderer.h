@@ -31,21 +31,17 @@ namespace war
         [[nodiscard]] const std::string& statusMessage() const;
 
     private:
-        [[nodiscard]] bool ensureTextureAssetsLoaded();
+        [[nodiscard]] bool ensureAtlasTextureLoaded();
         [[nodiscard]] bool submitColorLayer(const BgfxRenderLayer& layer) const;
         [[nodiscard]] bool submitTexturedLayer(const BgfxTexturedRenderLayer& layer) const;
 
 #if WAR_HAS_BGFX
-        [[nodiscard]] bgfx::TextureHandle textureHandleFor(BgfxTextureAssetId texture) const;
+        [[nodiscard]] bgfx::TextureHandle atlasTextureHandle() const;
 #endif
 
         BgfxShaderProgram m_colorProgram{};
         BgfxShaderProgram m_textureProgram{};
-
-        BgfxTextureAsset m_playerTexture{};
-        BgfxTextureAsset m_crateTexture{};
-        BgfxTextureAsset m_terminalTexture{};
-        BgfxTextureAsset m_lockerTexture{};
+        BgfxTextureAsset m_spriteAtlasTexture{};
 
         std::string m_statusMessage = "BgfxWorldRenderer not used yet";
     };

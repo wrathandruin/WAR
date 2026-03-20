@@ -4,6 +4,7 @@
 #include <cstring>
 #include <vector>
 
+#include "engine/render/BgfxSpriteMaterial.h"
 #include "engine/render/BgfxViewTransform.h"
 #include "engine/render/RenderAssetPaths.h"
 
@@ -105,7 +106,7 @@ namespace war
             return false;
         }
 
-        if (!ensureTextureAssetsLoaded())
+        if (!ensureAtlasTextureLoaded())
         {
             return false;
         }
@@ -148,7 +149,7 @@ namespace war
         submitTexturedLayer(renderData.entities);
         submitTexturedLayer(renderData.player);
 
-        m_statusMessage = "bgfx world rendered with textured sprites";
+        m_statusMessage = "bgfx world rendered with atlas materials";
         return true;
 #else
         (void)worldState;
@@ -165,10 +166,7 @@ namespace war
 
     void BgfxWorldRenderer::shutdown()
     {
-        m_playerTexture.shutdown();
-        m_crateTexture.shutdown();
-        m_terminalTexture.shutdown();
-        m_lockerTexture.shutdown();
+        m_spriteAtlasTexture.shutdown();
 
         m_textureProgram.shutdown();
         m_colorProgram.shutdown();
@@ -185,29 +183,10 @@ namespace war
         return m_statusMessage;
     }
 
-    bool BgfxWorldRenderer::ensureTextureAssetsLoaded()
+    bool BgfxWorldRenderer::ensureAtlasTextureLoaded()
     {
         std::string status{};
-
-        if (!m_playerTexture.loadFromBmpFile(RenderAssetPaths::textureAssetPath("player.bmp"), status))
-        {
-            m_statusMessage = status;
-            return false;
-        }
-
-        if (!m_crateTexture.loadFromBmpFile(RenderAssetPaths::textureAssetPath("crate.bmp"), status))
-        {
-            m_statusMessage = status;
-            return false;
-        }
-
-        if (!m_terminalTexture.loadFromBmpFile(RenderAssetPaths::textureAssetPath("terminal.bmp"), status))
-        {
-            m_statusMessage = status;
-            return false;
-        }
-
-        if (!m_lockerTexture.loadFromBmpFile(RenderAssetPaths::textureAssetPath("locker.bmp"), status))
+        if (!m_spriteAtlasTexture.loadFromBmpFile(RenderAssetPaths::spriteAtlasTexturePath(), status))
         {
             m_statusMessage = status;
             return false;
@@ -281,62 +260,61 @@ namespace war
     bool BgfxWorldRenderer::submitTexturedLayer(const BgfxTexturedRenderLayer& layer) const
     {
 #if WAR_HAS_BGFX
-        if (layer.quads.empty() || !m_textureProgram.isReady())
+        if (layer.quads.empty() || !m_textureProgram.isReady() || !m_spriteAtlasTexture.isReady())
         {
             return false;
         }
 
-        bool submittedAny = false;
+        std::vector<PosTexColorVertex> vertices;
+        std::vector<unsigned short> indices;
+
+        vertices.reserve(layer.quads.size() * 4);
+        indices.reserve(layer.quads.size() * 6);
 
         for (const BgfxTexturedQuad& quad : layer.quads)
         {
-            const bgfx::TextureHandle texture = textureHandleFor(quad.texture);
-            if (!bgfx::isValid(texture))
-            {
-                continue;
-            }
+            const BgfxUvRect uv = BgfxSpriteMaterials::uvFor(quad.material);
+            const unsigned short base = static_cast<unsigned short>(vertices.size());
 
-            const std::array<PosTexColorVertex, 4> vertices{{
-                { quad.left,  quad.top,    0.0f, quad.u0, quad.v0, quad.color },
-                { quad.right, quad.top,    0.0f, quad.u1, quad.v0, quad.color },
-                { quad.right, quad.bottom, 0.0f, quad.u1, quad.v1, quad.color },
-                { quad.left,  quad.bottom, 0.0f, quad.u0, quad.v1, quad.color }
-            }};
+            vertices.push_back({ quad.left,  quad.top,    0.0f, uv.u0, uv.v0, quad.color });
+            vertices.push_back({ quad.right, quad.top,    0.0f, uv.u1, uv.v0, quad.color });
+            vertices.push_back({ quad.right, quad.bottom, 0.0f, uv.u1, uv.v1, quad.color });
+            vertices.push_back({ quad.left,  quad.bottom, 0.0f, uv.u0, uv.v1, quad.color });
 
-            constexpr std::array<unsigned short, 6> indices{{
-                0, 1, 2,
-                0, 2, 3
-            }};
-
-            bgfx::TransientVertexBuffer tvb{};
-            bgfx::TransientIndexBuffer tib{};
-
-            if (!bgfx::allocTransientBuffers(
-                &tvb,
-                PosTexColorVertex::layout,
-                static_cast<uint32_t>(vertices.size()),
-                &tib,
-                static_cast<uint32_t>(indices.size())))
-            {
-                continue;
-            }
-
-            std::memcpy(tvb.data, vertices.data(), vertices.size() * sizeof(PosTexColorVertex));
-            std::memcpy(tib.data, indices.data(), indices.size() * sizeof(unsigned short));
-
-            bgfx::setVertexBuffer(0, &tvb);
-            bgfx::setIndexBuffer(&tib);
-            bgfx::setTexture(0, s_textureSampler, texture);
-            bgfx::setState(
-                BGFX_STATE_WRITE_RGB
-                | BGFX_STATE_WRITE_A
-                | BGFX_STATE_MSAA
-                | BGFX_STATE_BLEND_ALPHA);
-            bgfx::submit(0, m_textureProgram.handle());
-            submittedAny = true;
+            indices.push_back(base + 0);
+            indices.push_back(base + 1);
+            indices.push_back(base + 2);
+            indices.push_back(base + 0);
+            indices.push_back(base + 2);
+            indices.push_back(base + 3);
         }
 
-        return submittedAny;
+        bgfx::TransientVertexBuffer tvb{};
+        bgfx::TransientIndexBuffer tib{};
+
+        if (!bgfx::allocTransientBuffers(
+            &tvb,
+            PosTexColorVertex::layout,
+            static_cast<uint32_t>(vertices.size()),
+            &tib,
+            static_cast<uint32_t>(indices.size())))
+        {
+            return false;
+        }
+
+        std::memcpy(tvb.data, vertices.data(), vertices.size() * sizeof(PosTexColorVertex));
+        std::memcpy(tib.data, indices.data(), indices.size() * sizeof(unsigned short));
+
+        bgfx::setVertexBuffer(0, &tvb);
+        bgfx::setIndexBuffer(&tib);
+        bgfx::setTexture(0, s_textureSampler, atlasTextureHandle());
+        bgfx::setState(
+            BGFX_STATE_WRITE_RGB
+            | BGFX_STATE_WRITE_A
+            | BGFX_STATE_MSAA
+            | BGFX_STATE_BLEND_ALPHA);
+        bgfx::submit(0, m_textureProgram.handle());
+        return true;
 #else
         (void)layer;
         return false;
@@ -344,25 +322,9 @@ namespace war
     }
 
 #if WAR_HAS_BGFX
-    bgfx::TextureHandle BgfxWorldRenderer::textureHandleFor(BgfxTextureAssetId texture) const
+    bgfx::TextureHandle BgfxWorldRenderer::atlasTextureHandle() const
     {
-        switch (texture)
-        {
-        case BgfxTextureAssetId::Player:
-            return m_playerTexture.handle();
-
-        case BgfxTextureAssetId::Crate:
-            return m_crateTexture.handle();
-
-        case BgfxTextureAssetId::Terminal:
-            return m_terminalTexture.handle();
-
-        case BgfxTextureAssetId::Locker:
-            return m_lockerTexture.handle();
-
-        default:
-            return BGFX_INVALID_HANDLE;
-        }
+        return m_spriteAtlasTexture.handle();
     }
 #endif
 }
