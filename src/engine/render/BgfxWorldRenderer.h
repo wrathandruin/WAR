@@ -6,7 +6,7 @@
 
 #include "engine/math/Vec2.h"
 #include "engine/render/BgfxRenderData.h"
-#include "engine/render/BgfxViewTransform.h"
+#include "engine/render/BgfxShaderProgram.h"
 #include "engine/render/Camera2D.h"
 #include "engine/world/WorldGrid.h"
 #include "engine/world/WorldState.h"
@@ -25,11 +25,14 @@ namespace war
             bool hasHoveredTile,
             TileCoord hoveredTile);
 
+        void shutdown();
+
         [[nodiscard]] const std::string& statusMessage() const;
 
     private:
         [[nodiscard]] bool submitLayer(const BgfxRenderLayer& layer) const;
 
+        BgfxShaderProgram m_colorProgram{};
         std::string m_statusMessage = "BgfxWorldRenderer not used yet";
     };
 }

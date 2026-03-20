@@ -26,8 +26,8 @@ namespace war
             if (preferred->initialize(m_window->getHandle()))
             {
                 m_renderDevice = std::move(preferred);
-                pushEvent("Milestone 18.1 initialized");
-                pushEvent("bgfx camera/projection cleanup fixed");
+                pushEvent("Milestone 19 initialized");
+                pushEvent("bgfx shader/asset pipeline cleanup active");
                 pushEvent(std::string("Active backend: ") + m_renderDevice->name());
             }
             else
@@ -36,7 +36,7 @@ namespace war
                 const bool fallbackReady = fallback->initialize(m_window->getHandle());
                 m_renderDevice = std::move(fallback);
 
-                pushEvent("Milestone 18.1 initialized");
+                pushEvent("Milestone 19 initialized");
                 pushEvent("bgfx unavailable, falling back to GDI");
                 pushEvent(std::string("Active backend: ") + m_renderDevice->name());
                 if (!fallbackReady)
@@ -127,6 +127,8 @@ namespace war
 
     void GameLayer::shutdown()
     {
+        m_bgfxWorldRenderer.shutdown();
+
         if (m_renderDevice)
         {
             m_renderDevice->shutdown();

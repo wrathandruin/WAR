@@ -1,155 +1,47 @@
 #include "engine/render/BgfxWorldRenderer.h"
 
 #include <cstring>
-#include <fstream>
-#include <string>
 #include <vector>
 
 #include "engine/render/BgfxViewTransform.h"
 
-#if defined(__has_include)
-#  if __has_include(<bgfx/bgfx.h>) && __has_include(<bx/math.h>)
-#    define WAR_HAS_BGFX 1
-#  else
-#    define WAR_HAS_BGFX 0
-#  endif
-#else
-#  define WAR_HAS_BGFX 0
-#endif
-
 #if WAR_HAS_BGFX
-#  include <bgfx/bgfx.h>
+namespace
+{
+    struct PosColorVertex
+    {
+        float x;
+        float y;
+        float z;
+        unsigned int abgr;
+
+        static bgfx::VertexLayout layout;
+
+        static void init()
+        {
+            layout.begin()
+                .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
+                .add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true)
+                .end();
+        }
+    };
+
+    bgfx::VertexLayout PosColorVertex::layout{};
+    bool s_layoutInitialized = false;
+
+    void ensureLayoutInitialized()
+    {
+        if (!s_layoutInitialized)
+        {
+            PosColorVertex::init();
+            s_layoutInitialized = true;
+        }
+    }
+}
 #endif
 
 namespace war
 {
-#if WAR_HAS_BGFX
-    namespace
-    {
-        struct PosColorVertex
-        {
-            float x;
-            float y;
-            float z;
-            unsigned int abgr;
-
-            static bgfx::VertexLayout layout;
-
-            static void init()
-            {
-                layout.begin()
-                    .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
-                    .add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true)
-                    .end();
-            }
-        };
-
-        bgfx::VertexLayout PosColorVertex::layout{};
-
-        bool s_layoutInitialized = false;
-        bool s_programAttempted = false;
-        bool s_programReady = false;
-        bgfx::ProgramHandle s_program = BGFX_INVALID_HANDLE;
-
-        std::string shaderFolderForRenderer(bgfx::RendererType::Enum type)
-        {
-            switch (type)
-            {
-            case bgfx::RendererType::Direct3D11:
-            case bgfx::RendererType::Direct3D12:
-                return "dx11";
-
-            case bgfx::RendererType::OpenGL:
-                return "glsl";
-
-            case bgfx::RendererType::Vulkan:
-                return "spirv";
-
-            default:
-                return "";
-            }
-        }
-
-        const bgfx::Memory* loadMemoryFromFile(const char* path)
-        {
-            std::ifstream file(path, std::ios::binary | std::ios::ate);
-            if (!file)
-            {
-                return nullptr;
-            }
-
-            const std::streamsize size = file.tellg();
-            if (size <= 0)
-            {
-                return nullptr;
-            }
-
-            file.seekg(0, std::ios::beg);
-
-            const bgfx::Memory* memory = bgfx::alloc(static_cast<unsigned int>(size + 1));
-            if (!file.read(reinterpret_cast<char*>(memory->data), size))
-            {
-                return nullptr;
-            }
-
-            memory->data[size] = 0;
-            return memory;
-        }
-
-        bool ensureProgramLoaded(std::string& statusMessage)
-        {
-            if (s_programAttempted)
-            {
-                statusMessage = s_programReady
-                    ? "bgfx color program ready"
-                    : "bgfx shaders missing or failed to load";
-                return s_programReady;
-            }
-
-            s_programAttempted = true;
-
-            if (!s_layoutInitialized)
-            {
-                PosColorVertex::init();
-                s_layoutInitialized = true;
-            }
-
-            const std::string folder = shaderFolderForRenderer(bgfx::getRendererType());
-            if (folder.empty())
-            {
-                statusMessage = "unsupported bgfx renderer for shader folder mapping";
-                return false;
-            }
-
-            const std::string vsPath = "assets/shaders/" + folder + "/vs_color.bin";
-            const std::string fsPath = "assets/shaders/" + folder + "/fs_color.bin";
-
-            const bgfx::Memory* vsMemory = loadMemoryFromFile(vsPath.c_str());
-            const bgfx::Memory* fsMemory = loadMemoryFromFile(fsPath.c_str());
-            if (vsMemory == nullptr || fsMemory == nullptr)
-            {
-                statusMessage = "missing shader binaries: " + vsPath + " or " + fsPath;
-                return false;
-            }
-
-            const bgfx::ShaderHandle vs = bgfx::createShader(vsMemory);
-            const bgfx::ShaderHandle fs = bgfx::createShader(fsMemory);
-            if (!bgfx::isValid(vs) || !bgfx::isValid(fs))
-            {
-                statusMessage = "failed to create bgfx shader handles";
-                return false;
-            }
-
-            s_program = bgfx::createProgram(vs, fs, true);
-            s_programReady = bgfx::isValid(s_program);
-            statusMessage = s_programReady
-                ? "bgfx color program ready"
-                : "failed to create bgfx shader program";
-            return s_programReady;
-        }
-    }
-#endif
-
     bool BgfxWorldRenderer::render(
         const WorldState& worldState,
         const Camera2D& camera,
@@ -160,7 +52,9 @@ namespace war
         TileCoord hoveredTile)
     {
 #if WAR_HAS_BGFX
-        if (!ensureProgramLoaded(m_statusMessage))
+        ensureLayoutInitialized();
+
+        if (!m_colorProgram.loadColorProgram(m_statusMessage))
         {
             return false;
         }
@@ -185,7 +79,7 @@ namespace war
         float proj[16]{};
         BgfxViewTransform::buildMatrices(camera, viewWidth, viewHeight, view, proj);
 
-        bgfx::setViewRect(0, 0, 0, static_cast<unsigned short>(viewWidth), static_cast<unsigned short>(viewHeight));
+        bgfx::setViewRect(0, 0, 0, static_cast<uint16_t>(viewWidth), static_cast<uint16_t>(viewHeight));
         bgfx::setViewTransform(0, view, proj);
 
         const BgfxWorldRenderData renderData = BgfxRenderDataBuilder::build(
@@ -218,6 +112,12 @@ namespace war
 #endif
     }
 
+    void BgfxWorldRenderer::shutdown()
+    {
+        m_colorProgram.shutdown();
+        m_statusMessage = "bgfx world renderer shutdown";
+    }
+
     const std::string& BgfxWorldRenderer::statusMessage() const
     {
         return m_statusMessage;
@@ -226,7 +126,7 @@ namespace war
     bool BgfxWorldRenderer::submitLayer(const BgfxRenderLayer& layer) const
     {
 #if WAR_HAS_BGFX
-        if (layer.quads.empty())
+        if (layer.quads.empty() || !m_colorProgram.isReady())
         {
             return false;
         }
@@ -277,7 +177,7 @@ namespace war
             | BGFX_STATE_WRITE_A
             | BGFX_STATE_MSAA
             | BGFX_STATE_BLEND_ALPHA);
-        bgfx::submit(0, s_program);
+        bgfx::submit(0, m_colorProgram.handle());
         return true;
 #else
         (void)layer;
