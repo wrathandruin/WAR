@@ -26,11 +26,19 @@ namespace war
         [[nodiscard]] WorldRegionTagId regionTag(TileCoord tile) const;
         [[nodiscard]] BgfxWorldThemeId visualThemeForTile(TileCoord tile) const;
 
+        void setRegionOverlayEnabled(bool enabled);
+        [[nodiscard]] bool regionOverlayEnabled() const;
+
+        void setPaletteMode(BgfxThemePaletteMode paletteMode);
+        [[nodiscard]] BgfxThemePaletteMode paletteMode() const;
+
     private:
         [[nodiscard]] size_t index(TileCoord tile) const;
 
         WorldGrid m_world;
         EntityManager m_entities;
         std::vector<WorldRegionTagId> m_regionTags;
+        bool m_regionOverlayEnabled = true;
+        BgfxThemePaletteMode m_paletteMode = BgfxThemePaletteMode::Default;
     };
 }

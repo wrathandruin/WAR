@@ -1,5 +1,7 @@
 #include "engine/render/WorldRenderer.h"
 
+#include "engine/render/BgfxWorldTheme.h"
+
 namespace war
 {
     namespace
@@ -47,6 +49,128 @@ namespace war
                 return RGB(200, 255, 210);
             }
         }
+
+        COLORREF tileFillColor(
+            BgfxWorldThemeId theme,
+            BgfxThemePaletteMode paletteMode,
+            bool blocked,
+            int tileVariant)
+        {
+            switch (theme)
+            {
+            case BgfxWorldThemeId::Industrial:
+                if (blocked)
+                {
+                    switch (paletteMode)
+                    {
+                    case BgfxThemePaletteMode::Muted: return tileVariant == 0 ? RGB(184, 184, 184) : RGB(196, 196, 196);
+                    case BgfxThemePaletteMode::Vivid: return tileVariant == 0 ? RGB(220, 220, 220) : RGB(235, 235, 235);
+                    default: return tileVariant == 0 ? RGB(208, 208, 208) : RGB(220, 220, 220);
+                    }
+                }
+                switch (paletteMode)
+                {
+                case BgfxThemePaletteMode::Muted: return tileVariant == 0 ? RGB(205, 210, 214) : RGB(220, 224, 228);
+                case BgfxThemePaletteMode::Vivid: return tileVariant == 0 ? RGB(245, 245, 248) : RGB(255, 255, 255);
+                default: return tileVariant == 0 ? RGB(235, 235, 235) : RGB(255, 255, 255);
+                }
+
+            case BgfxWorldThemeId::Sterile:
+                if (blocked)
+                {
+                    switch (paletteMode)
+                    {
+                    case BgfxThemePaletteMode::Muted: return tileVariant == 0 ? RGB(194, 214, 224) : RGB(208, 224, 232);
+                    case BgfxThemePaletteMode::Vivid: return tileVariant == 0 ? RGB(224, 244, 255) : RGB(236, 248, 255);
+                    default: return tileVariant == 0 ? RGB(215, 235, 245) : RGB(228, 245, 255);
+                    }
+                }
+                switch (paletteMode)
+                {
+                case BgfxThemePaletteMode::Muted: return tileVariant == 0 ? RGB(205, 225, 235) : RGB(220, 234, 242);
+                case BgfxThemePaletteMode::Vivid: return tileVariant == 0 ? RGB(230, 248, 255) : RGB(246, 252, 255);
+                default: return tileVariant == 0 ? RGB(225, 245, 255) : RGB(245, 252, 255);
+                }
+
+            case BgfxWorldThemeId::Emergency:
+                if (blocked)
+                {
+                    switch (paletteMode)
+                    {
+                    case BgfxThemePaletteMode::Muted: return tileVariant == 0 ? RGB(214, 168, 168) : RGB(225, 182, 182);
+                    case BgfxThemePaletteMode::Vivid: return tileVariant == 0 ? RGB(255, 214, 214) : RGB(255, 228, 228);
+                    default: return tileVariant == 0 ? RGB(255, 205, 205) : RGB(255, 220, 220);
+                    }
+                }
+                switch (paletteMode)
+                {
+                case BgfxThemePaletteMode::Muted: return tileVariant == 0 ? RGB(225, 196, 196) : RGB(235, 208, 208);
+                case BgfxThemePaletteMode::Vivid: return tileVariant == 0 ? RGB(255, 214, 214) : RGB(255, 232, 232);
+                default: return tileVariant == 0 ? RGB(255, 230, 230) : RGB(255, 245, 245);
+                }
+
+            default:
+                return blocked ? RGB(220, 220, 220) : RGB(255, 255, 255);
+            }
+        }
+
+        COLORREF tileOutlineColor(BgfxWorldThemeId theme)
+        {
+            switch (theme)
+            {
+            case BgfxWorldThemeId::Industrial:
+                return RGB(95, 105, 118);
+
+            case BgfxWorldThemeId::Sterile:
+                return RGB(108, 164, 192);
+
+            case BgfxWorldThemeId::Emergency:
+                return RGB(176, 92, 92);
+
+            default:
+                return RGB(80, 80, 80);
+            }
+        }
+
+        COLORREF regionBoundaryColor(BgfxWorldThemeId theme, BgfxThemePaletteMode paletteMode)
+        {
+            switch (theme)
+            {
+            case BgfxWorldThemeId::Industrial:
+                switch (paletteMode)
+                {
+                case BgfxThemePaletteMode::Muted: return RGB(118, 128, 138);
+                case BgfxThemePaletteMode::Vivid: return RGB(166, 184, 204);
+                default: return RGB(144, 158, 176);
+                }
+
+            case BgfxWorldThemeId::Sterile:
+                switch (paletteMode)
+                {
+                case BgfxThemePaletteMode::Muted: return RGB(118, 188, 220);
+                case BgfxThemePaletteMode::Vivid: return RGB(110, 222, 255);
+                default: return RGB(128, 208, 244);
+                }
+
+            case BgfxWorldThemeId::Emergency:
+                switch (paletteMode)
+                {
+                case BgfxThemePaletteMode::Muted: return RGB(196, 112, 112);
+                case BgfxThemePaletteMode::Vivid: return RGB(255, 110, 110);
+                default: return RGB(236, 124, 124);
+                }
+
+            default:
+                return RGB(255, 255, 255);
+            }
+        }
+
+        int tileVariant(TileCoord tile)
+        {
+            const int value = tile.x * 17 + tile.y * 31 + tile.x * tile.y * 3;
+            const int hash = value < 0 ? -value : value;
+            return hash % 2;
+        }
     }
 
     void WorldRenderer::render(
@@ -73,27 +197,64 @@ namespace war
 
     void WorldRenderer::drawTiles(HDC dc, const WorldState& worldState, const Camera2D& camera) const
     {
-        for (int y = 0; y < worldState.world().getHeight(); ++y)
+        const int width = worldState.world().getWidth();
+        const int height = worldState.world().getHeight();
+
+        for (int y = 0; y < height; ++y)
         {
-            for (int x = 0; x < worldState.world().getWidth(); ++x)
+            for (int x = 0; x < width; ++x)
             {
                 const TileCoord tile{ x, y };
                 const RECT rect = tileToScreenRect(worldState, camera, tile);
                 const bool blocked = worldState.world().isBlocked(tile);
+                const BgfxWorldThemeId theme = worldState.visualThemeForTile(tile);
+                const BgfxThemePaletteMode paletteMode = worldState.paletteMode();
 
-                HBRUSH brush = CreateSolidBrush(
-                    blocked ? RGB(220, 60, 60) : RGB(34, 38, 46));
+                HBRUSH brush = CreateSolidBrush(tileFillColor(theme, paletteMode, blocked, tileVariant(tile)));
                 FillRect(dc, &rect, brush);
                 DeleteObject(brush);
 
-                HPEN pen = CreatePen(
-                    PS_SOLID,
-                    1,
-                    blocked ? RGB(255, 180, 180) : RGB(45, 50, 60));
+                HPEN pen = CreatePen(PS_SOLID, 1, tileOutlineColor(theme));
                 HPEN oldPen = static_cast<HPEN>(SelectObject(dc, pen));
                 HBRUSH oldBrush = static_cast<HBRUSH>(SelectObject(dc, GetStockObject(HOLLOW_BRUSH)));
 
                 Rectangle(dc, rect.left, rect.top, rect.right, rect.bottom);
+
+                if (worldState.regionOverlayEnabled())
+                {
+                    const int boundaryThickness = max(4, (rect.right - rect.left) / 6);
+                    const COLORREF boundary = regionBoundaryColor(theme, paletteMode);
+
+                    const TileCoord east{ x + 1, y };
+                    if (x + 1 < width && worldState.visualThemeForTile(east) != theme)
+                    {
+                        RECT boundaryRect{
+                            rect.right - boundaryThickness / 2,
+                            rect.top,
+                            rect.right + boundaryThickness / 2,
+                            rect.bottom
+                        };
+
+                        HBRUSH boundaryBrush = CreateSolidBrush(boundary);
+                        FillRect(dc, &boundaryRect, boundaryBrush);
+                        DeleteObject(boundaryBrush);
+                    }
+
+                    const TileCoord south{ x, y + 1 };
+                    if (y + 1 < height && worldState.visualThemeForTile(south) != theme)
+                    {
+                        RECT boundaryRect{
+                            rect.left,
+                            rect.bottom - boundaryThickness / 2,
+                            rect.right,
+                            rect.bottom + boundaryThickness / 2
+                        };
+
+                        HBRUSH boundaryBrush = CreateSolidBrush(boundary);
+                        FillRect(dc, &boundaryRect, boundaryBrush);
+                        DeleteObject(boundaryBrush);
+                    }
+                }
 
                 SelectObject(dc, oldBrush);
                 SelectObject(dc, oldPen);

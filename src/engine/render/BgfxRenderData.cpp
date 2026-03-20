@@ -2,6 +2,7 @@
 
 #include "engine/gameplay/Entity.h"
 #include "engine/render/BgfxTileVisuals.h"
+#include "engine/render/BgfxWorldTheme.h"
 
 namespace war
 {
@@ -72,6 +73,38 @@ namespace war
                 worldPosition.y + halfSize,
                 color,
                 material
+            };
+        }
+
+        BgfxQuad rightBoundaryQuad(const WorldState& worldState, TileCoord tile, float thickness, uint32_t color)
+        {
+            const int tileSize = worldState.world().getTileSize();
+            const Vec2 center = worldState.world().tileToWorldCenter(tile);
+            const float halfTile = static_cast<float>(tileSize) * 0.5f;
+            const float halfThickness = thickness * 0.5f;
+
+            return BgfxQuad{
+                center.x + halfTile - halfThickness,
+                center.y - halfTile,
+                center.x + halfTile + halfThickness,
+                center.y + halfTile,
+                color
+            };
+        }
+
+        BgfxQuad bottomBoundaryQuad(const WorldState& worldState, TileCoord tile, float thickness, uint32_t color)
+        {
+            const int tileSize = worldState.world().getTileSize();
+            const Vec2 center = worldState.world().tileToWorldCenter(tile);
+            const float halfTile = static_cast<float>(tileSize) * 0.5f;
+            const float halfThickness = thickness * 0.5f;
+
+            return BgfxQuad{
+                center.x - halfTile,
+                center.y + halfTile - halfThickness,
+                center.x + halfTile,
+                center.y + halfTile + halfThickness,
+                color
             };
         }
 
@@ -153,21 +186,53 @@ namespace war
 
         BgfxWorldRenderData data{};
 
-        data.tiles.quads.reserve(
-            static_cast<size_t>(worldState.world().getWidth())
-            * static_cast<size_t>(worldState.world().getHeight()));
+        const int width = worldState.world().getWidth();
+        const int height = worldState.world().getHeight();
 
-        for (int y = 0; y < worldState.world().getHeight(); ++y)
+        data.tiles.quads.reserve(static_cast<size_t>(width) * static_cast<size_t>(height));
+
+        if (worldState.regionOverlayEnabled())
         {
-            for (int x = 0; x < worldState.world().getWidth(); ++x)
+            data.regionOverlay.quads.reserve(static_cast<size_t>(width) * static_cast<size_t>(height));
+        }
+
+        const float boundaryThickness = 8.0f;
+
+        for (int y = 0; y < height; ++y)
+        {
+            for (int x = 0; x < width; ++x)
             {
                 const TileCoord tile{ x, y };
+
                 data.tiles.quads.push_back(
                     tileToWorldTexturedQuad(
                         worldState,
                         tile,
                         BgfxTileVisuals::tintForTile(worldState, tile),
                         BgfxTileVisuals::materialForTile(worldState, tile)));
+
+                if (!worldState.regionOverlayEnabled())
+                {
+                    continue;
+                }
+
+                const BgfxWorldThemeId theme = worldState.visualThemeForTile(tile);
+                const BgfxThemePaletteMode paletteMode = worldState.paletteMode();
+                const uint32_t boundaryColor = BgfxWorldTheme::regionBoundaryColor(theme, paletteMode);
+
+                const TileCoord east{ x + 1, y };
+                if (x + 1 < width && worldState.visualThemeForTile(east) != theme)
+                {
+                    data.regionOverlay.quads.push_back(
+                        rightBoundaryQuad(worldState, tile, boundaryThickness, boundaryColor));
+                }
+
+                const TileCoord south{ x, y + 1 };
+                if (y + 1 < height && worldState.visualThemeForTile(south) != theme)
+                {
+                    data.regionOverlay.quads.push_back(
+                        bottomBoundaryQuad(worldState, tile, boundaryThickness, boundaryColor));
+                }
             }
         }
 

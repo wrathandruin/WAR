@@ -26,9 +26,11 @@ namespace war
             if (preferred->initialize(m_window->getHandle()))
             {
                 m_renderDevice = std::move(preferred);
-                pushEvent("Milestone 25 initialized");
-                pushEvent("bgfx content tagging / region hooks active");
-                pushEvent("World zones: Industrial | Sterile | Emergency");
+                pushEvent("Milestone 26 initialized");
+                pushEvent("bgfx region authoring overlay / palette hooks active");
+                pushEvent("Region boundary overlay is enabled by default");
+                pushEvent("Press O to toggle region boundary overlay");
+                pushEvent("Press 7 / 8 / 9 for Default / Muted / Vivid palette");
                 pushEvent(std::string("Active backend: ") + m_renderDevice->name());
             }
             else
@@ -37,9 +39,11 @@ namespace war
                 const bool fallbackReady = fallback->initialize(m_window->getHandle());
                 m_renderDevice = std::move(fallback);
 
-                pushEvent("Milestone 25 initialized");
+                pushEvent("Milestone 26 initialized");
                 pushEvent("bgfx unavailable, falling back to GDI");
-                pushEvent("World zones: Industrial | Sterile | Emergency");
+                pushEvent("Region boundary overlay is enabled by default");
+                pushEvent("Press O to toggle region boundary overlay");
+                pushEvent("Press 7 / 8 / 9 for Default / Muted / Vivid palette");
                 pushEvent(std::string("Active backend: ") + m_renderDevice->name());
                 if (!fallbackReady)
                 {
@@ -139,6 +143,8 @@ namespace war
 
     void GameLayer::updateInput()
     {
+        applyAuthoringHotkeys();
+
         const POINT mouse = m_window->getMousePosition();
         const Vec2 mouseWorld = m_camera.screenToWorld(mouse.x, mouse.y);
         const TileCoord hovered = m_worldState.world().worldToTile(mouseWorld);
@@ -190,6 +196,44 @@ namespace war
         {
             (void)m_window->consumeMouseDelta();
         }
+    }
+
+    void GameLayer::applyAuthoringHotkeys()
+    {
+        const bool overlayDown = (GetAsyncKeyState('O') & 0x8000) != 0;
+        const bool palette7Down = (GetAsyncKeyState('7') & 0x8000) != 0;
+        const bool palette8Down = (GetAsyncKeyState('8') & 0x8000) != 0;
+        const bool palette9Down = (GetAsyncKeyState('9') & 0x8000) != 0;
+
+        if (overlayDown && !m_overlayKeyWasDown)
+        {
+            const bool newState = !m_worldState.regionOverlayEnabled();
+            m_worldState.setRegionOverlayEnabled(newState);
+            pushEvent(newState ? "Region boundary overlay enabled" : "Region boundary overlay disabled");
+        }
+
+        if (palette7Down && !m_palette7WasDown)
+        {
+            m_worldState.setPaletteMode(BgfxThemePaletteMode::Default);
+            pushEvent("Palette mode: Default");
+        }
+
+        if (palette8Down && !m_palette8WasDown)
+        {
+            m_worldState.setPaletteMode(BgfxThemePaletteMode::Muted);
+            pushEvent("Palette mode: Muted");
+        }
+
+        if (palette9Down && !m_palette9WasDown)
+        {
+            m_worldState.setPaletteMode(BgfxThemePaletteMode::Vivid);
+            pushEvent("Palette mode: Vivid");
+        }
+
+        m_overlayKeyWasDown = overlayDown;
+        m_palette7WasDown = palette7Down;
+        m_palette8WasDown = palette8Down;
+        m_palette9WasDown = palette9Down;
     }
 
     void GameLayer::updatePlayer(float dt)

@@ -15,6 +15,8 @@ namespace war
     void WorldState::initializeTestWorld()
     {
         m_world.generateTestMap();
+        m_regionOverlayEnabled = true;
+        m_paletteMode = BgfxThemePaletteMode::Default;
 
         for (int y = 0; y < m_world.getHeight(); ++y)
         {
@@ -113,6 +115,26 @@ namespace war
     BgfxWorldThemeId WorldState::visualThemeForTile(TileCoord tile) const
     {
         return WorldRegionTags::themeFor(regionTag(tile));
+    }
+
+    void WorldState::setRegionOverlayEnabled(bool enabled)
+    {
+        m_regionOverlayEnabled = enabled;
+    }
+
+    bool WorldState::regionOverlayEnabled() const
+    {
+        return m_regionOverlayEnabled;
+    }
+
+    void WorldState::setPaletteMode(BgfxThemePaletteMode paletteMode)
+    {
+        m_paletteMode = paletteMode;
+    }
+
+    BgfxThemePaletteMode WorldState::paletteMode() const
+    {
+        return m_paletteMode;
     }
 
     size_t WorldState::index(TileCoord tile) const

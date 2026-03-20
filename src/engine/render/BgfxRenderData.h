@@ -44,6 +44,7 @@ namespace war
     struct BgfxWorldRenderData
     {
         BgfxTexturedRenderLayer tiles;
+        BgfxRenderLayer regionOverlay;
         BgfxRenderLayer path;
         BgfxRenderLayer hoveredTile;
         BgfxTexturedRenderLayer actors;

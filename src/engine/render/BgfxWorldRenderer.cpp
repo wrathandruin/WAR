@@ -143,11 +143,12 @@ namespace war
             hoveredTile);
 
         submitTexturedLayer(renderData.tiles);
+        submitColorLayer(renderData.regionOverlay);
         submitColorLayer(renderData.path);
         submitColorLayer(renderData.hoveredTile);
         submitTexturedLayer(renderData.actors);
 
-        m_statusMessage = "bgfx world rendered with theme sets";
+        m_statusMessage = "bgfx world rendered with visible region boundary overlay";
         return true;
 #else
         (void)worldState;

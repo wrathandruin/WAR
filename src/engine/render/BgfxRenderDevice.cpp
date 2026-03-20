@@ -48,6 +48,9 @@ namespace war
 
         bgfx::setDebug(BGFX_DEBUG_TEXT);
         bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x101218ff, 1.0f, 0);
+        // The world renderer depends on strict layer ordering so region overlays
+        // are composited on top of the tile pass instead of being state-sorted away.
+        bgfx::setViewMode(0, bgfx::ViewMode::Sequential);
         m_initialized = true;
         return true;
 #else
@@ -79,6 +82,7 @@ namespace war
             m_height = newHeight;
             bgfx::reset(m_width, m_height, BGFX_RESET_VSYNC);
             bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x101218ff, 1.0f, 0);
+            bgfx::setViewMode(0, bgfx::ViewMode::Sequential);
         }
 
         bgfx::setViewRect(0, 0, 0, static_cast<uint16_t>(m_width), static_cast<uint16_t>(m_height));

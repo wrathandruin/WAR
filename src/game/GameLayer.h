@@ -10,6 +10,7 @@
 #include "engine/math/Vec2.h"
 #include "engine/render/BgfxDebugFrameRenderer.h"
 #include "engine/render/BgfxWorldRenderer.h"
+#include "engine/render/BgfxWorldTheme.h"
 #include "engine/render/Camera2D.h"
 #include "engine/render/DebugOverlayRenderer.h"
 #include "engine/render/IRenderDevice.h"
@@ -32,6 +33,7 @@ namespace war
         void updateInput();
         void updatePlayer(float dt);
         void pushEvent(const std::string& message);
+        void applyAuthoringHotkeys();
 
         [[nodiscard]] RECT getClientRect() const;
 
@@ -56,5 +58,10 @@ namespace war
 
         float m_lastDeltaTime = 0.016f;
         std::vector<std::string> m_eventLog;
+
+        bool m_overlayKeyWasDown = false;
+        bool m_palette7WasDown = false;
+        bool m_palette8WasDown = false;
+        bool m_palette9WasDown = false;
     };
 }

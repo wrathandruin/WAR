@@ -50,15 +50,16 @@ namespace war
         TileCoord tile)
     {
         const BgfxWorldThemeId theme = worldState.visualThemeForTile(tile);
+        const BgfxThemePaletteMode paletteMode = worldState.paletteMode();
         const bool blocked = worldState.world().isBlocked(tile);
 
         if (blocked)
         {
             const int tileVariant = countBlockedNeighbors(worldState, tile) >= 3 ? 1 : 0;
-            return BgfxWorldTheme::wallTint(theme, tileVariant);
+            return BgfxWorldTheme::wallTint(theme, paletteMode, tileVariant);
         }
 
         const int tileVariant = coordinateHash(tile) % 2;
-        return BgfxWorldTheme::floorTint(theme, tileVariant);
+        return BgfxWorldTheme::floorTint(theme, paletteMode, tileVariant);
     }
 }
