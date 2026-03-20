@@ -36,6 +36,12 @@ namespace war
             return std::filesystem::exists(path, error) && std::filesystem::is_directory(path, error);
         }
 
+        bool fileExists(const std::filesystem::path& path)
+        {
+            std::error_code error;
+            return std::filesystem::exists(path, error) && std::filesystem::is_regular_file(path, error);
+        }
+
         void ensureDirectory(const std::filesystem::path& path, RuntimeBoundaryReport& report)
         {
             std::error_code error;
@@ -59,11 +65,24 @@ namespace war
             ? std::filesystem::current_path()
             : report.executablePath.parent_path();
 
+        const std::filesystem::path packagedAssetRoot = report.executableDirectory / "assets";
+        const std::filesystem::path packagedRuntimeRootLower = report.executableDirectory / "runtime";
+        const std::filesystem::path packagedRuntimeRootUpper = report.executableDirectory / "Runtime";
+        const std::filesystem::path packagedRuntimeRoot =
+            directoryExists(packagedRuntimeRootLower)
+                ? packagedRuntimeRootLower
+                : (directoryExists(packagedRuntimeRootUpper) ? packagedRuntimeRootUpper : std::filesystem::path{});
+        const bool packagedMarkersPresent =
+            fileExists(report.executableDirectory / "demo_manifest.txt")
+            || fileExists(report.executableDirectory / "launch_local_demo_win64.bat")
+            || fileExists(report.executableDirectory / "launch_headless_host_win64.bat");
         report.repoRoot = findRepoRoot(report.executableDirectory);
         report.repoRootResolved = !report.repoRoot.empty();
-        report.runningFromSourceTree = report.repoRootResolved;
-
-        const std::filesystem::path packagedAssetRoot = report.executableDirectory / "assets";
+        const bool packagedLayoutDetected =
+            directoryExists(packagedAssetRoot)
+            && !packagedRuntimeRoot.empty()
+            && (packagedMarkersPresent || !report.repoRootResolved);
+        report.runningFromSourceTree = report.repoRootResolved && !packagedLayoutDetected;
         const std::filesystem::path sourceAssetRoot = report.repoRootResolved
             ? report.repoRoot / "assets"
             : std::filesystem::path{};
@@ -83,9 +102,9 @@ namespace war
             report.issues.push_back("Asset root could not be resolved from packaged or source-tree layout.");
         }
 
-        report.runtimeRoot = report.repoRootResolved
-            ? report.repoRoot / "Runtime"
-            : report.executableDirectory / "runtime";
+        report.runtimeRoot = packagedLayoutDetected
+            ? packagedRuntimeRoot
+            : (report.repoRootResolved ? report.repoRoot / "Runtime" : report.executableDirectory / "runtime");
         report.configDirectory = report.runtimeRoot / "Config";
         report.logsDirectory = report.runtimeRoot / "Logs";
         report.savesDirectory = report.runtimeRoot / "Saves";

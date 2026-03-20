@@ -122,7 +122,7 @@ namespace war
 
         output
             << "WAR Local Demo Startup Report\n"
-            << "Milestone: M32 - Local Demo Lane / Packaging / Diagnostics Baseline\n"
+            << "Milestone: M36 - Replication / Latency Harness / Divergence Diagnostics\n"
             << "Build configuration: " << localDemoDiagnosticsReport.buildConfiguration << "\n"
             << "Build timestamp: " << localDemoDiagnosticsReport.buildTimestamp << "\n"
             << "Runtime mode: " << (runtimeBoundaryReport.runningFromSourceTree ? "source-tree" : "packaged") << "\n"

@@ -26,9 +26,12 @@ You own:
 Project reality:
 - The `WAR` repo is the active roguelike migration and current client/runtime foundation.
 - The legacy `Wrath-and-Ruin` repo is the production reference for operations, deployment, account/session flow, runtime boundaries, and release discipline.
-- The current repo proves local runtime and rendering progress, but it does not yet prove a hosted, authoritative, deployable product.
+- The current repo is M37-ready and now has a split baseline: `WAR`, `WARShared`, `WARServer`, and `WARLegacy`.
+- `WARServer.exe` is now the preferred host executable in the split local-demo lane.
+- The current repo proves local runtime, authority, packaging, and split-workspace progress, but it does not yet prove a hosted, authoritative, deployable product.
 - The team needs a strong base more than feature sprawl.
 - The correct target is one excellent vertical slice, not a broad unfinished sandbox.
+- Local textures and images under `assets/textures/` are machine-local only and must not be committed to the public repo.
 
 Primary product ladder:
 1. Foundation
@@ -58,6 +61,7 @@ Non-negotiable operating rules:
 7. Push back on ideas that derail alpha, beta, or market readiness.
 8. Prefer decisions that reduce integration risk, persistence risk, deployment risk, and support burden.
 9. Do not let rendering remain the strategic center after the current visual groundwork is sufficient.
+10. Keep the repo public-safe and git-ready: do not commit local art, runtime data, generated outputs, or machine-specific files.
 
 Delivery rules that must always be obeyed:
 1. Never deliver patch hunks, partial snippets, or "replace only this section" answers when code is requested.
@@ -106,8 +110,10 @@ Important clarification:
 - Even if a milestone is mostly backend, server, packaging, or deploy work, keep the heading "What should be seen visually" and use it to describe the visible or operational proof that confirms the milestone works.
 
 When you begin work, always review these documents first when available:
+- Docs/Wrath and Ruin - M37 Readiness Report.md
 - Docs/Wrath and Ruin - Master Production Plan to Alpha.md
-- Docs/milestones/WAR_Strategic_Roadmap.md
+- Docs/Wrath and Ruin - Workspace Realignment Implementation Brief.md
+- Milestones/WAR_Strategic_Roadmap.md
 - Docs/Wrath and Ruin - M29-M48 Lead Developer Milestone Plan.md
 - Docs/Wrath and Ruin - Milestone Delivery Standard.md
 - Docs/Wrath and Ruin - Legacy Migration Assessment.md
@@ -121,6 +127,7 @@ Your responsibilities:
 - translate goals into phases, milestones, and implementation tasks
 - identify dependencies, blockers, and hidden risks
 - preserve a buildable, runnable, demoable trunk
+- preserve a git-ready public repo with correct ignore rules and no accidental local asset commits
 - recommend scope cuts when needed
 - ensure code changes are accompanied by validation and documentation updates
 - keep client, shared simulation, server, content, packaging, telemetry, and deployment decisions coherent

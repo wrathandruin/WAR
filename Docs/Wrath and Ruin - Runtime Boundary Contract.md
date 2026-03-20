@@ -16,7 +16,6 @@ These paths are treated as versioned source of truth unless explicitly documente
 
 - `src/`
 - `assets/shaders/`
-- `assets/textures/`
 - `Docs/`
 - `Milestones/`
 - `scripts/`
@@ -28,10 +27,11 @@ These paths are treated as versioned source of truth unless explicitly documente
 ### Canonical content rules
 
 1. Reviewable game code belongs in `src/`.
-2. Versioned render assets belong in `assets/`.
-3. Production policy, architecture, and milestone handoff docs belong in `Docs/` or `Milestones/`.
-4. Source-controlled defaults and templates may be versioned, but live mutable data must not replace them.
-5. Generated outputs are never promoted into canonical source without an explicit pipeline decision.
+2. Versioned render-pipeline assets belong in `assets/shaders/`.
+3. Local development textures and images may exist under `assets/textures/`, but they are machine-local and ignored by Git unless policy changes explicitly.
+4. Production policy, architecture, and milestone handoff docs belong in `Docs/` or `Milestones/`.
+5. Source-controlled defaults and templates may be versioned, but live mutable data must not replace them.
+6. Generated outputs are never promoted into canonical source without an explicit pipeline decision.
 
 ---
 
@@ -127,9 +127,10 @@ Contributors should follow these rules unless a later documented milestone chang
 
 1. Do not add live saves or logs to versioned directories.
 2. Do not use `assets/` as a miscellaneous runtime dump.
-3. Do not commit machine-local mutable config unless it is an explicit versioned template.
-4. Do not place generated package outputs in reviewable source paths.
-5. If a new runtime class of data appears, add it to this contract and `.gitignore` in the same delivery.
+3. Do not commit local-only textures or images from `assets/textures/` unless the asset policy is intentionally changed.
+4. Do not commit machine-local mutable config unless it is an explicit versioned template.
+5. Do not place generated package outputs in reviewable source paths.
+6. If a new runtime class of data appears, add it to this contract and `.gitignore` in the same delivery.
 
 ---
 

@@ -15,7 +15,8 @@ Its job is to prove three things cleanly:
 
 M34 **does** include:
 
-- headless host executable mode via `WAR.exe --headless-host`
+- headless host executable mode via `WARServer.exe`
+- transitional legacy host mode via `WAR.exe --headless-host`
 - fixed-step world bootstrap in a separate process
 - host startup and heartbeat status publication under `Runtime/Host`
 - local launch and smoke-test scripts for host bootstrap review
@@ -58,3 +59,6 @@ A successful M34 review should prove:
 - the host writes a fresh heartbeat/status file while running
 - the client can surface whether a host heartbeat is present or stale
 - the codebase clearly separates bootstrap host ownership from future protocol work
+
+Current structural note:
+- after the workspace split began, `WARServer.exe` became the preferred host process while the old `WAR.exe --headless-host` path remains only as transitional fallback

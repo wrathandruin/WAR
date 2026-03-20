@@ -138,7 +138,8 @@ namespace war
             const RuntimeBoundaryReport& runtimeBoundaryReport,
             const LocalDemoDiagnosticsReport& localDemoDiagnosticsReport,
             const SharedSimulationDiagnostics& simulationDiagnostics,
-            const HeadlessHostPresenceReport& headlessHostPresenceReport)
+            const HeadlessHostPresenceReport& headlessHostPresenceReport,
+            const AuthoritativeHostProtocolReport& authoritativeHostProtocolReport)
         {
             const std::string hovered = tileText(hasHoveredTile && worldState.world().isInBounds(hoveredTile), hoveredTile);
             const std::string selected = tileText(hasSelectedTile && worldState.world().isInBounds(selectedTile), selectedTile);
@@ -150,16 +151,30 @@ namespace war
 
             std::ostringstream status;
             status
-                << "M34 host bootstrap | sim ticks: " << simulationDiagnostics.simulationTicks
+                << "M36 replication harness | sim ticks: " << simulationDiagnostics.simulationTicks
+                << " | snapshot age ms: " << simulationDiagnostics.lastSnapshotAgeMilliseconds
+                << " | corr/div: "
+                << simulationDiagnostics.correctionsApplied << "/"
+                << simulationDiagnostics.divergenceEvents
                 << " | intents q/p/pending: "
                 << simulationDiagnostics.intentsQueued << "/"
                 << simulationDiagnostics.intentsProcessed << "/"
                 << simulationDiagnostics.pendingIntentCount
+                << " | harness ms: "
+                << simulationDiagnostics.intentLatencyMilliseconds << "/"
+                << simulationDiagnostics.acknowledgementLatencyMilliseconds << "/"
+                << simulationDiagnostics.snapshotLatencyMilliseconds
+                << " | jitter: " << simulationDiagnostics.jitterMilliseconds
                 << " | runtime: " << (runtimeBoundaryReport.runningFromSourceTree ? "source-tree" : "packaged")
                 << " | packaged lane: " << (localDemoDiagnosticsReport.packagedLaneReady ? "ready" : "not staged")
                 << " | host online: " << (headlessHostPresenceReport.hostOnline ? "yes" : "no")
                 << " | host state: " << headlessHostPresenceReport.hostState
                 << " | host age ms: " << headlessHostPresenceReport.heartbeatAgeMilliseconds
+                << " | host q: "
+                << headlessHostPresenceReport.pendingInboundIntentCount << "/"
+                << headlessHostPresenceReport.pendingOutboundAcknowledgementCount << "/"
+                << headlessHostPresenceReport.pendingSnapshotCount
+                << " | protocol lane: " << (authoritativeHostProtocolReport.authorityLaneReady ? "ready" : "not ready")
                 << " | hover: " << hovered
                 << " | prompt: " << contextPrompt(worldState, hasHoveredTile, hoveredTile)
                 << " | selected: " << selected
@@ -184,7 +199,8 @@ namespace war
         const RuntimeBoundaryReport& runtimeBoundaryReport,
         const LocalDemoDiagnosticsReport& localDemoDiagnosticsReport,
         const SharedSimulationDiagnostics& simulationDiagnostics,
-        const HeadlessHostPresenceReport& headlessHostPresenceReport)
+        const HeadlessHostPresenceReport& headlessHostPresenceReport,
+        const AuthoritativeHostProtocolReport& authoritativeHostProtocolReport)
     {
 #if WAR_HAS_BGFX
         ensureSharedBgfxState();
@@ -240,14 +256,27 @@ namespace war
             hasActionTargetTile,
             actionTargetTile);
 
-        submitTexturedLayer(renderData.tiles);
-        submitColorLayer(renderData.regionOverlay);
-        submitColorLayer(renderData.path);
-        submitColorLayer(renderData.selectedTile);
-        submitColorLayer(renderData.actionTarget);
-        submitColorLayer(renderData.authoringHotspots);
-        submitColorLayer(renderData.hoveredTile);
-        submitTexturedLayer(renderData.actors);
+        const bool tilesSubmitted = submitTexturedLayer(renderData.tiles);
+        const bool regionOverlaySubmitted = submitColorLayer(renderData.regionOverlay);
+        const bool pathSubmitted = submitColorLayer(renderData.path);
+        const bool selectedSubmitted = submitColorLayer(renderData.selectedTile);
+        const bool actionTargetSubmitted = submitColorLayer(renderData.actionTarget);
+        const bool hotspotsSubmitted = submitColorLayer(renderData.authoringHotspots);
+        const bool hoveredSubmitted = submitColorLayer(renderData.hoveredTile);
+        const bool actorsSubmitted = submitTexturedLayer(renderData.actors);
+
+        if (!tilesSubmitted || !actorsSubmitted)
+        {
+            m_statusMessage = "bgfx critical layer submission failed";
+            return false;
+        }
+
+        (void)regionOverlaySubmitted;
+        (void)pathSubmitted;
+        (void)selectedSubmitted;
+        (void)actionTargetSubmitted;
+        (void)hotspotsSubmitted;
+        (void)hoveredSubmitted;
 
         m_statusMessage = buildStatusMessage(
             worldState,
@@ -262,7 +291,8 @@ namespace war
             runtimeBoundaryReport,
             localDemoDiagnosticsReport,
             simulationDiagnostics,
-            headlessHostPresenceReport);
+            headlessHostPresenceReport,
+            authoritativeHostProtocolReport);
         return true;
 #else
         (void)worldState;
@@ -280,6 +310,7 @@ namespace war
         (void)localDemoDiagnosticsReport;
         (void)simulationDiagnostics;
         (void)headlessHostPresenceReport;
+        (void)authoritativeHostProtocolReport;
         m_statusMessage = "bgfx headers not available at compile time";
         return false;
 #endif

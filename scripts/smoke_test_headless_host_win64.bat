@@ -7,7 +7,12 @@ if not exist "%DEMO_ROOT%\WAR.exe" (
     for %%I in ("%SCRIPT_DIR%..") do set "DEMO_ROOT=%%~fI"
 )
 
-set "EXE_PATH=%DEMO_ROOT%\WAR.exe"
+set "HOST_EXE_PATH=%DEMO_ROOT%\WARServer.exe"
+set "HOST_ARGS="
+if not exist "%HOST_EXE_PATH%" (
+    set "HOST_EXE_PATH=%DEMO_ROOT%\WAR.exe"
+    set "HOST_ARGS=--headless-host"
+)
 set "RUNTIME_ROOT=%DEMO_ROOT%\runtime"
 if not exist "%RUNTIME_ROOT%" set "RUNTIME_ROOT=%DEMO_ROOT%\Runtime"
 set "HOST_ROOT=%RUNTIME_ROOT%\Host"
@@ -25,10 +30,10 @@ if exist "%HOST_LOG%" del /q "%HOST_LOG%" >nul 2>nul
 
 set "FAILED=0"
 
-call :check_file "%EXE_PATH%" "WAR executable"
+call :check_file "%HOST_EXE_PATH%" "Host executable"
 if "%FAILED%"=="1" goto :report
 
-start "WAR Headless Host Smoke" /min "%EXE_PATH%" --headless-host --host-run-seconds=3
+start "WAR Headless Host Smoke" /min "%HOST_EXE_PATH%" %HOST_ARGS% --host-run-seconds=3
 ping 127.0.0.1 -n 5 >nul
 
 call :check_file "%STATUS_FILE%" "Headless host status file"
@@ -38,7 +43,7 @@ call :check_file "%HOST_LOG%" "Headless host log"
 (
     echo WAR Headless Host Smoke Test
     echo Demo root: %DEMO_ROOT%
-    echo Executable: %EXE_PATH%
+    echo Executable: %HOST_EXE_PATH%
     echo Runtime root: %RUNTIME_ROOT%
     echo Host root: %HOST_ROOT%
     if "%FAILED%"=="0" (
@@ -52,11 +57,11 @@ call :check_file "%HOST_LOG%" "Headless host log"
 
 type "%REPORT_PATH%"
 if "%FAILED%"=="0" (
-    echo [M34] Host smoke test passed.
+    echo [M36] Host smoke test passed.
     exit /b 0
 )
 
-echo [M34] Host smoke test failed.
+echo [M36] Host smoke test failed.
 exit /b 1
 
 :check_file

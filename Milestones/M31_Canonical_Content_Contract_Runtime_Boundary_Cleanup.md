@@ -44,10 +44,16 @@ It is not a gameplay-expansion milestone.
 ### Canonical source-controlled truth
 
 - code in `src/`
-- versioned assets in `assets/`
+- versioned shader and render-pipeline assets in `assets/shaders/`
 - production docs in `Docs/`
 - milestone docs in `Milestones/`
 - versioned build/project files at repo root
+
+### Local machine-only development assets
+
+- local textures and images in `assets/textures/`
+
+These assets may exist for local rendering and demo review, but they are not part of the public canonical Git payload.
 
 ### Mutable runtime-only state
 

@@ -1,4 +1,5 @@
-# Canonical source-controlled assets live under assets/shaders and assets/textures.
+# Canonical source-controlled asset pipeline files live under assets/shaders.
+# Local development textures/images under assets/textures are machine-local and must not be committed.
 # Mutable runtime data belongs under Runtime/ and must not be committed.
 
 # Private/local assets
@@ -7,7 +8,8 @@
 !/assets/shaders/
 !/assets/shaders/**
 !/assets/textures/
-!/assets/textures/**
+/assets/textures/**
+!/assets/textures/.gitkeep
 
 # Runtime-only mutable state
 /Runtime/**

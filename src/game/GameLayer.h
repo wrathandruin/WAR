@@ -7,7 +7,9 @@
 
 #include "engine/core/LocalDemoDiagnostics.h"
 #include "engine/core/RuntimePaths.h"
+#include "engine/host/AuthoritativeHostProtocol.h"
 #include "engine/host/HeadlessHostPresence.h"
+#include "engine/host/ReplicationHarness.h"
 #include "engine/math/Vec2.h"
 #include "engine/render/BgfxDebugFrameRenderer.h"
 #include "engine/render/BgfxWorldRenderer.h"
@@ -33,6 +35,11 @@ namespace war
         void updateInput();
         void pushEvent(const std::string& message);
         void applyAuthoringHotkeys();
+        void refreshAuthorityMode();
+        void pollAuthoritativeHostResponses();
+        void persistReplicationHarnessConfig();
+        void updateReplicationDiagnostics();
+        void writeClientReplicationStatus() const;
 
         [[nodiscard]] RECT getClientRect() const;
 
@@ -42,6 +49,8 @@ namespace war
         RuntimeBoundaryReport m_runtimeBoundaryReport{};
         LocalDemoDiagnosticsReport m_localDemoDiagnosticsReport{};
         HeadlessHostPresenceReport m_headlessHostPresenceReport{};
+        AuthoritativeHostProtocolReport m_authoritativeHostProtocolReport{};
+        ReplicationHarnessConfig m_replicationHarnessConfig{};
         WorldRenderer m_worldRenderer{};
         DebugOverlayRenderer m_debugOverlayRenderer{};
         BgfxWorldRenderer m_bgfxWorldRenderer{};
@@ -58,11 +67,17 @@ namespace war
         bool m_hasActionTargetTile = false;
 
         float m_lastDeltaTime = 0.016f;
+        uint64_t m_lastSnapshotAgeMilliseconds = 0;
+        bool m_useHeadlessHostAuthority = false;
+        std::string m_lastSnapshotReadError{};
 
         bool m_overlayKeyWasDown = false;
         bool m_hotspotKeyWasDown = false;
         bool m_palette7WasDown = false;
         bool m_palette8WasDown = false;
         bool m_palette9WasDown = false;
+        bool m_latencyToggleWasDown = false;
+        bool m_latencyPresetWasDown = false;
+        bool m_jitterPresetWasDown = false;
     };
 }

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{DFEA94D5-E1C1-48A3-A9CE-30A9DE6B8C22}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{D3975912-57EF-48AA-BB5B-CBBBD7A7D657}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;inl</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\main.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\src\engine\core\Application.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\src\engine\core\LocalDemoDiagnostics.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\src\engine\render\Camera2D.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\src\engine\render\WorldRenderer.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\src\engine\render\BgfxWorldRenderer.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\src\engine\render\BgfxRenderData.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\src\engine\render\BgfxViewTransform.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\src\engine\render\BgfxShaderProgram.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\src\engine\render\BgfxTextureAsset.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\src\engine\render\BgfxSpriteMaterial.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\src\engine\render\BgfxWorldTheme.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\src\engine\render\BgfxTileVisuals.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\src\engine\render\RenderAssetPaths.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\src\engine\render\DebugOverlayRenderer.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\src\engine\render\GdiRenderDevice.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\src\engine\render\BgfxRenderDevice.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\src\engine\render\BgfxDebugFrameRenderer.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\src\platform\win32\Win32Window.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\src\game\GameLayer.cpp"><Filter>Source Files</Filter></ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\engine\core\Application.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="..\src\engine\core\LocalDemoDiagnostics.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="..\src\engine\render\Camera2D.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="..\src\engine\render\WorldRenderer.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="..\src\engine\render\BgfxWorldRenderer.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="..\src\engine\render\BgfxRenderData.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="..\src\engine\render\BgfxViewTransform.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="..\src\engine\render\BgfxShaderProgram.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="..\src\engine\render\BgfxTextureAsset.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="..\src\engine\render\BgfxSpriteMaterial.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="..\src\engine\render\BgfxWorldTheme.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="..\src\engine\render\BgfxTileVisuals.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="..\src\engine\render\RenderAssetPaths.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="..\src\engine\render\DebugOverlayRenderer.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="..\src\engine\render\RenderBackendType.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="..\src\engine\render\IRenderDevice.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="..\src\engine\render\GdiRenderDevice.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="..\src\engine\render\BgfxRenderDevice.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="..\src\engine\render\BgfxDebugFrameRenderer.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="..\src\platform\IWindow.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="..\src\platform\win32\Win32Window.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="..\src\game\GameLayer.h"><Filter>Header Files</Filter></ClInclude>
+  </ItemGroup>
+</Project>

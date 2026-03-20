@@ -27,10 +27,8 @@ namespace war
 #if WAR_HAS_BGFX
         bx::mtxIdentity(outView);
 
-        const Vec2 topLeft = camera.screenToWorld(0.0f, 0.0f);
-        const Vec2 bottomRight = camera.screenToWorld(
-            static_cast<float>(viewWidth),
-            static_cast<float>(viewHeight));
+        const Vec2 topLeft = camera.screenToWorld(0, 0);
+        const Vec2 bottomRight = camera.screenToWorld(viewWidth, viewHeight);
 
         const bgfx::Caps* caps = bgfx::getCaps();
         const bool homogeneousDepth = caps != nullptr ? caps->homogeneousDepth : true;

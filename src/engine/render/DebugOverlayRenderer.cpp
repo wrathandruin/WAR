@@ -155,7 +155,8 @@ namespace war
         const RuntimeBoundaryReport& runtimeBoundaryReport,
         const LocalDemoDiagnosticsReport& localDemoDiagnosticsReport,
         const SharedSimulationDiagnostics& simulationDiagnostics,
-        const HeadlessHostPresenceReport& headlessHostPresenceReport) const
+        const HeadlessHostPresenceReport& headlessHostPresenceReport,
+        const AuthoritativeHostProtocolReport& authoritativeHostProtocolReport) const
     {
         SetBkMode(dc, TRANSPARENT);
         SetTextColor(dc, RGB(225, 225, 225));
@@ -193,21 +194,43 @@ namespace war
 
         std::ostringstream info;
         info
-            << "WAR Milestone 34\n"
+            << "WAR Milestone 36\n"
             << "LMB: move    RMB: interact    Shift+RMB: inspect    MMB drag: pan    Wheel: zoom\n"
             << "Authoring: O region overlay    H hotspot overlay    7/8/9 palette\n"
-            << "Simulation owner: SharedSimulationRuntime (client local authority until M35)\n"
+            << "Simulation owner: SharedSimulationRuntime with localhost authority diagnostics\n"
             << "Local authority active: " << (simulationDiagnostics.localAuthorityActive ? "yes" : "no") << "\n"
+            << "Client prediction enabled: " << (simulationDiagnostics.clientPredictionEnabled ? "yes" : "no") << "\n"
             << "Fixed step enabled: " << (simulationDiagnostics.fixedStepEnabled ? "yes" : "no") << "\n"
             << "Fixed step seconds: " << simulationDiagnostics.fixedStepSeconds << "\n"
             << "Accumulator seconds: " << simulationDiagnostics.accumulatorSeconds << "\n"
             << "Presentation alpha: " << simulationDiagnostics.presentationAlpha << "\n"
             << "Rendered frames: " << simulationDiagnostics.renderedFrames << "\n"
             << "Simulation ticks: " << simulationDiagnostics.simulationTicks << "\n"
+            << "Latency harness enabled: " << (simulationDiagnostics.latencyHarnessEnabled ? "yes" : "no") << "\n"
+            << "Harness latency ms: "
+            << simulationDiagnostics.intentLatencyMilliseconds << "/"
+            << simulationDiagnostics.acknowledgementLatencyMilliseconds << "/"
+            << simulationDiagnostics.snapshotLatencyMilliseconds << "\n"
+            << "Harness jitter ms: " << simulationDiagnostics.jitterMilliseconds << "\n"
             << "Intents queued: " << simulationDiagnostics.intentsQueued << "\n"
             << "Intents processed: " << simulationDiagnostics.intentsProcessed << "\n"
+            << "Intents acknowledged: " << simulationDiagnostics.intentsAcknowledged << "\n"
+            << "Intents rejected: " << simulationDiagnostics.intentsRejected << "\n"
             << "Pending intents: " << simulationDiagnostics.pendingIntentCount << "\n"
             << "Last intent sequence: " << simulationDiagnostics.lastIntentSequence << "\n"
+            << "Last snapshot sequence: " << simulationDiagnostics.lastSnapshotSequence << "\n"
+            << "Last snapshot sim ticks: " << simulationDiagnostics.lastSnapshotSimulationTicks << "\n"
+            << "Last snapshot age ms: " << simulationDiagnostics.lastSnapshotAgeMilliseconds << "\n"
+            << "Corrections applied: " << simulationDiagnostics.correctionsApplied << "\n"
+            << "Divergence events: " << simulationDiagnostics.divergenceEvents << "\n"
+            << "Position drift: " << simulationDiagnostics.lastPositionDivergenceDistance << "\n"
+            << "Path divergence: " << (simulationDiagnostics.lastPathDivergence ? "yes" : "no") << "\n"
+            << "Entity divergence: " << (simulationDiagnostics.lastEntityDivergence ? "yes" : "no") << "\n"
+            << "Snapshot read failures: " << simulationDiagnostics.snapshotReadFailures << "\n"
+            << "Last snapshot read failed: " << (simulationDiagnostics.lastSnapshotReadFailed ? "yes" : "no") << "\n"
+            << "Last snapshot read error: "
+            << (simulationDiagnostics.lastSnapshotReadError.empty() ? "none" : simulationDiagnostics.lastSnapshotReadError)
+            << "\n"
             << "Headless host file: " << hostPath << "\n"
             << "Headless host online: " << (headlessHostPresenceReport.hostOnline ? "yes" : "no") << "\n"
             << "Host heartbeat fresh: " << (headlessHostPresenceReport.heartbeatFresh ? "yes" : "no") << "\n"
@@ -218,6 +241,13 @@ namespace war
             << "Host tick ms: " << headlessHostPresenceReport.hostTickMilliseconds << "\n"
             << "Advertised host sim ticks: " << headlessHostPresenceReport.advertisedSimulationTicks << "\n"
             << "Local host lane ready: " << (headlessHostPresenceReport.localBootstrapLaneReady ? "yes" : "no") << "\n"
+            << "Host pending inbound intents: " << headlessHostPresenceReport.pendingInboundIntentCount << "\n"
+            << "Host pending outbound acks: " << headlessHostPresenceReport.pendingOutboundAcknowledgementCount << "\n"
+            << "Host pending snapshots: " << headlessHostPresenceReport.pendingSnapshotCount << "\n"
+            << "Intent queue ready: " << (authoritativeHostProtocolReport.intentQueueReady ? "yes" : "no") << "\n"
+            << "Ack queue ready: " << (authoritativeHostProtocolReport.acknowledgementQueueReady ? "yes" : "no") << "\n"
+            << "Snapshot present: " << (authoritativeHostProtocolReport.snapshotPresent ? "yes" : "no") << "\n"
+            << "Authority protocol lane ready: " << (authoritativeHostProtocolReport.authorityLaneReady ? "yes" : "no") << "\n"
             << "Player world: (" << playerPosition.x << ", " << playerPosition.y << ")\n"
             << "Player tile: (" << playerTile.x << ", " << playerTile.y << ")\n"
             << "Mouse tile: (" << mouseTile.x << ", " << mouseTile.y << ")\n"

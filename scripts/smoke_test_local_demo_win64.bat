@@ -45,11 +45,11 @@ call :check_dir "%RUNTIME_ROOT%\CrashDumps" "Runtime crash directory"
 
 type "%REPORT_PATH%"
 if "%FAILED%"=="0" (
-    echo [M32] Smoke test passed.
+    echo [M36] Smoke test passed.
     exit /b 0
 )
 
-echo [M32] Smoke test failed.
+echo [M36] Smoke test failed.
 exit /b 1
 
 :check_file

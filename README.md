@@ -1,43 +1,84 @@
-# WAR — Milestone 34 (Headless World Host / Dedicated Server Bootstrap)
+# WAR — Milestone 36 (Replication / Latency Harness / Divergence Diagnostics)
 
-> Current development milestone: M34 — Headless World Host / Dedicated Server Bootstrap
+> Current development milestone: M36 — Replication / Latency Harness / Divergence Diagnostics
 
 ## Focus
-Stand up the first separate host-owned runtime lane outside the client window loop.
+Harden the localhost authoritative lane so it is observable, testable, and supportable before persistence work begins.
 
-M33 established shared simulation and fixed-step ownership.
-M34 uses that same simulation runtime to prove that world ownership can boot in a separate process, publish startup diagnostics, and expose a controlled local host-presence lane ahead of the real client intent protocol in M35.
+M35 moved movement and interaction requests into the headless host through the file-backed localhost authority lane.
+M36 closes that subsection by adding latency and jitter harness controls, queue visibility, divergence diagnostics, snapshot read failure surfacing, and an acceptance lane the team can run repeatedly.
 
 ## What this milestone does
-- adds `HeadlessHostMode` so `WAR.exe --headless-host` can boot a separate runtime process without creating the client window
-- adds `HeadlessHostPresence` so the host writes a heartbeat/status file under `Runtime/Host` and the client can diagnose that host bootstrap lane
-- keeps the client locally authoritative for gameplay truth for now, but makes the bootstrap boundary explicit so M35 can move action validation into the host
-- adds host launch and smoke-test scripts for local authority bootstrap review
-- fixes the Visual Studio project file and build definitions so the new shared/host files are included without broken path escaping
-- updates runtime boundary rules so host bootstrap artifacts live under `Runtime/Host`
+- adds a shared replication harness config under `Runtime/Config/replication_harness.cfg`
+- simulates latency for inbound intents, outbound acknowledgements, and outbound snapshots
+- preserves original publication timestamps for acknowledgements and snapshots under delayed delivery
+- publishes authoritative snapshots atomically through temp-file write plus rename
+- surfaces snapshot read failures in diagnostics and event log instead of failing silently
+- hardens host freshness so malformed or incomplete heartbeat files cannot report the host as online
+- adds a machine-readable client replication status file for acceptance and diagnostics review
+- upgrades the local Windows packaging lane to locate `MSBuild.exe` through `vswhere.exe`
+- adds an M36 acceptance script for localhost authority review
 
-## Headless host bootstrap after M34
-The repo should now read more clearly as:
+## Local validation procedure
+1. Build or stage with `scripts/build_local_demo_package_win64.bat Release`
+2. Launch the headless host with `scripts/launch_headless_host_win64.bat`
+3. Launch the client against the host with `scripts/launch_local_client_against_host_win64.bat`
+4. Verify in the overlay that authority is `headless-host`, host heartbeat is online, and queue visibility is present
+5. Toggle the harness with `J`, cycle latency with `K`, and cycle jitter with `L`
+6. Confirm snapshot age increases under delayed delivery and that correction/divergence counters remain visible
+7. Run `scripts/acceptance_m36_localhost_authority_win64.bat` and review the generated pass/fail report under `Runtime/Logs`
 
-- client: input, camera, rendering, diagnostics, local simulation presentation
-- shared simulation runtime: reusable gameplay state/update ownership
-- headless host bootstrap: separate process that can own and advertise a world runtime
-- future protocol work: next milestone destination for client intents and authoritative validation
+## Known limits of the current localhost protocol
+The current authority lane is still intentionally file-backed and local-only.
+It is suitable for proving runtime ownership and diagnostics, but it is not a final transport.
 
-## Why this matters
-M34 is where WAR stops only talking about authority and starts proving that authority can live outside the rendering process.
+Current limits:
+- no real socket transport
+- no binary serialization or packet framing
+- no reliability layer beyond file presence and sequencing
+- no session security or remote host discovery
+- no bandwidth or packet-loss simulation beyond the current latency/jitter harness
+- no rollback or advanced prediction model beyond current correction flow
 
-It is intentionally still a bootstrap milestone, not a full protocol milestone.
-That discipline matters:
+That is acceptable for M36.
+It would not be acceptable to carry these limits forward unchanged into hosted beta work.
 
-- M34 proves separate host boot and host diagnostics
-- M35 moves movement and interaction truth into the host through a real intent lane
-- M36 adds replication, latency, and divergence visibility
 
-## Host launch commands
-- `WAR.exe --headless-host`
-- `WAR.exe --headless-host --host-tick-ms=50`
-- `WAR.exe --headless-host --host-run-seconds=5`
+Automated note:
+- the batch acceptance lane does not synthesize gameplay input
+- correction and divergence counters are therefore validated for visibility and reporting, and may remain zero unless the client is actively driven during the run
+
+## Acceptance criteria before M37
+M36 is not signed off until all of the following are true:
+- the headless host heartbeat cannot report online when the file is missing or malformed
+- host acknowledgements and snapshots preserve original publication timestamps through delayed delivery
+- authoritative snapshots are written atomically
+- snapshot read failures show up in diagnostics and event log instead of disappearing silently
+- queue visibility is available for inbound intents, outbound acknowledgements, and pending snapshots
+- the acceptance script produces a pass/fail report covering heartbeat, snapshot age growth, correction count visibility, divergence count visibility, and queue visibility
+- the local Windows package/build lane no longer assumes `msbuild` is on `PATH`
+
+## Current audit status
+Audit date: 2026-03-20
+
+M36 is signed off.
+
+Verified on the real Windows/MSBuild lane:
+- `WAR.vcxproj` `Debug|x64` rebuild passes with `0 warnings` and `0 errors`
+- the local demo package stages successfully under `out/local_demo/WAR_M36_Debug`
+- the staged local demo smoke test passes
+- the staged headless-host smoke test passes
+- the staged acceptance script passes and writes a final `PASS` report under `runtime/Logs/m36_acceptance_report.txt`
+- the split targets `WAR`, `WARShared`, `WARServer`, and `WARLegacy` all build successfully
+- the staged bundle now carries `WAR.exe` and `WARServer.exe` as separate client and host outputs
+
+M37 is unblocked from the M36 sign-off perspective.
+The pre-M37 workspace split baseline is also validated.
+
+## Public Repo Hygiene
+- only `assets/shaders/` is treated as canonical source-controlled asset content
+- local textures and images under `assets/textures/` remain on disk for development but are not part of the public Git payload
+- runtime data, packaged bundles, and build outputs remain ignored and disposable
 
 ## Demo controls
 - `LMB`: move / set movement target
@@ -48,6 +89,21 @@ That discipline matters:
 - `O`: toggle region boundary overlay
 - `H`: toggle authored hotspot overlay
 - `7 / 8 / 9`: Default / Muted / Vivid palette modes
+- `J`: toggle replication latency harness
+- `K`: cycle latency preset
+- `L`: cycle jitter preset
+
+## Why this matters
+M36 is the finish line for the authority subsection, not the start of a networking sprawl pass.
+
+The project now has:
+- shared simulation ownership
+- a separate headless host runtime
+- host-owned movement and interaction resolution
+- observable localhost replication behavior under stress
+- a repeatable validation lane for authority review
+
+That is the correct base before versioned persistence enters the runtime in M37.
 
 ## Requirements
 The bgfx textured path expects compiled shader binaries at:
@@ -65,8 +121,11 @@ And the shared sprite atlas at:
 assets/textures/world_atlas.bmp
 ```
 
+The texture atlas is a local development asset and is intentionally not versioned in Git.
+Only the shader pipeline under `assets/shaders/` is treated as canonical source-controlled asset content in this public repo.
+
 ## Next Milestone
-### M35 — Client Intent Protocol / Authoritative Movement And Interaction
-- move movement and interaction requests into the host lane
-- validate and resolve client intents on the host instead of inside the client shell
-- make authority visible in actual gameplay behavior rather than only startup/process diagnostics
+### M37 — Persistence Schema / Save-Load / Versioned Migration
+- introduce versioned save schema and migration rules
+- persist authoritative slice state safely
+- prepare the runtime for hosted persistence work instead of transient demo-only state

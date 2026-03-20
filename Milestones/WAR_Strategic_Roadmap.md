@@ -20,6 +20,7 @@ The correct move now is:
 - close the current visual-content loop cleanly
 - lock down content and runtime boundaries
 - establish a local demo and packaging lane
+- realign the workspace toward explicit desktop/server/shared/contracts ownership
 - stand up the authoritative server foundation
 - build one complete planet-to-space vertical slice
 - harden it into an internal alpha
@@ -95,6 +96,26 @@ These lessons from the old project should guide all planning:
 5. Smoke, acceptance, and healthcheck culture should exist before release pressure.
 6. Packaging and updater direction should not be left until the end.
 
+## Workspace Direction
+
+The repo should stop evolving as a single-executable prototype tree and move toward a product workspace built around:
+
+- `desktop/`
+- `server/`
+- `shared/`
+- `contracts/`
+- `web/` when real product work exists to justify it
+
+This direction is defined in:
+
+- `Docs/Wrath and Ruin - Workspace Structure Realignment Plan.md`
+- `Docs/Wrath and Ruin - Workspace Realignment Implementation Brief.md`
+
+Execution rule:
+- perform the non-destructive split during the M37-M38 window while persistence and actor runtime boundaries are still forming
+- avoid mixing the workspace split with a broad gameplay rewrite
+- treat the split as production hardening, not cosmetic cleanup
+
 ## Active Milestone Runway
 
 The implemented milestone train is treated as current through M28.
@@ -117,6 +138,11 @@ The active tactical roadmap for the next lead developer is M29 through M48 and i
 - M34: Headless World Host / Dedicated Server Bootstrap
 - M35: Client Intent Protocol / Authoritative Movement And Interaction
 - M36: Replication / Latency Harness / Divergence Diagnostics
+
+Phase gate note:
+M36 was signed off on 2026-03-20 after the Windows build, staged local-demo smoke tests, staged headless-host smoke test, and staged M36 acceptance script all passed.
+M37 is unblocked from the M36 authority/replication gate.
+The desktop/server/shared split baseline is also validated going into M37: `WAR`, `WARShared`, `WARServer`, and `WARLegacy` all build, the staged local demo package carries separate client and host executables, and the packaged authority acceptance still passes after the split work.
 
 ### Phase 3 - Planetary Gameplay Core
 
@@ -159,6 +185,7 @@ AI-assisted execution may compress or expand individual tasks, but the cadence r
 
 - M37 through M40
 - add persistence, inventory, hazards, and combat
+- complete the non-destructive workspace split before the repo hardens around the wrong ownership model
 
 ### Weeks 13-16
 

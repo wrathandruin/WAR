@@ -33,7 +33,8 @@ Planned focus areas:
 
 ## What should be seen visually
 
-- a separate `WAR.exe --headless-host` process should boot without opening the client window
+- a separate `WARServer.exe` process should boot without opening the client window
+- during the transition, the legacy `WAR.exe --headless-host` path may still exist as fallback
 - the client overlay and bgfx status text should report whether a host heartbeat is present or stale
 - failures should surface as diagnosable runtime issues instead of silent process ambiguity
 

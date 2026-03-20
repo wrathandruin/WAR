@@ -106,13 +106,16 @@ if exist "$(ProjectDir)assets\textures" xcopy /Y /I /E "$(ProjectDir)assets\text
   <ItemGroup>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\engine\core\Application.cpp" />
-    <ClCompile Include="src\engine\core\Timer.cpp" />
-    <ClCompile Include="src\engine\core\Log.cpp" />
-    <ClCompile Include="src\engine\core\RuntimePaths.cpp" />
+    <ClCompile Include="shared\src\core\Timer.cpp" />
+    <ClCompile Include="shared\src\core\Log.cpp" />
+    <ClCompile Include="shared\src\runtime\RuntimePaths.cpp" />
     <ClCompile Include="src\engine\core\LocalDemoDiagnostics.cpp" />
+    <ClCompile Include="shared\src\runtime\host\AuthoritativeHostProtocol.cpp" />
+    <ClCompile Include="src\engine\host\HeadlessHostBootstrap.cpp" />
     <ClCompile Include="src\engine\host\HeadlessHostMode.cpp" />
-    <ClCompile Include="src\engine\host\HeadlessHostPresence.cpp" />
-    <ClCompile Include="src\engine\math\Vec2.cpp" />
+    <ClCompile Include="shared\src\runtime\host\HeadlessHostPresence.cpp" />
+    <ClCompile Include="shared\src\runtime\host\ReplicationHarness.cpp" />
+    <ClCompile Include="shared\src\math\Vec2.cpp" />
     <ClCompile Include="src\engine\render\Camera2D.cpp" />
     <ClCompile Include="src\engine\render\WorldRenderer.cpp" />
     <ClCompile Include="src\engine\render\BgfxWorldRenderer.cpp" />
@@ -128,14 +131,14 @@ if exist "$(ProjectDir)assets\textures" xcopy /Y /I /E "$(ProjectDir)assets\text
     <ClCompile Include="src\engine\render\GdiRenderDevice.cpp" />
     <ClCompile Include="src\engine\render\BgfxRenderDevice.cpp" />
     <ClCompile Include="src\engine\render\BgfxDebugFrameRenderer.cpp" />
-    <ClCompile Include="src\engine\world\WorldGrid.cpp" />
-    <ClCompile Include="src\engine\world\WorldRegionTag.cpp" />
-    <ClCompile Include="src\engine\world\WorldSemanticDressing.cpp" />
-    <ClCompile Include="src\engine\world\Pathfinding.cpp" />
-    <ClCompile Include="src\engine\world\WorldState.cpp" />
-    <ClCompile Include="src\engine\gameplay\EntityManager.cpp" />
-    <ClCompile Include="src\engine\gameplay\ActionSystem.cpp" />
-    <ClCompile Include="src\engine\simulation\SimulationRuntime.cpp" />
+    <ClCompile Include="shared\src\world\WorldGrid.cpp" />
+    <ClCompile Include="shared\src\world\WorldRegionTag.cpp" />
+    <ClCompile Include="shared\src\world\WorldSemanticDressing.cpp" />
+    <ClCompile Include="shared\src\world\Pathfinding.cpp" />
+    <ClCompile Include="shared\src\world\WorldState.cpp" />
+    <ClCompile Include="shared\src\gameplay\EntityManager.cpp" />
+    <ClCompile Include="shared\src\gameplay\ActionSystem.cpp" />
+    <ClCompile Include="shared\src\simulation\SimulationRuntime.cpp" />
     <ClCompile Include="src\platform\win32\Win32Window.cpp" />
     <ClCompile Include="src\game\GameLayer.cpp" />
   </ItemGroup>
@@ -146,8 +149,11 @@ if exist "$(ProjectDir)assets\textures" xcopy /Y /I /E "$(ProjectDir)assets\text
     <ClInclude Include="src\engine\core\Log.h" />
     <ClInclude Include="src\engine\core\RuntimePaths.h" />
     <ClInclude Include="src\engine\core\LocalDemoDiagnostics.h" />
+    <ClInclude Include="src\engine\host\AuthoritativeHostProtocol.h" />
+    <ClInclude Include="src\engine\host\HeadlessHostBootstrap.h" />
     <ClInclude Include="src\engine\host\HeadlessHostMode.h" />
     <ClInclude Include="src\engine\host\HeadlessHostPresence.h" />
+    <ClInclude Include="src\engine\host\ReplicationHarness.h" />
     <ClInclude Include="src\engine\math\Vec2.h" />
     <ClInclude Include="src\engine\render\Camera2D.h" />
     <ClInclude Include="src\engine\render\WorldRenderer.h" />

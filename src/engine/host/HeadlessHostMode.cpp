@@ -2,19 +2,41 @@
 
 #include <algorithm>
 #include <chrono>
+#include <deque>
 #include <fstream>
+#include <optional>
 #include <string>
 #include <thread>
 
 #include <windows.h>
 
+#include "engine/host/AuthoritativeHostProtocol.h"
 #include "engine/host/HeadlessHostPresence.h"
+#include "engine/host/ReplicationHarness.h"
 #include "engine/simulation/SimulationRuntime.h"
 
 namespace war
 {
     namespace
     {
+        struct PendingIntentArrival
+        {
+            SimulationIntent intent{};
+            uint64_t dueEpochMilliseconds = 0;
+        };
+
+        struct PendingAcknowledgementDelivery
+        {
+            SimulationIntentAck acknowledgement{};
+            uint64_t dueEpochMilliseconds = 0;
+        };
+
+        struct PendingSnapshotDelivery
+        {
+            AuthoritativeWorldSnapshot snapshot{};
+            uint64_t dueEpochMilliseconds = 0;
+        };
+
         uint32_t parseOptionValue(const std::wstring& commandLine, const std::wstring& key, uint32_t fallback)
         {
             const size_t start = commandLine.find(key);
@@ -50,6 +72,11 @@ namespace war
 
             output << line << "\n";
         }
+
+        uint32_t effectiveLatency(bool enabled, uint32_t value)
+        {
+            return enabled ? value : 0u;
+        }
     }
 
     HeadlessHostOptions HeadlessHostMode::parseOptions(const std::wstring& commandLine)
@@ -68,19 +95,35 @@ namespace war
     {
         SimulationRuntime simulationRuntime{};
         simulationRuntime.initializeForLocalAuthority();
-        simulationRuntime.appendEvent("Headless host bootstrap active");
-        simulationRuntime.appendEvent("Separate host process running shared simulation runtime");
-        simulationRuntime.appendEvent("Client intent protocol remains future work for M35");
+        simulationRuntime.setAuthorityMode(false, true, false);
+        simulationRuntime.appendEvent("Headless host authoritative lane active");
+        simulationRuntime.appendEvent("Client movement and interaction requests are resolved here");
+        simulationRuntime.appendEvent("Replication latency harness and divergence diagnostics active for M36");
+
+        AuthoritativeHostProtocolReport protocolReport = AuthoritativeHostProtocol::buildReport(runtimeBoundaryReport);
+        AuthoritativeHostProtocol::ensureDirectories(protocolReport);
+
+        ReplicationHarnessConfig harnessConfig = ReplicationHarness::loadConfig(runtimeBoundaryReport);
+        std::string harnessError;
+        (void)ReplicationHarness::saveConfig(runtimeBoundaryReport, harnessConfig, harnessError);
 
         const std::filesystem::path logPath = runtimeBoundaryReport.logsDirectory / "headless_host_log.txt";
         const uint32_t processId = GetCurrentProcessId();
 
-        appendLogLine(logPath, "WAR Headless Host Bootstrap");
+        appendLogLine(logPath, "WAR Headless Authoritative Host");
         appendLogLine(logPath, std::string("PID: ") + std::to_string(processId));
         appendLogLine(logPath, std::string("Tick ms: ") + std::to_string(options.tickMilliseconds));
         appendLogLine(logPath, std::string("Runtime root: ") + RuntimePaths::displayPath(runtimeBoundaryReport.runtimeRoot));
         appendLogLine(logPath, std::string("Startup report: ") + RuntimePaths::displayPath(localDemoDiagnosticsReport.startupReportPath));
+        appendLogLine(logPath, std::string("Intent queue: ") + protocolReport.intentQueueDirectory.generic_string());
+        appendLogLine(logPath, std::string("Ack queue: ") + protocolReport.acknowledgementQueueDirectory.generic_string());
+        appendLogLine(logPath, std::string("Snapshot path: ") + protocolReport.snapshotPath.generic_string());
+        appendLogLine(logPath, std::string("Harness enabled: ") + (harnessConfig.enabled ? "yes" : "no"));
         appendLogLine(logPath, "State: running");
+
+        std::deque<PendingIntentArrival> pendingIntentArrivals{};
+        std::deque<PendingAcknowledgementDelivery> pendingAcknowledgementDeliveries{};
+        std::optional<PendingSnapshotDelivery> pendingSnapshotDelivery{};
 
         const auto tickDuration = std::chrono::milliseconds(options.tickMilliseconds);
         const auto heartbeatDuration = std::chrono::milliseconds(options.heartbeatMilliseconds);
@@ -90,34 +133,112 @@ namespace war
 
         for (;;)
         {
-            const auto now = std::chrono::steady_clock::now();
+            const auto nowSteady = std::chrono::steady_clock::now();
+            const uint64_t nowEpochMilliseconds = ReplicationHarness::currentEpochMilliseconds();
+            harnessConfig = ReplicationHarness::loadConfig(runtimeBoundaryReport);
+
             if (options.runSeconds > 0)
             {
-                const auto elapsedSeconds = std::chrono::duration_cast<std::chrono::seconds>(now - startedAt).count();
+                const auto elapsedSeconds = std::chrono::duration_cast<std::chrono::seconds>(nowSteady - startedAt).count();
                 if (elapsedSeconds >= static_cast<long long>(options.runSeconds))
                 {
                     break;
                 }
             }
 
-            if (now < nextTick)
+            if (nowSteady < nextTick)
             {
                 std::this_thread::sleep_until(nextTick);
                 continue;
             }
 
+            const std::vector<SimulationIntent> incomingRequests =
+                AuthoritativeHostProtocol::collectPendingIntentRequestsForHost(runtimeBoundaryReport);
+            for (const SimulationIntent& intent : incomingRequests)
+            {
+                PendingIntentArrival arrival{};
+                arrival.intent = intent;
+                arrival.dueEpochMilliseconds = ReplicationHarness::computeArrivalEpochMilliseconds(
+                    nowEpochMilliseconds,
+                    intent.sequence,
+                    effectiveLatency(harnessConfig.enabled, harnessConfig.intentLatencyMilliseconds),
+                    effectiveLatency(harnessConfig.enabled, harnessConfig.jitterMilliseconds));
+                pendingIntentArrivals.push_back(arrival);
+            }
+
+            while (!pendingIntentArrivals.empty() && pendingIntentArrivals.front().dueEpochMilliseconds <= nowEpochMilliseconds)
+            {
+                const SimulationIntent intent = pendingIntentArrivals.front().intent;
+                pendingIntentArrivals.pop_front();
+
+                SimulationIntentAck acknowledgement = simulationRuntime.submitAuthoritativeIntent(intent);
+                acknowledgement.publishedEpochMilliseconds = nowEpochMilliseconds;
+
+                PendingAcknowledgementDelivery delivery{};
+                delivery.acknowledgement = acknowledgement;
+                delivery.dueEpochMilliseconds = ReplicationHarness::computeArrivalEpochMilliseconds(
+                    nowEpochMilliseconds,
+                    acknowledgement.sequence,
+                    effectiveLatency(harnessConfig.enabled, harnessConfig.acknowledgementLatencyMilliseconds),
+                    effectiveLatency(harnessConfig.enabled, harnessConfig.jitterMilliseconds));
+                pendingAcknowledgementDeliveries.push_back(delivery);
+            }
+
             simulationRuntime.advanceFrame(static_cast<float>(options.tickMilliseconds) / 1000.0f);
             nextTick += tickDuration;
 
-            if (now >= nextHeartbeat)
+            while (!pendingAcknowledgementDeliveries.empty()
+                && pendingAcknowledgementDeliveries.front().dueEpochMilliseconds <= nowEpochMilliseconds)
+            {
+                const SimulationIntentAck acknowledgement = pendingAcknowledgementDeliveries.front().acknowledgement;
+                pendingAcknowledgementDeliveries.pop_front();
+
+                std::string ackError;
+                if (!AuthoritativeHostProtocol::writeAcknowledgement(runtimeBoundaryReport, acknowledgement, ackError))
+                {
+                    appendLogLine(logPath, std::string("Ack write failed: ") + ackError);
+                }
+            }
+
+            if (!pendingSnapshotDelivery.has_value())
+            {
+                PendingSnapshotDelivery delivery{};
+                delivery.snapshot = simulationRuntime.buildAuthoritativeSnapshot(simulationRuntime.diagnostics().lastIntentSequence);
+                delivery.snapshot.publishedEpochMilliseconds = nowEpochMilliseconds;
+                delivery.dueEpochMilliseconds = ReplicationHarness::computeArrivalEpochMilliseconds(
+                    nowEpochMilliseconds,
+                    delivery.snapshot.simulationTicks + delivery.snapshot.lastProcessedIntentSequence,
+                    effectiveLatency(harnessConfig.enabled, harnessConfig.snapshotLatencyMilliseconds),
+                    effectiveLatency(harnessConfig.enabled, harnessConfig.jitterMilliseconds));
+                pendingSnapshotDelivery = delivery;
+            }
+
+            if (pendingSnapshotDelivery.has_value() && pendingSnapshotDelivery->dueEpochMilliseconds <= nowEpochMilliseconds)
+            {
+                std::string snapshotError;
+                if (!AuthoritativeHostProtocol::writeAuthoritativeSnapshot(
+                        runtimeBoundaryReport,
+                        pendingSnapshotDelivery->snapshot,
+                        snapshotError))
+                {
+                    appendLogLine(logPath, std::string("Snapshot write failed: ") + snapshotError);
+                }
+                pendingSnapshotDelivery.reset();
+            }
+
+            if (nowSteady >= nextHeartbeat)
             {
                 HeadlessHostPresence::writeStatus(
                     runtimeBoundaryReport,
                     simulationRuntime.diagnostics(),
                     options.tickMilliseconds,
                     processId,
-                    "running");
-                nextHeartbeat = now + heartbeatDuration;
+                    "running",
+                    harnessConfig,
+                    pendingIntentArrivals.size(),
+                    pendingAcknowledgementDeliveries.size(),
+                    pendingSnapshotDelivery.has_value() ? 1u : 0u);
+                nextHeartbeat = nowSteady + heartbeatDuration;
             }
         }
 
@@ -126,9 +247,21 @@ namespace war
             simulationRuntime.diagnostics(),
             options.tickMilliseconds,
             processId,
-            "stopped");
+            "stopped",
+            harnessConfig,
+            0u,
+            0u,
+            0u);
+
+        AuthoritativeWorldSnapshot finalSnapshot =
+            simulationRuntime.buildAuthoritativeSnapshot(simulationRuntime.diagnostics().lastIntentSequence);
+        finalSnapshot.publishedEpochMilliseconds = ReplicationHarness::currentEpochMilliseconds();
+        std::string snapshotError;
+        (void)AuthoritativeHostProtocol::writeAuthoritativeSnapshot(runtimeBoundaryReport, finalSnapshot, snapshotError);
 
         appendLogLine(logPath, std::string("Simulation ticks: ") + std::to_string(simulationRuntime.diagnostics().simulationTicks));
+        appendLogLine(logPath, std::string("Last processed intent: ") + std::to_string(simulationRuntime.diagnostics().lastIntentSequence));
+        appendLogLine(logPath, std::string("Divergence corrections observed: ") + std::to_string(simulationRuntime.diagnostics().correctionsApplied));
         appendLogLine(logPath, "State: stopped");
         return 0;
     }

@@ -16,10 +16,28 @@ namespace war
     {
     public:
         void initializeForLocalAuthority();
+        void setAuthorityMode(bool localAuthorityActive, bool hostAuthorityActive, bool clientPredictionEnabled);
+        void setReplicationHarnessState(
+            bool latencyHarnessEnabled,
+            uint32_t intentLatencyMilliseconds,
+            uint32_t acknowledgementLatencyMilliseconds,
+            uint32_t snapshotLatencyMilliseconds,
+            uint32_t jitterMilliseconds,
+            uint64_t snapshotAgeMilliseconds);
 
         [[nodiscard]] uint64_t enqueueIntent(SimulationIntentType type, TileCoord target);
+        [[nodiscard]] SimulationIntentAck submitAuthoritativeIntent(const SimulationIntent& intent);
+
         void advanceFrame(float frameDeltaSeconds);
         void appendEvent(const std::string& message);
+        void recordSnapshotReadFailure(const std::string& error);
+        void clearSnapshotReadFailure();
+        void applyAcknowledgement(const SimulationIntentAck& ack);
+        [[nodiscard]] bool applyAuthoritativeSnapshot(
+            const AuthoritativeWorldSnapshot& snapshot,
+            uint64_t snapshotAgeMilliseconds,
+            std::string& outCorrectionReason);
+        [[nodiscard]] AuthoritativeWorldSnapshot buildAuthoritativeSnapshot(uint64_t lastProcessedIntentSequence) const;
 
         [[nodiscard]] const WorldState& worldState() const;
         [[nodiscard]] WorldState& worldState();
@@ -38,6 +56,8 @@ namespace war
         static constexpr float kFixedStepSeconds = 0.05f;
         static constexpr float kPlayerSpeedUnitsPerSecond = 210.0f;
 
+        [[nodiscard]] SimulationIntentAck validateIntent(const SimulationIntent& intent) const;
+        void queueAcceptedIntent(const SimulationIntent& intent);
         void processQueuedIntents();
         void advanceAuthoritativePlayer(float stepSeconds);
         void refreshPresentedPlayerPosition();

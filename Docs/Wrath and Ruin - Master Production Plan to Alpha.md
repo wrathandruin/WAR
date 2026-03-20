@@ -187,6 +187,7 @@ At market candidate, the project should additionally prove:
 - no deployment scripts or environment model
 - no telemetry, crash capture, or admin tools
 - no market-facing packaging plan
+- workspace structure is still prototype-shaped around one native executable tree
 
 ### 4.4 Directional Risk
 
@@ -200,6 +201,38 @@ That would produce:
 - a costly future architecture pivot
 
 The renderer is now far enough along that the production base must take priority.
+
+### 4.5 Workspace Shape Risk
+
+The current repository layout still reflects a single-executable prototype:
+
+- `src/engine/`
+- `src/game/`
+- `src/platform/`
+- `src/tools/`
+
+That shape was acceptable while the project was proving rendering, local simulation, and the first localhost authority lane.
+It is the wrong long-term shape for:
+
+- separate desktop and server deliverables
+- a real shared gameplay/runtime library
+- persistence and protocol contracts that outlive one binary
+- future account, relay, admin, or web surfaces
+
+The repo should deliberately move toward:
+
+- `desktop/`
+- `server/`
+- `shared/`
+- `contracts/`
+- `web/` when justified by real product work
+
+The detailed move map and execution order are defined in:
+
+- `Docs/Wrath and Ruin - Workspace Structure Realignment Plan.md`
+- `Docs/Wrath and Ruin - Workspace Realignment Implementation Brief.md`
+
+This is part of the production transition, not cosmetic cleanup.
 
 ---
 
@@ -222,6 +255,7 @@ The old project should not be copied wholesale, but it should absolutely inform 
 
 - room-based world logic into spatial simulation
 - legacy monolith into clearer client/shared/server boundaries
+- legacy top-level product/workspace separation into the new repo structure
 - flat-file assumptions into intentional content pipelines
 - MUD-first navigation into graphical tactical navigation with text support
 
@@ -381,12 +415,14 @@ Deliverables:
 - command and replication protocol
 - authoritative movement and interaction
 - latency and divergence harness
+- non-destructive workspace realignment toward explicit desktop/server/shared/contracts boundaries
 
 Exit Criteria:
 
 - the server owns gameplay state
 - the client becomes a rendering and intent surface
 - localhost multiplayer is real
+- the repo no longer reads like a forever single-executable prototype tree
 
 ### Phase 3 - Planetary Core Loop
 

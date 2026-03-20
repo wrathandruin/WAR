@@ -7,6 +7,7 @@
 
 #include "engine/core/LocalDemoDiagnostics.h"
 #include "engine/core/RuntimePaths.h"
+#include "engine/host/AuthoritativeHostProtocol.h"
 #include "engine/host/HeadlessHostPresence.h"
 #include "engine/math/Vec2.h"
 #include "engine/render/Camera2D.h"
@@ -37,7 +38,8 @@ namespace war
             const RuntimeBoundaryReport& runtimeBoundaryReport,
             const LocalDemoDiagnosticsReport& localDemoDiagnosticsReport,
             const SharedSimulationDiagnostics& simulationDiagnostics,
-            const HeadlessHostPresenceReport& headlessHostPresenceReport) const;
+            const HeadlessHostPresenceReport& headlessHostPresenceReport,
+            const AuthoritativeHostProtocolReport& authoritativeHostProtocolReport) const;
 
     private:
         [[nodiscard]] const char* entityTypeToText(EntityType type) const;
