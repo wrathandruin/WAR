@@ -1,5 +1,7 @@
 #include "engine/render/BgfxRenderData.h"
 
+#include "engine/gameplay/Entity.h"
+
 namespace war
 {
     namespace
@@ -37,6 +39,26 @@ namespace war
             };
         }
 
+        BgfxTexturedQuad centeredWorldTexturedQuad(
+            const Vec2& worldPosition,
+            float halfSize,
+            uint32_t color,
+            BgfxTextureAssetId texture)
+        {
+            return BgfxTexturedQuad{
+                worldPosition.x - halfSize,
+                worldPosition.y - halfSize,
+                worldPosition.x + halfSize,
+                worldPosition.y + halfSize,
+                0.0f,
+                0.0f,
+                1.0f,
+                1.0f,
+                color,
+                texture
+            };
+        }
+
         uint32_t tileColor(bool blocked)
         {
             return blocked
@@ -67,25 +89,44 @@ namespace war
             {
             case EntityType::Crate:
                 return entity.isOpen
-                    ? rgbaToAbgr(110, 110, 110)
-                    : rgbaToAbgr(120, 255, 150);
+                    ? rgbaToAbgr(160, 160, 160)
+                    : rgbaToAbgr(200, 180, 120);
 
             case EntityType::Terminal:
                 return entity.isPowered
-                    ? rgbaToAbgr(90, 170, 255)
-                    : rgbaToAbgr(70, 110, 150);
+                    ? rgbaToAbgr(120, 220, 255)
+                    : rgbaToAbgr(100, 120, 150);
 
             case EntityType::Locker:
                 if (entity.isLocked)
                 {
                     return rgbaToAbgr(220, 110, 110);
                 }
+
                 return entity.isOpen
-                    ? rgbaToAbgr(160, 160, 210)
-                    : rgbaToAbgr(190, 190, 240);
+                    ? rgbaToAbgr(200, 200, 230)
+                    : rgbaToAbgr(180, 180, 210);
 
             default:
-                return rgbaToAbgr(120, 255, 150);
+                return rgbaToAbgr(255, 255, 255);
+            }
+        }
+
+        BgfxTextureAssetId entityTexture(const Entity& entity)
+        {
+            switch (entity.type)
+            {
+            case EntityType::Crate:
+                return BgfxTextureAssetId::Crate;
+
+            case EntityType::Terminal:
+                return BgfxTextureAssetId::Terminal;
+
+            case EntityType::Locker:
+                return BgfxTextureAssetId::Locker;
+
+            default:
+                return BgfxTextureAssetId::Crate;
             }
         }
     }
@@ -139,10 +180,19 @@ namespace war
         for (const Entity& entity : worldState.entities().all())
         {
             data.entities.quads.push_back(
-                centeredWorldQuad(worldState.world().tileToWorldCenter(entity.tile), 8.0f, entityColor(entity)));
+                centeredWorldTexturedQuad(
+                    worldState.world().tileToWorldCenter(entity.tile),
+                    12.0f,
+                    entityColor(entity),
+                    entityTexture(entity)));
         }
 
-        data.player.quads.push_back(centeredWorldQuad(playerPosition, 12.0f, playerColor()));
+        data.player.quads.push_back(
+            centeredWorldTexturedQuad(
+                playerPosition,
+                14.0f,
+                playerColor(),
+                BgfxTextureAssetId::Player));
 
         return data;
     }

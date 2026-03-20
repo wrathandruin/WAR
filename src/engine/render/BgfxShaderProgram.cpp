@@ -1,6 +1,8 @@
 #include "engine/render/BgfxShaderProgram.h"
 
+#include <cstdint>
 #include <fstream>
+#include <vector>
 
 #include "engine/render/RenderAssetPaths.h"
 
@@ -25,14 +27,13 @@ namespace war
 
             file.seekg(0, std::ios::beg);
 
-            const bgfx::Memory* memory = bgfx::alloc(static_cast<uint32_t>(size + 1));
-            if (!file.read(reinterpret_cast<char*>(memory->data), size))
+            std::vector<char> bytes(static_cast<size_t>(size) + 1u, '\0');
+            if (!file.read(bytes.data(), size))
             {
                 return nullptr;
             }
 
-            memory->data[size] = 0;
-            return memory;
+            return bgfx::copy(bytes.data(), static_cast<uint32_t>(bytes.size()));
         }
     }
 #endif
@@ -44,6 +45,28 @@ namespace war
 
     bool BgfxShaderProgram::loadColorProgram(std::string& outStatus)
     {
+        return loadProgram(
+            RenderAssetPaths::colorVertexShaderPath(),
+            RenderAssetPaths::colorFragmentShaderPath(),
+            "bgfx color program ready",
+            outStatus);
+    }
+
+    bool BgfxShaderProgram::loadTextureProgram(std::string& outStatus)
+    {
+        return loadProgram(
+            RenderAssetPaths::textureVertexShaderPath(),
+            RenderAssetPaths::textureFragmentShaderPath(),
+            "bgfx texture program ready",
+            outStatus);
+    }
+
+    bool BgfxShaderProgram::loadProgram(
+        const std::string& vertexShaderPath,
+        const std::string& fragmentShaderPath,
+        const char* readyMessage,
+        std::string& outStatus)
+    {
 #if WAR_HAS_BGFX
         if (m_attemptedLoad)
         {
@@ -53,28 +76,25 @@ namespace war
 
         m_attemptedLoad = true;
 
-        const std::string vsPath = RenderAssetPaths::colorVertexShaderPath();
-        const std::string fsPath = RenderAssetPaths::colorFragmentShaderPath();
-
-        if (vsPath.empty() || fsPath.empty())
+        if (vertexShaderPath.empty() || fragmentShaderPath.empty())
         {
             m_lastStatus = "unsupported bgfx renderer for shader asset folder";
             outStatus = m_lastStatus;
             return false;
         }
 
-        const bgfx::Memory* vsMemory = loadMemoryFromFile(vsPath.c_str());
+        const bgfx::Memory* vsMemory = loadMemoryFromFile(vertexShaderPath.c_str());
         if (vsMemory == nullptr)
         {
-            m_lastStatus = "missing shader binary: " + vsPath;
+            m_lastStatus = "missing shader binary: " + vertexShaderPath;
             outStatus = m_lastStatus;
             return false;
         }
 
-        const bgfx::Memory* fsMemory = loadMemoryFromFile(fsPath.c_str());
+        const bgfx::Memory* fsMemory = loadMemoryFromFile(fragmentShaderPath.c_str());
         if (fsMemory == nullptr)
         {
-            m_lastStatus = "missing shader binary: " + fsPath;
+            m_lastStatus = "missing shader binary: " + fragmentShaderPath;
             outStatus = m_lastStatus;
             return false;
         }
@@ -82,7 +102,7 @@ namespace war
         const bgfx::ShaderHandle vs = bgfx::createShader(vsMemory);
         if (!bgfx::isValid(vs))
         {
-            m_lastStatus = "failed to create bgfx vertex shader: " + vsPath;
+            m_lastStatus = "failed to create bgfx vertex shader: " + vertexShaderPath;
             outStatus = m_lastStatus;
             return false;
         }
@@ -91,7 +111,7 @@ namespace war
         if (!bgfx::isValid(fs))
         {
             bgfx::destroy(vs);
-            m_lastStatus = "failed to create bgfx fragment shader: " + fsPath;
+            m_lastStatus = "failed to create bgfx fragment shader: " + fragmentShaderPath;
             outStatus = m_lastStatus;
             return false;
         }
@@ -99,16 +119,21 @@ namespace war
         m_program = bgfx::createProgram(vs, fs, true);
         if (!bgfx::isValid(m_program))
         {
+            bgfx::destroy(vs);
+            bgfx::destroy(fs);
             m_lastStatus = "failed to create bgfx shader program";
             outStatus = m_lastStatus;
             return false;
         }
 
         m_ready = true;
-        m_lastStatus = "bgfx color program ready";
+        m_lastStatus = readyMessage;
         outStatus = m_lastStatus;
         return true;
 #else
+        (void)vertexShaderPath;
+        (void)fragmentShaderPath;
+        (void)readyMessage;
         m_lastStatus = "bgfx headers not available at compile time";
         outStatus = m_lastStatus;
         return false;
@@ -127,7 +152,7 @@ namespace war
 
         m_ready = false;
         m_attemptedLoad = false;
-        m_lastStatus = "bgfx color program not loaded";
+        m_lastStatus = "bgfx shader program not loaded";
     }
 
     bool BgfxShaderProgram::isReady() const

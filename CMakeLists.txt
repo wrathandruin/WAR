@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(WAR
-    VERSION 0.3.2
-    DESCRIPTION "Wrath and Ruin milestone 19"
+    VERSION 0.3.3
+    DESCRIPTION "Wrath and Ruin milestone 20"
     LANGUAGES CXX
 )
 
@@ -22,6 +22,7 @@ set(WAR_SOURCES
     src/engine/render/BgfxRenderData.cpp
     src/engine/render/BgfxViewTransform.cpp
     src/engine/render/BgfxShaderProgram.cpp
+    src/engine/render/BgfxTextureAsset.cpp
     src/engine/render/RenderAssetPaths.cpp
     src/engine/render/DebugOverlayRenderer.cpp
     src/engine/render/GdiRenderDevice.cpp
@@ -98,10 +99,12 @@ endif()
 
 if(WIN32 AND EXISTS "${WAR_SHADER_BUILD_SCRIPT}")
     add_custom_target(war_build_shaders
-        COMMAND cmd /c ""${WAR_SHADER_BUILD_SCRIPT}" "${CMAKE_SOURCE_DIR}" "$<CONFIG>""
+        COMMAND cmd /c "\"${WAR_SHADER_BUILD_SCRIPT}\" \"${CMAKE_SOURCE_DIR}\" \"$<CONFIG>\""
         BYPRODUCTS
             "${CMAKE_SOURCE_DIR}/assets/shaders/dx11/vs_color.bin"
             "${CMAKE_SOURCE_DIR}/assets/shaders/dx11/fs_color.bin"
+            "${CMAKE_SOURCE_DIR}/assets/shaders/dx11/vs_texture.bin"
+            "${CMAKE_SOURCE_DIR}/assets/shaders/dx11/fs_texture.bin"
         VERBATIM
     )
 
@@ -109,9 +112,13 @@ if(WIN32 AND EXISTS "${WAR_SHADER_BUILD_SCRIPT}")
 
     add_custom_command(TARGET WAR POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:WAR>/assets/shaders/dx11"
+        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:WAR>/assets/textures"
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_SOURCE_DIR}/assets/shaders/dx11"
             "$<TARGET_FILE_DIR:WAR>/assets/shaders/dx11"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_SOURCE_DIR}/assets/textures"
+            "$<TARGET_FILE_DIR:WAR>/assets/textures"
         VERBATIM
     )
 endif()

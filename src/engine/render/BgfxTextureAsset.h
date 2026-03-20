@@ -18,35 +18,28 @@
 
 namespace war
 {
-    class BgfxShaderProgram
+    class BgfxTextureAsset
     {
     public:
-        ~BgfxShaderProgram();
+        ~BgfxTextureAsset();
 
-        bool loadColorProgram(std::string& outStatus);
-        bool loadTextureProgram(std::string& outStatus);
+        bool loadFromBmpFile(const std::string& path, std::string& outStatus);
         void shutdown();
 
         [[nodiscard]] bool isReady() const;
         [[nodiscard]] const std::string& statusMessage() const;
 
 #if WAR_HAS_BGFX
-        [[nodiscard]] bgfx::ProgramHandle handle() const;
+        [[nodiscard]] bgfx::TextureHandle handle() const;
 #endif
 
     private:
-        bool loadProgram(
-            const std::string& vertexShaderPath,
-            const std::string& fragmentShaderPath,
-            const char* readyMessage,
-            std::string& outStatus);
-
         bool m_attemptedLoad = false;
         bool m_ready = false;
-        std::string m_lastStatus = "bgfx shader program not loaded";
+        std::string m_lastStatus = "bgfx texture not loaded";
 
 #if WAR_HAS_BGFX
-        bgfx::ProgramHandle m_program = BGFX_INVALID_HANDLE;
+        bgfx::TextureHandle m_texture = BGFX_INVALID_HANDLE;
 #endif
     };
 }

@@ -3,8 +3,25 @@
 /out/
 /bin/
 /obj/
+/x64/
+/Debug/
+/Release/
 /.vs/
 /.vscode/ipch/
+
+# Build outputs
+*.dll
+*.exe
+*.exp
+*.idb
+*.ilk
+*.lib
+*.manifest
+*.obj
+*.o
+*.pch
+*.pdb
+*.tlog
 
 # CMake
 CMakeUserPresets.json
@@ -13,15 +30,20 @@ CMakeFiles/
 cmake-build-*/
 compile_commands.json
 
-# Visual Studio
+# Visual Studio / IDE
 *.VC.db
 *.VC.opendb
+*.opensdf
+*.sdf
 *.suo
 *.user
 *.userosscache
-*.pdb
-*.ilk
+*.ipch
+.idea/
 
 # Logs / temp
+*.bak
 *.log
 *.tmp
+.DS_Store
+Thumbs.db

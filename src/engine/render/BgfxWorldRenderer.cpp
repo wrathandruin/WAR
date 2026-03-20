@@ -1,9 +1,11 @@
 #include "engine/render/BgfxWorldRenderer.h"
 
+#include <array>
 #include <cstring>
 #include <vector>
 
 #include "engine/render/BgfxViewTransform.h"
+#include "engine/render/RenderAssetPaths.h"
 
 #if WAR_HAS_BGFX
 namespace
@@ -26,15 +28,54 @@ namespace
         }
     };
 
-    bgfx::VertexLayout PosColorVertex::layout{};
-    bool s_layoutInitialized = false;
-
-    void ensureLayoutInitialized()
+    struct PosTexColorVertex
     {
-        if (!s_layoutInitialized)
+        float x;
+        float y;
+        float z;
+        float u;
+        float v;
+        unsigned int abgr;
+
+        static bgfx::VertexLayout layout;
+
+        static void init()
+        {
+            layout.begin()
+                .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
+                .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
+                .add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true)
+                .end();
+        }
+    };
+
+    bgfx::VertexLayout PosColorVertex::layout{};
+    bgfx::VertexLayout PosTexColorVertex::layout{};
+
+    bool s_layoutsInitialized = false;
+    bgfx::UniformHandle s_textureSampler = BGFX_INVALID_HANDLE;
+
+    void ensureSharedBgfxState()
+    {
+        if (!s_layoutsInitialized)
         {
             PosColorVertex::init();
-            s_layoutInitialized = true;
+            PosTexColorVertex::init();
+            s_layoutsInitialized = true;
+        }
+
+        if (!bgfx::isValid(s_textureSampler))
+        {
+            s_textureSampler = bgfx::createUniform("s_texColor0", bgfx::UniformType::Sampler);
+        }
+    }
+
+    void shutdownSharedBgfxState()
+    {
+        if (bgfx::isValid(s_textureSampler))
+        {
+            bgfx::destroy(s_textureSampler);
+            s_textureSampler = BGFX_INVALID_HANDLE;
         }
     }
 }
@@ -52,9 +93,19 @@ namespace war
         TileCoord hoveredTile)
     {
 #if WAR_HAS_BGFX
-        ensureLayoutInitialized();
+        ensureSharedBgfxState();
 
         if (!m_colorProgram.loadColorProgram(m_statusMessage))
+        {
+            return false;
+        }
+
+        if (!m_textureProgram.loadTextureProgram(m_statusMessage))
+        {
+            return false;
+        }
+
+        if (!ensureTextureAssetsLoaded())
         {
             return false;
         }
@@ -91,13 +142,13 @@ namespace war
             hasHoveredTile,
             hoveredTile);
 
-        submitLayer(renderData.tiles);
-        submitLayer(renderData.path);
-        submitLayer(renderData.hoveredTile);
-        submitLayer(renderData.entities);
-        submitLayer(renderData.player);
+        submitColorLayer(renderData.tiles);
+        submitColorLayer(renderData.path);
+        submitColorLayer(renderData.hoveredTile);
+        submitTexturedLayer(renderData.entities);
+        submitTexturedLayer(renderData.player);
 
-        m_statusMessage = "bgfx world rendered";
+        m_statusMessage = "bgfx world rendered with textured sprites";
         return true;
 #else
         (void)worldState;
@@ -114,7 +165,18 @@ namespace war
 
     void BgfxWorldRenderer::shutdown()
     {
+        m_playerTexture.shutdown();
+        m_crateTexture.shutdown();
+        m_terminalTexture.shutdown();
+        m_lockerTexture.shutdown();
+
+        m_textureProgram.shutdown();
         m_colorProgram.shutdown();
+
+#if WAR_HAS_BGFX
+        shutdownSharedBgfxState();
+#endif
+
         m_statusMessage = "bgfx world renderer shutdown";
     }
 
@@ -123,7 +185,38 @@ namespace war
         return m_statusMessage;
     }
 
-    bool BgfxWorldRenderer::submitLayer(const BgfxRenderLayer& layer) const
+    bool BgfxWorldRenderer::ensureTextureAssetsLoaded()
+    {
+        std::string status{};
+
+        if (!m_playerTexture.loadFromBmpFile(RenderAssetPaths::textureAssetPath("player.bmp"), status))
+        {
+            m_statusMessage = status;
+            return false;
+        }
+
+        if (!m_crateTexture.loadFromBmpFile(RenderAssetPaths::textureAssetPath("crate.bmp"), status))
+        {
+            m_statusMessage = status;
+            return false;
+        }
+
+        if (!m_terminalTexture.loadFromBmpFile(RenderAssetPaths::textureAssetPath("terminal.bmp"), status))
+        {
+            m_statusMessage = status;
+            return false;
+        }
+
+        if (!m_lockerTexture.loadFromBmpFile(RenderAssetPaths::textureAssetPath("locker.bmp"), status))
+        {
+            m_statusMessage = status;
+            return false;
+        }
+
+        return true;
+    }
+
+    bool BgfxWorldRenderer::submitColorLayer(const BgfxRenderLayer& layer) const
     {
 #if WAR_HAS_BGFX
         if (layer.quads.empty() || !m_colorProgram.isReady())
@@ -184,4 +277,92 @@ namespace war
         return false;
 #endif
     }
+
+    bool BgfxWorldRenderer::submitTexturedLayer(const BgfxTexturedRenderLayer& layer) const
+    {
+#if WAR_HAS_BGFX
+        if (layer.quads.empty() || !m_textureProgram.isReady())
+        {
+            return false;
+        }
+
+        bool submittedAny = false;
+
+        for (const BgfxTexturedQuad& quad : layer.quads)
+        {
+            const bgfx::TextureHandle texture = textureHandleFor(quad.texture);
+            if (!bgfx::isValid(texture))
+            {
+                continue;
+            }
+
+            const std::array<PosTexColorVertex, 4> vertices{{
+                { quad.left,  quad.top,    0.0f, quad.u0, quad.v0, quad.color },
+                { quad.right, quad.top,    0.0f, quad.u1, quad.v0, quad.color },
+                { quad.right, quad.bottom, 0.0f, quad.u1, quad.v1, quad.color },
+                { quad.left,  quad.bottom, 0.0f, quad.u0, quad.v1, quad.color }
+            }};
+
+            constexpr std::array<unsigned short, 6> indices{{
+                0, 1, 2,
+                0, 2, 3
+            }};
+
+            bgfx::TransientVertexBuffer tvb{};
+            bgfx::TransientIndexBuffer tib{};
+
+            if (!bgfx::allocTransientBuffers(
+                &tvb,
+                PosTexColorVertex::layout,
+                static_cast<uint32_t>(vertices.size()),
+                &tib,
+                static_cast<uint32_t>(indices.size())))
+            {
+                continue;
+            }
+
+            std::memcpy(tvb.data, vertices.data(), vertices.size() * sizeof(PosTexColorVertex));
+            std::memcpy(tib.data, indices.data(), indices.size() * sizeof(unsigned short));
+
+            bgfx::setVertexBuffer(0, &tvb);
+            bgfx::setIndexBuffer(&tib);
+            bgfx::setTexture(0, s_textureSampler, texture);
+            bgfx::setState(
+                BGFX_STATE_WRITE_RGB
+                | BGFX_STATE_WRITE_A
+                | BGFX_STATE_MSAA
+                | BGFX_STATE_BLEND_ALPHA);
+            bgfx::submit(0, m_textureProgram.handle());
+            submittedAny = true;
+        }
+
+        return submittedAny;
+#else
+        (void)layer;
+        return false;
+#endif
+    }
+
+#if WAR_HAS_BGFX
+    bgfx::TextureHandle BgfxWorldRenderer::textureHandleFor(BgfxTextureAssetId texture) const
+    {
+        switch (texture)
+        {
+        case BgfxTextureAssetId::Player:
+            return m_playerTexture.handle();
+
+        case BgfxTextureAssetId::Crate:
+            return m_crateTexture.handle();
+
+        case BgfxTextureAssetId::Terminal:
+            return m_terminalTexture.handle();
+
+        case BgfxTextureAssetId::Locker:
+            return m_lockerTexture.handle();
+
+        default:
+            return BGFX_INVALID_HANDLE;
+        }
+    }
+#endif
 }

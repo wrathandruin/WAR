@@ -1,158 +1,162 @@
 <?xml version="1.0" encoding="utf-8"?>
-    <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-      <ItemGroup Label="ProjectConfigurations">
-        <ProjectConfiguration Include="Debug|x64">
-          <Configuration>Debug</Configuration>
-          <Platform>x64</Platform>
-        </ProjectConfiguration>
-        <ProjectConfiguration Include="Release|x64">
-          <Configuration>Release</Configuration>
-          <Platform>x64</Platform>
-        </ProjectConfiguration>
-      </ItemGroup>
-      <PropertyGroup Label="Globals">
-        <VCProjectVersion>17.0</VCProjectVersion>
-        <Keyword>Win32Proj</Keyword>
-        <ProjectGuid>{5ECF3E8A-6D76-4BF2-B2B6-7E93F4C8A1D2}</ProjectGuid>
-        <RootNamespace>WAR</RootNamespace>
-        <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-      </PropertyGroup>
-      <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-      <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-        <ConfigurationType>Application</ConfigurationType>
-        <UseDebugLibraries>true</UseDebugLibraries>
-        <PlatformToolset>v143</PlatformToolset>
-        <CharacterSet>Unicode</CharacterSet>
-      </PropertyGroup>
-      <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-        <ConfigurationType>Application</ConfigurationType>
-        <UseDebugLibraries>false</UseDebugLibraries>
-        <PlatformToolset>v143</PlatformToolset>
-        <WholeProgramOptimization>true</WholeProgramOptimization>
-        <CharacterSet>Unicode</CharacterSet>
-      </PropertyGroup>
-      <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-      <ImportGroup Label="ExtensionSettings" />
-      <ImportGroup Label="Shared" />
-      <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-        <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-      </ImportGroup>
-      <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-        <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-      </ImportGroup>
-      <PropertyGroup Label="UserMacros" />
-      <PropertyGroup>
-        <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
-        <IntDir>$(SolutionDir)obj\$(Configuration)\</IntDir>
-        <TargetName>WAR</TargetName>
-      </PropertyGroup>
-      <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-        <ClCompile>
-          <WarningLevel>Level4</WarningLevel>
-          <SDLCheck>true</SDLCheck>
-          <PreprocessorDefinitions>WIN32;_WINDOWS;BX_CONFIG_DEBUG=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-          <ConformanceMode>true</ConformanceMode>
-          <LanguageStandard>stdcpp20</LanguageStandard>
-          <AdditionalOptions>/Zc:__cplusplus /Zc:preprocessor %(AdditionalOptions)</AdditionalOptions>
-          <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-          <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party\bgfx\include;$(ProjectDir)third_party\bx\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-        </ClCompile>
-        <PreBuildEvent>
-          <Command>call "$(ProjectDir)scripts\build_shaders_win64.bat" "$(ProjectDir)" "$(Configuration)"</Command>
-        </PreBuildEvent>
-        <Link>
-          <SubSystem>Windows</SubSystem>
-          <GenerateDebugInformation>true</GenerateDebugInformation>
-          <AdditionalDependencies>user32.lib;gdi32.lib;bgfxDebug.lib;bxDebug.lib;bimgDebug.lib;%(AdditionalDependencies)</AdditionalDependencies>
-          <AdditionalLibraryDirectories>$(ProjectDir)third_party\bgfx\lib\win64\debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-        </Link>
-        <PostBuildEvent>
-          <Command>if exist "$(ProjectDir)assets\shaders\dx11" xcopy /Y /I /E "$(ProjectDir)assets\shaders\dx11" "$(OutDir)assets\shaders\dx11\"</Command>
-        </PostBuildEvent>
-      </ItemDefinitionGroup>
-      <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-        <ClCompile>
-          <WarningLevel>Level4</WarningLevel>
-          <FunctionLevelLinking>true</FunctionLevelLinking>
-          <IntrinsicFunctions>true</IntrinsicFunctions>
-          <SDLCheck>true</SDLCheck>
-          <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;BX_CONFIG_DEBUG=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-          <ConformanceMode>true</ConformanceMode>
-          <LanguageStandard>stdcpp20</LanguageStandard>
-          <AdditionalOptions>/Zc:__cplusplus /Zc:preprocessor %(AdditionalOptions)</AdditionalOptions>
-          <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-          <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party\bgfx\include;$(ProjectDir)third_party\bx\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-        </ClCompile>
-        <PreBuildEvent>
-          <Command>call "$(ProjectDir)scripts\build_shaders_win64.bat" "$(ProjectDir)" "$(Configuration)"</Command>
-        </PreBuildEvent>
-        <Link>
-          <SubSystem>Windows</SubSystem>
-          <EnableCOMDATFolding>true</EnableCOMDATFolding>
-          <OptimizeReferences>true</OptimizeReferences>
-          <GenerateDebugInformation>true</GenerateDebugInformation>
-          <AdditionalDependencies>user32.lib;gdi32.lib;bgfxRelease.lib;bxRelease.lib;bimgRelease.lib;%(AdditionalDependencies)</AdditionalDependencies>
-          <AdditionalLibraryDirectories>$(ProjectDir)third_party\bgfx\lib\win64\release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-        </Link>
-        <PostBuildEvent>
-          <Command>if exist "$(ProjectDir)assets\shaders\dx11" xcopy /Y /I /E "$(ProjectDir)assets\shaders\dx11" "$(OutDir)assets\shaders\dx11\"</Command>
-        </PostBuildEvent>
-      </ItemDefinitionGroup>
-      <ItemGroup>
-        <ClCompile Include="src\main.cpp" />
-        <ClCompile Include="src\engine\core\Application.cpp" />
-        <ClCompile Include="src\engine\core\Timer.cpp" />
-        <ClCompile Include="src\engine\core\Log.cpp" />
-        <ClCompile Include="src\engine\math\Vec2.cpp" />
-        <ClCompile Include="src\engine\render\Camera2D.cpp" />
-        <ClCompile Include="src\engine\render\WorldRenderer.cpp" />
-        <ClCompile Include="src\engine\render\BgfxWorldRenderer.cpp" />
-        <ClCompile Include="src\engine\render\BgfxRenderData.cpp" />
-        <ClCompile Include="src\engine\render\BgfxViewTransform.cpp" />
-        <ClCompile Include="src\engine\render\BgfxShaderProgram.cpp" />
-        <ClCompile Include="src\engine\render\RenderAssetPaths.cpp" />
-        <ClCompile Include="src\engine\render\DebugOverlayRenderer.cpp" />
-        <ClCompile Include="src\engine\render\GdiRenderDevice.cpp" />
-        <ClCompile Include="src\engine\render\BgfxRenderDevice.cpp" />
-        <ClCompile Include="src\engine\render\BgfxDebugFrameRenderer.cpp" />
-        <ClCompile Include="src\engine\world\WorldGrid.cpp" />
-        <ClCompile Include="src\engine\world\Pathfinding.cpp" />
-        <ClCompile Include="src\engine\world\WorldState.cpp" />
-        <ClCompile Include="src\engine\gameplay\EntityManager.cpp" />
-        <ClCompile Include="src\engine\gameplay\ActionSystem.cpp" />
-        <ClCompile Include="src\platform\win32\Win32Window.cpp" />
-        <ClCompile Include="src\game\GameLayer.cpp" />
-      </ItemGroup>
-      <ItemGroup>
-        <ClInclude Include="src\engine\core\Application.h" />
-        <ClInclude Include="src\engine\core\Timer.h" />
-        <ClInclude Include="src\engine\core\Log.h" />
-        <ClInclude Include="src\engine\math\Vec2.h" />
-        <ClInclude Include="src\engine\render\Camera2D.h" />
-        <ClInclude Include="src\engine\render\WorldRenderer.h" />
-        <ClInclude Include="src\engine\render\BgfxWorldRenderer.h" />
-        <ClInclude Include="src\engine\render\BgfxRenderData.h" />
-        <ClInclude Include="src\engine\render\BgfxViewTransform.h" />
-        <ClInclude Include="src\engine\render\BgfxShaderProgram.h" />
-        <ClInclude Include="src\engine\render\RenderAssetPaths.h" />
-        <ClInclude Include="src\engine\render\DebugOverlayRenderer.h" />
-        <ClInclude Include="src\engine\render\RenderBackendType.h" />
-        <ClInclude Include="src\engine\render\IRenderDevice.h" />
-        <ClInclude Include="src\engine\render\GdiRenderDevice.h" />
-        <ClInclude Include="src\engine\render\BgfxRenderDevice.h" />
-        <ClInclude Include="src\engine\render\BgfxDebugFrameRenderer.h" />
-        <ClInclude Include="src\engine\world\WorldGrid.h" />
-        <ClInclude Include="src\engine\world\Pathfinding.h" />
-        <ClInclude Include="src\engine\world\WorldState.h" />
-        <ClInclude Include="src\engine\gameplay\Action.h" />
-        <ClInclude Include="src\engine\gameplay\ActionQueue.h" />
-        <ClInclude Include="src\engine\gameplay\Entity.h" />
-        <ClInclude Include="src\engine\gameplay\EntityManager.h" />
-        <ClInclude Include="src\engine\gameplay\ActionSystem.h" />
-        <ClInclude Include="src\platform\IWindow.h" />
-        <ClInclude Include="src\platform\win32\Win32Window.h" />
-        <ClInclude Include="src\game\GameLayer.h" />
-      </ItemGroup>
-      <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-      <ImportGroup Label="ExtensionTargets" />
-    </Project>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{5ECF3E8A-6D76-4BF2-B2B6-7E93F4C8A1D2}</ProjectGuid>
+    <RootNamespace>WAR</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)obj\$(Configuration)\</IntDir>
+    <TargetName>WAR</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;BX_CONFIG_DEBUG=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/Zc:__cplusplus /Zc:preprocessor %(AdditionalOptions)</AdditionalOptions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party\bgfx\include;$(ProjectDir)third_party\bx\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <PreBuildEvent>
+      <Command>call "$(ProjectDir)scripts\build_shaders_win64.bat" "$(ProjectDir)" "$(Configuration)"</Command>
+    </PreBuildEvent>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>user32.lib;gdi32.lib;bgfxDebug.lib;bxDebug.lib;bimgDebug.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)third_party\bgfx\lib\win64\debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <PostBuildEvent>
+      <Command>if exist "$(ProjectDir)assets\shaders\dx11" xcopy /Y /I /E "$(ProjectDir)assets\shaders\dx11" "$(OutDir)assets\shaders\dx11\"
+if exist "$(ProjectDir)assets\textures" xcopy /Y /I /E "$(ProjectDir)assets\textures" "$(OutDir)assets\textures\"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;BX_CONFIG_DEBUG=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/Zc:__cplusplus /Zc:preprocessor %(AdditionalOptions)</AdditionalOptions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party\bgfx\include;$(ProjectDir)third_party\bx\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <PreBuildEvent>
+      <Command>call "$(ProjectDir)scripts\build_shaders_win64.bat" "$(ProjectDir)" "$(Configuration)"</Command>
+    </PreBuildEvent>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>user32.lib;gdi32.lib;bgfxRelease.lib;bxRelease.lib;bimgRelease.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)third_party\bgfx\lib\win64\release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <PostBuildEvent>
+      <Command>if exist "$(ProjectDir)assets\shaders\dx11" xcopy /Y /I /E "$(ProjectDir)assets\shaders\dx11" "$(OutDir)assets\shaders\dx11\"
+if exist "$(ProjectDir)assets\textures" xcopy /Y /I /E "$(ProjectDir)assets\textures" "$(OutDir)assets\textures\"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\engine\core\Application.cpp" />
+    <ClCompile Include="src\engine\core\Timer.cpp" />
+    <ClCompile Include="src\engine\core\Log.cpp" />
+    <ClCompile Include="src\engine\math\Vec2.cpp" />
+    <ClCompile Include="src\engine\render\Camera2D.cpp" />
+    <ClCompile Include="src\engine\render\WorldRenderer.cpp" />
+    <ClCompile Include="src\engine\render\BgfxWorldRenderer.cpp" />
+    <ClCompile Include="src\engine\render\BgfxRenderData.cpp" />
+    <ClCompile Include="src\engine\render\BgfxViewTransform.cpp" />
+    <ClCompile Include="src\engine\render\BgfxShaderProgram.cpp" />
+    <ClCompile Include="src\engine\render\BgfxTextureAsset.cpp" />
+    <ClCompile Include="src\engine\render\RenderAssetPaths.cpp" />
+    <ClCompile Include="src\engine\render\DebugOverlayRenderer.cpp" />
+    <ClCompile Include="src\engine\render\GdiRenderDevice.cpp" />
+    <ClCompile Include="src\engine\render\BgfxRenderDevice.cpp" />
+    <ClCompile Include="src\engine\render\BgfxDebugFrameRenderer.cpp" />
+    <ClCompile Include="src\engine\world\WorldGrid.cpp" />
+    <ClCompile Include="src\engine\world\Pathfinding.cpp" />
+    <ClCompile Include="src\engine\world\WorldState.cpp" />
+    <ClCompile Include="src\engine\gameplay\EntityManager.cpp" />
+    <ClCompile Include="src\engine\gameplay\ActionSystem.cpp" />
+    <ClCompile Include="src\platform\win32\Win32Window.cpp" />
+    <ClCompile Include="src\game\GameLayer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\engine\core\Application.h" />
+    <ClInclude Include="src\engine\core\Timer.h" />
+    <ClInclude Include="src\engine\core\Log.h" />
+    <ClInclude Include="src\engine\math\Vec2.h" />
+    <ClInclude Include="src\engine\render\Camera2D.h" />
+    <ClInclude Include="src\engine\render\WorldRenderer.h" />
+    <ClInclude Include="src\engine\render\BgfxWorldRenderer.h" />
+    <ClInclude Include="src\engine\render\BgfxRenderData.h" />
+    <ClInclude Include="src\engine\render\BgfxViewTransform.h" />
+    <ClInclude Include="src\engine\render\BgfxShaderProgram.h" />
+    <ClInclude Include="src\engine\render\BgfxTextureAsset.h" />
+    <ClInclude Include="src\engine\render\RenderAssetPaths.h" />
+    <ClInclude Include="src\engine\render\DebugOverlayRenderer.h" />
+    <ClInclude Include="src\engine\render\RenderBackendType.h" />
+    <ClInclude Include="src\engine\render\IRenderDevice.h" />
+    <ClInclude Include="src\engine\render\GdiRenderDevice.h" />
+    <ClInclude Include="src\engine\render\BgfxRenderDevice.h" />
+    <ClInclude Include="src\engine\render\BgfxDebugFrameRenderer.h" />
+    <ClInclude Include="src\engine\world\WorldGrid.h" />
+    <ClInclude Include="src\engine\world\Pathfinding.h" />
+    <ClInclude Include="src\engine\world\WorldState.h" />
+    <ClInclude Include="src\engine\gameplay\Action.h" />
+    <ClInclude Include="src\engine\gameplay\ActionQueue.h" />
+    <ClInclude Include="src\engine\gameplay\Entity.h" />
+    <ClInclude Include="src\engine\gameplay\EntityManager.h" />
+    <ClInclude Include="src\engine\gameplay\ActionSystem.h" />
+    <ClInclude Include="src\platform\IWindow.h" />
+    <ClInclude Include="src\platform\win32\Win32Window.h" />
+    <ClInclude Include="src\game\GameLayer.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>

@@ -11,6 +11,14 @@
 
 namespace war
 {
+    enum class BgfxTextureAssetId
+    {
+        Player,
+        Crate,
+        Terminal,
+        Locker
+    };
+
     struct BgfxQuad
     {
         float left = 0.0f;
@@ -20,9 +28,28 @@ namespace war
         uint32_t color = 0xffffffff;
     };
 
+    struct BgfxTexturedQuad
+    {
+        float left = 0.0f;
+        float top = 0.0f;
+        float right = 0.0f;
+        float bottom = 0.0f;
+        float u0 = 0.0f;
+        float v0 = 0.0f;
+        float u1 = 1.0f;
+        float v1 = 1.0f;
+        uint32_t color = 0xffffffff;
+        BgfxTextureAssetId texture = BgfxTextureAssetId::Player;
+    };
+
     struct BgfxRenderLayer
     {
         std::vector<BgfxQuad> quads;
+    };
+
+    struct BgfxTexturedRenderLayer
+    {
+        std::vector<BgfxTexturedQuad> quads;
     };
 
     struct BgfxWorldRenderData
@@ -30,8 +57,8 @@ namespace war
         BgfxRenderLayer tiles;
         BgfxRenderLayer path;
         BgfxRenderLayer hoveredTile;
-        BgfxRenderLayer entities;
-        BgfxRenderLayer player;
+        BgfxTexturedRenderLayer entities;
+        BgfxTexturedRenderLayer player;
     };
 
     class BgfxRenderDataBuilder

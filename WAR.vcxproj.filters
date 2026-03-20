@@ -1,71 +1,72 @@
-\
-    <?xml version="1.0" encoding="utf-8"?>
-    <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-      <ItemGroup>
-        <Filter Include="Source Files">
-          <UniqueIdentifier>{0E701D2D-3A50-4A17-BB5D-9453F2A77A10}</UniqueIdentifier>
-          <Extensions>cpp;c;cc;cxx</Extensions>
-        </Filter>
-        <Filter Include="Header Files">
-          <UniqueIdentifier>{A7F7C939-B61A-46EC-A255-7A671F4BE3C1}</UniqueIdentifier>
-          <Extensions>h;hpp;hxx;inl</Extensions>
-        </Filter>
-      </ItemGroup>
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{0E701D2D-3A50-4A17-BB5D-9453F2A77A10}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{A7F7C939-B61A-46EC-A255-7A671F4BE3C1}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;inl</Extensions>
+    </Filter>
+  </ItemGroup>
 
-      <ItemGroup>
-        <ClCompile Include="src\main.cpp"><Filter>Source Files</Filter></ClCompile>
-        <ClCompile Include="src\engine\core\Application.cpp"><Filter>Source Files</Filter></ClCompile>
-        <ClCompile Include="src\engine\core\Timer.cpp"><Filter>Source Files</Filter></ClCompile>
-        <ClCompile Include="src\engine\core\Log.cpp"><Filter>Source Files</Filter></ClCompile>
-        <ClCompile Include="src\engine\math\Vec2.cpp"><Filter>Source Files</Filter></ClCompile>
-        <ClCompile Include="src\engine\render\Camera2D.cpp"><Filter>Source Files</Filter></ClCompile>
-        <ClCompile Include="src\engine\render\WorldRenderer.cpp"><Filter>Source Files</Filter></ClCompile>
-        <ClCompile Include="src\engine\render\BgfxWorldRenderer.cpp"><Filter>Source Files</Filter></ClCompile>
-        <ClCompile Include="src\engine\render\BgfxRenderData.cpp"><Filter>Source Files</Filter></ClCompile>
-        <ClCompile Include="src\engine\render\BgfxViewTransform.cpp"><Filter>Source Files</Filter></ClCompile>
-        <ClCompile Include="src\engine\render\BgfxShaderProgram.cpp"><Filter>Source Files</Filter></ClCompile>
-        <ClCompile Include="src\engine\render\RenderAssetPaths.cpp"><Filter>Source Files</Filter></ClCompile>
-        <ClCompile Include="src\engine\render\DebugOverlayRenderer.cpp"><Filter>Source Files</Filter></ClCompile>
-        <ClCompile Include="src\engine\render\GdiRenderDevice.cpp"><Filter>Source Files</Filter></ClCompile>
-        <ClCompile Include="src\engine\render\BgfxRenderDevice.cpp"><Filter>Source Files</Filter></ClCompile>
-        <ClCompile Include="src\engine\render\BgfxDebugFrameRenderer.cpp"><Filter>Source Files</Filter></ClCompile>
-        <ClCompile Include="src\engine\world\WorldGrid.cpp"><Filter>Source Files</Filter></ClCompile>
-        <ClCompile Include="src\engine\world\Pathfinding.cpp"><Filter>Source Files</Filter></ClCompile>
-        <ClCompile Include="src\engine\world\WorldState.cpp"><Filter>Source Files</Filter></ClCompile>
-        <ClCompile Include="src\engine\gameplay\EntityManager.cpp"><Filter>Source Files</Filter></ClCompile>
-        <ClCompile Include="src\engine\gameplay\ActionSystem.cpp"><Filter>Source Files</Filter></ClCompile>
-        <ClCompile Include="src\platform\win32\Win32Window.cpp"><Filter>Source Files</Filter></ClCompile>
-        <ClCompile Include="src\game\GameLayer.cpp"><Filter>Source Files</Filter></ClCompile>
-      </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\main.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\engine\core\Application.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\engine\core\Timer.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\engine\core\Log.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\engine\math\Vec2.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\engine\render\Camera2D.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\engine\render\WorldRenderer.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\engine\render\BgfxWorldRenderer.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\engine\render\BgfxRenderData.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\engine\render\BgfxViewTransform.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\engine\render\BgfxShaderProgram.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\engine\render\BgfxTextureAsset.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\engine\render\RenderAssetPaths.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\engine\render\DebugOverlayRenderer.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\engine\render\GdiRenderDevice.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\engine\render\BgfxRenderDevice.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\engine\render\BgfxDebugFrameRenderer.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\engine\world\WorldGrid.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\engine\world\Pathfinding.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\engine\world\WorldState.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\engine\gameplay\EntityManager.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\engine\gameplay\ActionSystem.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\platform\win32\Win32Window.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\game\GameLayer.cpp"><Filter>Source Files</Filter></ClCompile>
+  </ItemGroup>
 
-      <ItemGroup>
-        <ClInclude Include="src\engine\core\Application.h"><Filter>Header Files</Filter></ClInclude>
-        <ClInclude Include="src\engine\core\Timer.h"><Filter>Header Files</Filter></ClInclude>
-        <ClInclude Include="src\engine\core\Log.h"><Filter>Header Files</Filter></ClInclude>
-        <ClInclude Include="src\engine\math\Vec2.h"><Filter>Header Files</Filter></ClInclude>
-        <ClInclude Include="src\engine\render\Camera2D.h"><Filter>Header Files</Filter></ClInclude>
-        <ClInclude Include="src\engine\render\WorldRenderer.h"><Filter>Header Files</Filter></ClInclude>
-        <ClInclude Include="src\engine\render\BgfxWorldRenderer.h"><Filter>Header Files</Filter></ClInclude>
-        <ClInclude Include="src\engine\render\BgfxRenderData.h"><Filter>Header Files</Filter></ClInclude>
-        <ClInclude Include="src\engine\render\BgfxViewTransform.h"><Filter>Header Files</Filter></ClInclude>
-        <ClInclude Include="src\engine\render\BgfxShaderProgram.h"><Filter>Header Files</Filter></ClInclude>
-        <ClInclude Include="src\engine\render\RenderAssetPaths.h"><Filter>Header Files</Filter></ClInclude>
-        <ClInclude Include="src\engine\render\DebugOverlayRenderer.h"><Filter>Header Files</Filter></ClInclude>
-        <ClInclude Include="src\engine\render\RenderBackendType.h"><Filter>Header Files</Filter></ClInclude>
-        <ClInclude Include="src\engine\render\IRenderDevice.h"><Filter>Header Files</Filter></ClInclude>
-        <ClInclude Include="src\engine\render\GdiRenderDevice.h"><Filter>Header Files</Filter></ClInclude>
-        <ClInclude Include="src\engine\render\BgfxRenderDevice.h"><Filter>Header Files</Filter></ClInclude>
-        <ClInclude Include="src\engine\render\BgfxDebugFrameRenderer.h"><Filter>Header Files</Filter></ClInclude>
-        <ClInclude Include="src\engine\world\WorldGrid.h"><Filter>Header Files</Filter></ClInclude>
-        <ClInclude Include="src\engine\world\Pathfinding.h"><Filter>Header Files</Filter></ClInclude>
-        <ClInclude Include="src\engine\world\WorldState.h"><Filter>Header Files</Filter></ClInclude>
-        <ClInclude Include="src\engine\gameplay\Action.h"><Filter>Header Files</Filter></ClInclude>
-        <ClInclude Include="src\engine\gameplay\ActionQueue.h"><Filter>Header Files</Filter></ClInclude>
-        <ClInclude Include="src\engine\gameplay\Entity.h"><Filter>Header Files</Filter></ClInclude>
-        <ClInclude Include="src\engine\gameplay\EntityManager.h"><Filter>Header Files</Filter></ClInclude>
-        <ClInclude Include="src\engine\gameplay\ActionSystem.h"><Filter>Header Files</Filter></ClInclude>
-        <ClInclude Include="src\platform\IWindow.h"><Filter>Header Files</Filter></ClInclude>
-        <ClInclude Include="src\platform\win32\Win32Window.h"><Filter>Header Files</Filter></ClInclude>
-        <ClInclude Include="src\game\GameLayer.h"><Filter>Header Files</Filter></ClInclude>
-      </ItemGroup>
-    </Project>
+  <ItemGroup>
+    <ClInclude Include="src\engine\core\Application.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\core\Timer.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\core\Log.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\math\Vec2.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\render\Camera2D.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\render\WorldRenderer.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\render\BgfxWorldRenderer.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\render\BgfxRenderData.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\render\BgfxViewTransform.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\render\BgfxShaderProgram.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\render\BgfxTextureAsset.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\render\RenderAssetPaths.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\render\DebugOverlayRenderer.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\render\RenderBackendType.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\render\IRenderDevice.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\render\GdiRenderDevice.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\render\BgfxRenderDevice.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\render\BgfxDebugFrameRenderer.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\world\WorldGrid.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\world\Pathfinding.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\world\WorldState.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\gameplay\Action.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\gameplay\ActionQueue.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\gameplay\Entity.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\gameplay\EntityManager.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\gameplay\ActionSystem.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\platform\IWindow.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\platform\win32\Win32Window.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\game\GameLayer.h"><Filter>Header Files</Filter></ClInclude>
+  </ItemGroup>
+</Project>

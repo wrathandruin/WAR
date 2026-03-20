@@ -60,4 +60,31 @@ namespace war::RenderAssetPaths
 
         return "assets/shaders/" + folder + "/fs_color.bin";
     }
+
+    std::string textureVertexShaderPath()
+    {
+        const std::string folder = shaderBackendFolder();
+        if (folder.empty())
+        {
+            return "";
+        }
+
+        return "assets/shaders/" + folder + "/vs_texture.bin";
+    }
+
+    std::string textureFragmentShaderPath()
+    {
+        const std::string folder = shaderBackendFolder();
+        if (folder.empty())
+        {
+            return "";
+        }
+
+        return "assets/shaders/" + folder + "/fs_texture.bin";
+    }
+
+    std::string textureAssetPath(const std::string& fileName)
+    {
+        return "assets/textures/" + fileName;
+    }
 }

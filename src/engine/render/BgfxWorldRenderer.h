@@ -7,6 +7,7 @@
 #include "engine/math/Vec2.h"
 #include "engine/render/BgfxRenderData.h"
 #include "engine/render/BgfxShaderProgram.h"
+#include "engine/render/BgfxTextureAsset.h"
 #include "engine/render/Camera2D.h"
 #include "engine/world/WorldGrid.h"
 #include "engine/world/WorldState.h"
@@ -30,9 +31,22 @@ namespace war
         [[nodiscard]] const std::string& statusMessage() const;
 
     private:
-        [[nodiscard]] bool submitLayer(const BgfxRenderLayer& layer) const;
+        [[nodiscard]] bool ensureTextureAssetsLoaded();
+        [[nodiscard]] bool submitColorLayer(const BgfxRenderLayer& layer) const;
+        [[nodiscard]] bool submitTexturedLayer(const BgfxTexturedRenderLayer& layer) const;
+
+#if WAR_HAS_BGFX
+        [[nodiscard]] bgfx::TextureHandle textureHandleFor(BgfxTextureAssetId texture) const;
+#endif
 
         BgfxShaderProgram m_colorProgram{};
+        BgfxShaderProgram m_textureProgram{};
+
+        BgfxTextureAsset m_playerTexture{};
+        BgfxTextureAsset m_crateTexture{};
+        BgfxTextureAsset m_terminalTexture{};
+        BgfxTextureAsset m_lockerTexture{};
+
         std::string m_statusMessage = "BgfxWorldRenderer not used yet";
     };
 }
