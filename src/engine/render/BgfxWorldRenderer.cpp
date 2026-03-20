@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#include "engine/render/BgfxViewTransform.h"
+
 #if defined(__has_include)
 #  if __has_include(<bgfx/bgfx.h>) && __has_include(<bx/math.h>)
 #    define WAR_HAS_BGFX 1
@@ -94,10 +96,13 @@ namespace war
             return memory;
         }
 
-        bool ensureProgramLoaded()
+        bool ensureProgramLoaded(std::string& statusMessage)
         {
             if (s_programAttempted)
             {
+                statusMessage = s_programReady
+                    ? "bgfx color program ready"
+                    : "bgfx shaders missing or failed to load";
                 return s_programReady;
             }
 
@@ -112,6 +117,7 @@ namespace war
             const std::string folder = shaderFolderForRenderer(bgfx::getRendererType());
             if (folder.empty())
             {
+                statusMessage = "unsupported bgfx renderer for shader folder mapping";
                 return false;
             }
 
@@ -122,6 +128,7 @@ namespace war
             const bgfx::Memory* fsMemory = loadMemoryFromFile(fsPath.c_str());
             if (vsMemory == nullptr || fsMemory == nullptr)
             {
+                statusMessage = "missing shader binaries: " + vsPath + " or " + fsPath;
                 return false;
             }
 
@@ -129,11 +136,15 @@ namespace war
             const bgfx::ShaderHandle fs = bgfx::createShader(fsMemory);
             if (!bgfx::isValid(vs) || !bgfx::isValid(fs))
             {
+                statusMessage = "failed to create bgfx shader handles";
                 return false;
             }
 
             s_program = bgfx::createProgram(vs, fs, true);
             s_programReady = bgfx::isValid(s_program);
+            statusMessage = s_programReady
+                ? "bgfx color program ready"
+                : "failed to create bgfx shader program";
             return s_programReady;
         }
     }
@@ -146,10 +157,10 @@ namespace war
         const std::vector<TileCoord>& currentPath,
         size_t pathIndex,
         bool hasHoveredTile,
-        TileCoord hoveredTile) const
+        TileCoord hoveredTile)
     {
 #if WAR_HAS_BGFX
-        if (!ensureProgramLoaded())
+        if (!ensureProgramLoaded(m_statusMessage))
         {
             return false;
         }
@@ -157,6 +168,7 @@ namespace war
         const bgfx::Stats* stats = bgfx::getStats();
         if (stats == nullptr)
         {
+            m_statusMessage = "bgfx stats unavailable";
             return false;
         }
 
@@ -165,8 +177,16 @@ namespace war
 
         if (viewWidth <= 0 || viewHeight <= 0)
         {
+            m_statusMessage = "invalid bgfx view size";
             return false;
         }
+
+        float view[16]{};
+        float proj[16]{};
+        BgfxViewTransform::buildMatrices(camera, viewWidth, viewHeight, view, proj);
+
+        bgfx::setViewRect(0, 0, 0, static_cast<unsigned short>(viewWidth), static_cast<unsigned short>(viewHeight));
+        bgfx::setViewTransform(0, view, proj);
 
         const BgfxWorldRenderData renderData = BgfxRenderDataBuilder::build(
             worldState,
@@ -177,12 +197,13 @@ namespace war
             hasHoveredTile,
             hoveredTile);
 
-        submitLayer(renderData.tiles, viewWidth, viewHeight);
-        submitLayer(renderData.path, viewWidth, viewHeight);
-        submitLayer(renderData.hoveredTile, viewWidth, viewHeight);
-        submitLayer(renderData.entities, viewWidth, viewHeight);
-        submitLayer(renderData.player, viewWidth, viewHeight);
+        submitLayer(renderData.tiles);
+        submitLayer(renderData.path);
+        submitLayer(renderData.hoveredTile);
+        submitLayer(renderData.entities);
+        submitLayer(renderData.player);
 
+        m_statusMessage = "bgfx world rendered";
         return true;
 #else
         (void)worldState;
@@ -192,11 +213,17 @@ namespace war
         (void)pathIndex;
         (void)hasHoveredTile;
         (void)hoveredTile;
+        m_statusMessage = "bgfx headers not available at compile time";
         return false;
 #endif
     }
 
-    bool BgfxWorldRenderer::submitLayer(const BgfxRenderLayer& layer, int viewWidth, int viewHeight) const
+    const std::string& BgfxWorldRenderer::statusMessage() const
+    {
+        return m_statusMessage;
+    }
+
+    bool BgfxWorldRenderer::submitLayer(const BgfxRenderLayer& layer) const
     {
 #if WAR_HAS_BGFX
         if (layer.quads.empty())
@@ -214,15 +241,10 @@ namespace war
         {
             const unsigned short base = static_cast<unsigned short>(vertices.size());
 
-            const float left = (static_cast<float>(quad.rect.left) / static_cast<float>(viewWidth)) * 2.0f - 1.0f;
-            const float right = (static_cast<float>(quad.rect.right) / static_cast<float>(viewWidth)) * 2.0f - 1.0f;
-            const float top = 1.0f - (static_cast<float>(quad.rect.top) / static_cast<float>(viewHeight)) * 2.0f;
-            const float bottom = 1.0f - (static_cast<float>(quad.rect.bottom) / static_cast<float>(viewHeight)) * 2.0f;
-
-            vertices.push_back({ left,  top,    0.0f, quad.color });
-            vertices.push_back({ right, top,    0.0f, quad.color });
-            vertices.push_back({ right, bottom, 0.0f, quad.color });
-            vertices.push_back({ left,  bottom, 0.0f, quad.color });
+            vertices.push_back({ quad.left,  quad.top,    0.0f, quad.color });
+            vertices.push_back({ quad.right, quad.top,    0.0f, quad.color });
+            vertices.push_back({ quad.right, quad.bottom, 0.0f, quad.color });
+            vertices.push_back({ quad.left,  quad.bottom, 0.0f, quad.color });
 
             indices.push_back(base + 0);
             indices.push_back(base + 1);
@@ -235,12 +257,12 @@ namespace war
         bgfx::TransientVertexBuffer tvb{};
         bgfx::TransientIndexBuffer tib{};
 
-        if (!bgfx::allocTransientVertexBuffer(&tvb, static_cast<unsigned int>(vertices.size()), PosColorVertex::layout))
-        {
-            return false;
-        }
-
-        if (!bgfx::allocTransientIndexBuffer(&tib, static_cast<unsigned int>(indices.size())))
+        if (!bgfx::allocTransientBuffers(
+            &tvb,
+            PosColorVertex::layout,
+            static_cast<uint32_t>(vertices.size()),
+            &tib,
+            static_cast<uint32_t>(indices.size())))
         {
             return false;
         }
@@ -259,8 +281,6 @@ namespace war
         return true;
 #else
         (void)layer;
-        (void)viewWidth;
-        (void)viewHeight;
         return false;
 #endif
     }

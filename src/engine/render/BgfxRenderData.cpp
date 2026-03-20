@@ -12,40 +12,28 @@ namespace war
                 | static_cast<uint32_t>(r);
         }
 
-        RECT tileToScreenRect(const WorldState& worldState, const Camera2D& camera, TileCoord tile)
+        BgfxQuad tileToWorldQuad(const WorldState& worldState, TileCoord tile, uint32_t color)
         {
             const int tileSize = worldState.world().getTileSize();
-
             const Vec2 center = worldState.world().tileToWorldCenter(tile);
-            const Vec2 topLeftWorld{
+
+            return BgfxQuad{
                 center.x - static_cast<float>(tileSize) * 0.5f,
-                center.y - static_cast<float>(tileSize) * 0.5f
-            };
-            const Vec2 bottomRightWorld{
+                center.y - static_cast<float>(tileSize) * 0.5f,
                 center.x + static_cast<float>(tileSize) * 0.5f,
-                center.y + static_cast<float>(tileSize) * 0.5f
-            };
-
-            const Vec2 topLeft = camera.worldToScreen(topLeftWorld);
-            const Vec2 bottomRight = camera.worldToScreen(bottomRightWorld);
-
-            return RECT{
-                static_cast<LONG>(topLeft.x),
-                static_cast<LONG>(topLeft.y),
-                static_cast<LONG>(bottomRight.x),
-                static_cast<LONG>(bottomRight.y)
+                center.y + static_cast<float>(tileSize) * 0.5f,
+                color
             };
         }
 
-        RECT centeredScreenRect(const Camera2D& camera, const Vec2& worldPosition, float halfSize)
+        BgfxQuad centeredWorldQuad(const Vec2& worldPosition, float halfSize, uint32_t color)
         {
-            const Vec2 screen = camera.worldToScreen(worldPosition);
-
-            return RECT{
-                static_cast<LONG>(screen.x - halfSize),
-                static_cast<LONG>(screen.y - halfSize),
-                static_cast<LONG>(screen.x + halfSize),
-                static_cast<LONG>(screen.y + halfSize)
+            return BgfxQuad{
+                worldPosition.x - halfSize,
+                worldPosition.y - halfSize,
+                worldPosition.x + halfSize,
+                worldPosition.y + halfSize,
+                color
             };
         }
 
@@ -111,6 +99,8 @@ namespace war
         bool hasHoveredTile,
         TileCoord hoveredTile)
     {
+        (void)camera;
+
         BgfxWorldRenderData data{};
 
         data.tiles.quads.reserve(
@@ -122,10 +112,8 @@ namespace war
             for (int x = 0; x < worldState.world().getWidth(); ++x)
             {
                 const TileCoord tile{ x, y };
-                data.tiles.quads.push_back(BgfxQuad{
-                    tileToScreenRect(worldState, camera, tile),
-                    tileColor(worldState.world().isBlocked(tile))
-                });
+                data.tiles.quads.push_back(
+                    tileToWorldQuad(worldState, tile, tileColor(worldState.world().isBlocked(tile))));
             }
         }
 
@@ -136,40 +124,25 @@ namespace war
 
         for (size_t i = pathIndex; i < currentPath.size(); ++i)
         {
-            data.path.quads.push_back(BgfxQuad{
-                centeredScreenRect(
-                    camera,
-                    worldState.world().tileToWorldCenter(currentPath[i]),
-                    5.0f * camera.getZoom()),
-                pathColor()
-            });
+            data.path.quads.push_back(
+                centeredWorldQuad(worldState.world().tileToWorldCenter(currentPath[i]), 5.0f, pathColor()));
         }
 
         if (hasHoveredTile && worldState.world().isInBounds(hoveredTile))
         {
-            data.hoveredTile.quads.push_back(BgfxQuad{
-                tileToScreenRect(worldState, camera, hoveredTile),
-                hoveredColor(worldState.world().isBlocked(hoveredTile))
-            });
+            data.hoveredTile.quads.push_back(
+                tileToWorldQuad(worldState, hoveredTile, hoveredColor(worldState.world().isBlocked(hoveredTile))));
         }
 
         data.entities.quads.reserve(worldState.entities().all().size());
 
         for (const Entity& entity : worldState.entities().all())
         {
-            data.entities.quads.push_back(BgfxQuad{
-                centeredScreenRect(
-                    camera,
-                    worldState.world().tileToWorldCenter(entity.tile),
-                    8.0f * camera.getZoom()),
-                entityColor(entity)
-            });
+            data.entities.quads.push_back(
+                centeredWorldQuad(worldState.world().tileToWorldCenter(entity.tile), 8.0f, entityColor(entity)));
         }
 
-        data.player.quads.push_back(BgfxQuad{
-            centeredScreenRect(camera, playerPosition, 12.0f * camera.getZoom()),
-            playerColor()
-        });
+        data.player.quads.push_back(centeredWorldQuad(playerPosition, 12.0f, playerColor()));
 
         return data;
     }

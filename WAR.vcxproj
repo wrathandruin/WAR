@@ -10,7 +10,6 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
@@ -18,16 +17,13 @@
     <RootNamespace>WAR</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
-
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -35,38 +31,37 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-
   <ImportGroup Label="ExtensionSettings" />
   <ImportGroup Label="Shared" />
-
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-
   <PropertyGroup Label="UserMacros" />
-
   <PropertyGroup>
     <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)obj\$(Configuration)\</IntDir>
     <TargetName>WAR</TargetName>
   </PropertyGroup>
-
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;BX_CONFIG_DEBUG=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/Zc:__cplusplus /Zc:preprocessor %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party\bgfx\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party\bgfx\include;$(ProjectDir)third_party\bx\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <PreBuildEvent>
+      <Command>if not exist "$(ProjectDir)assets\shaders\dx11" mkdir "$(ProjectDir)assets\shaders\dx11"
+"$(ProjectDir)third_party\bgfx\.build\win64_vs2022\bin\shadercDebug.exe" -f "$(ProjectDir)assets\shaders\src\vs_color.sc" -o "$(ProjectDir)assets\shaders\dx11\vs_color.bin" --platform windows --type vertex -p s_5_0 -O 3 --varyingdef "$(ProjectDir)assets\shaders\src\varying.def.sc" -i "$(ProjectDir)third_party\bgfx\src"
+"$(ProjectDir)third_party\bgfx\.build\win64_vs2022\bin\shadercDebug.exe" -f "$(ProjectDir)assets\shaders\src\fs_color.sc" -o "$(ProjectDir)assets\shaders\dx11\fs_color.bin" --platform windows --type fragment -p s_5_0 -O 3 --varyingdef "$(ProjectDir)assets\shaders\src\varying.def.sc" -i "$(ProjectDir)third_party\bgfx\src"</Command>
+    </PreBuildEvent>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -77,19 +72,24 @@
       <Command>if exist "$(ProjectDir)assets\shaders\dx11\vs_color.bin" xcopy /Y /I "$(ProjectDir)assets\shaders\dx11\*.bin" "$(OutDir)assets\shaders\dx11\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
-
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;BX_CONFIG_DEBUG=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/Zc:__cplusplus /Zc:preprocessor %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party\bgfx\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party\bgfx\include;$(ProjectDir)third_party\bx\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <PreBuildEvent>
+      <Command>if not exist "$(ProjectDir)assets\shaders\dx11" mkdir "$(ProjectDir)assets\shaders\dx11"
+"$(ProjectDir)third_party\bgfx\.build\win64_vs2022\bin\shadercRelease.exe" -f "$(ProjectDir)assets\shaders\src\vs_color.sc" -o "$(ProjectDir)assets\shaders\dx11\vs_color.bin" --platform windows --type vertex -p s_5_0 -O 3 --varyingdef "$(ProjectDir)assets\shaders\src\varying.def.sc" -i "$(ProjectDir)third_party\bgfx\src"
+"$(ProjectDir)third_party\bgfx\.build\win64_vs2022\bin\shadercRelease.exe" -f "$(ProjectDir)assets\shaders\src\fs_color.sc" -o "$(ProjectDir)assets\shaders\dx11\fs_color.bin" --platform windows --type fragment -p s_5_0 -O 3 --varyingdef "$(ProjectDir)assets\shaders\src\varying.def.sc" -i "$(ProjectDir)third_party\bgfx\src"</Command>
+    </PreBuildEvent>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -102,7 +102,6 @@
       <Command>if exist "$(ProjectDir)assets\shaders\dx11\vs_color.bin" xcopy /Y /I "$(ProjectDir)assets\shaders\dx11\*.bin" "$(OutDir)assets\shaders\dx11\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
-
   <ItemGroup>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\engine\core\Application.cpp" />
@@ -113,6 +112,7 @@
     <ClCompile Include="src\engine\render\WorldRenderer.cpp" />
     <ClCompile Include="src\engine\render\BgfxWorldRenderer.cpp" />
     <ClCompile Include="src\engine\render\BgfxRenderData.cpp" />
+    <ClCompile Include="src\engine\render\BgfxViewTransform.cpp" />
     <ClCompile Include="src\engine\render\DebugOverlayRenderer.cpp" />
     <ClCompile Include="src\engine\render\GdiRenderDevice.cpp" />
     <ClCompile Include="src\engine\render\BgfxRenderDevice.cpp" />
@@ -125,7 +125,6 @@
     <ClCompile Include="src\platform\win32\Win32Window.cpp" />
     <ClCompile Include="src\game\GameLayer.cpp" />
   </ItemGroup>
-
   <ItemGroup>
     <ClInclude Include="src\engine\core\Application.h" />
     <ClInclude Include="src\engine\core\Timer.h" />
@@ -135,6 +134,7 @@
     <ClInclude Include="src\engine\render\WorldRenderer.h" />
     <ClInclude Include="src\engine\render\BgfxWorldRenderer.h" />
     <ClInclude Include="src\engine\render\BgfxRenderData.h" />
+    <ClInclude Include="src\engine\render\BgfxViewTransform.h" />
     <ClInclude Include="src\engine\render\DebugOverlayRenderer.h" />
     <ClInclude Include="src\engine\render\RenderBackendType.h" />
     <ClInclude Include="src\engine\render\IRenderDevice.h" />
@@ -153,7 +153,6 @@
     <ClInclude Include="src\platform\win32\Win32Window.h" />
     <ClInclude Include="src\game\GameLayer.h" />
   </ItemGroup>
-
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
 </Project>

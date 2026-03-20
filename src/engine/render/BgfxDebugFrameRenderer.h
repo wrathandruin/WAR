@@ -16,7 +16,6 @@ namespace war
             const Vec2& playerPosition,
             const std::vector<std::string>& eventLog,
             float lastDeltaTime,
-            bool worldRendered,
-            const char* worldStatus) const;
+            const std::string& statusMessage) const;
     };
 }

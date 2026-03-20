@@ -4,8 +4,6 @@
 #include <cstdint>
 #include <vector>
 
-#include <windows.h>
-
 #include "engine/math/Vec2.h"
 #include "engine/render/Camera2D.h"
 #include "engine/world/WorldGrid.h"
@@ -15,7 +13,10 @@ namespace war
 {
     struct BgfxQuad
     {
-        RECT rect{};
+        float left = 0.0f;
+        float top = 0.0f;
+        float right = 0.0f;
+        float bottom = 0.0f;
         uint32_t color = 0xffffffff;
     };
 

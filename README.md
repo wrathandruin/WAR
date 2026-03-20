@@ -1,36 +1,39 @@
-# WAR — Milestone 17 (bgfx Batching & Render Data)
+# WAR — Milestone 18 (bgfx Camera / Projection Cleanup)
 
-> Current development milestone: M17 — bgfx batching and render data cleanup
+> Current development milestone: M18 — bgfx camera / projection cleanup
 
 ## Focus
-Make the bgfx renderer less ad hoc by separating render data generation from GPU submission.
+Move the bgfx renderer away from CPU-built screen-space/NDC assumptions and toward a cleaner world-space pipeline.
 
 ## What this milestone does
-- introduces `BgfxRenderDataBuilder`
-- groups world render data into explicit layers
-- keeps batching by layer instead of mixing generation and submission
-- preserves the current gameplay path and bgfx world rendering behavior
+- introduces `BgfxViewTransform`
+- builds an orthographic bgfx projection from the camera
+- changes bgfx render data from screen rectangles to world-space quads
+- keeps the current visible world rendering behavior
 
 ## Renderer architecture
-The bgfx world path is now split into two steps:
+The bgfx world path is now split into:
 
-1. **Build render data**
+1. **Build world-space render data**
    - tiles
    - path nodes
    - hovered tile
    - entities
    - player
 
-2. **Submit render data**
-   - one submission path per layer
-   - cleaner CPU-side renderer flow
+2. **Build view/projection**
+   - use the active camera
+   - compute visible world extents
+   - submit world-space geometry through bgfx
 
 ## Why this matters
-This makes the next renderer milestones safer:
-- camera/projection cleanup
-- texture pipeline
+This is the bridge from “CPU pushes screen quads” to “renderer owns the real camera path”.
+
+It makes the next milestones safer:
+- texture and sprite pipeline
+- cleaner zoom/pan behavior
+- batching improvements
 - material/shader expansion
-- better batching and draw ordering
 
 ## Requirements
 The bgfx geometry path still expects compiled shader binaries at:
@@ -41,6 +44,6 @@ assets/shaders/dx11/fs_color.bin
 ```
 
 ## Next Milestone
-### M18 — bgfx Camera / Projection Cleanup
-- move away from CPU-heavy screen-space assumptions
-- prepare the renderer for a cleaner world-space pipeline
+### M19 — bgfx Shader / Asset Pipeline Cleanup
+- improve shader/tooling workflow
+- make shader asset handling more explicit and less brittle

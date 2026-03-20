@@ -21,6 +21,7 @@
     <ClCompile Include="src\engine\render\WorldRenderer.cpp"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="src\engine\render\BgfxWorldRenderer.cpp"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="src\engine\render\BgfxRenderData.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\engine\render\BgfxViewTransform.cpp"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="src\engine\render\DebugOverlayRenderer.cpp"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="src\engine\render\GdiRenderDevice.cpp"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="src\engine\render\BgfxRenderDevice.cpp"><Filter>Source Files</Filter></ClCompile>
@@ -43,6 +44,7 @@
     <ClInclude Include="src\engine\render\WorldRenderer.h"><Filter>Header Files</Filter></ClInclude>
     <ClInclude Include="src\engine\render\BgfxWorldRenderer.h"><Filter>Header Files</Filter></ClInclude>
     <ClInclude Include="src\engine\render\BgfxRenderData.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\render\BgfxViewTransform.h"><Filter>Header Files</Filter></ClInclude>
     <ClInclude Include="src\engine\render\DebugOverlayRenderer.h"><Filter>Header Files</Filter></ClInclude>
     <ClInclude Include="src\engine\render\RenderBackendType.h"><Filter>Header Files</Filter></ClInclude>
     <ClInclude Include="src\engine\render\IRenderDevice.h"><Filter>Header Files</Filter></ClInclude>

@@ -26,8 +26,8 @@ namespace war
             if (preferred->initialize(m_window->getHandle()))
             {
                 m_renderDevice = std::move(preferred);
-                pushEvent("Milestones 14 + 15 + 16 initialized");
-                pushEvent("bgfx geometry path ready");
+                pushEvent("Milestone 18.1 initialized");
+                pushEvent("bgfx camera/projection cleanup fixed");
                 pushEvent(std::string("Active backend: ") + m_renderDevice->name());
             }
             else
@@ -36,7 +36,7 @@ namespace war
                 const bool fallbackReady = fallback->initialize(m_window->getHandle());
                 m_renderDevice = std::move(fallback);
 
-                pushEvent("Milestones 14 + 15 + 16 initialized");
+                pushEvent("Milestone 18.1 initialized");
                 pushEvent("bgfx unavailable, falling back to GDI");
                 pushEvent(std::string("Active backend: ") + m_renderDevice->name());
                 if (!fallbackReady)
@@ -105,7 +105,7 @@ namespace war
         }
         else
         {
-            const bool worldRendered = m_bgfxWorldRenderer.render(
+            m_bgfxWorldRenderer.render(
                 m_worldState,
                 m_camera,
                 m_playerPosition,
@@ -119,7 +119,6 @@ namespace war
                 m_playerPosition,
                 m_eventLog,
                 m_lastDeltaTime,
-                worldRendered,
                 m_bgfxWorldRenderer.statusMessage());
         }
 
