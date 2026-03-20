@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <string>
 #include <vector>
 
 #include "engine/gameplay/EntityManager.h"
@@ -9,6 +10,26 @@
 
 namespace war
 {
+    enum class WorldAuthoringHotspotType
+    {
+        Encounter,
+        Control,
+        Transit,
+        Loot,
+        Hazard
+    };
+
+    struct WorldAuthoringHotspot
+    {
+        int id = 0;
+        TileCoord tile{};
+        WorldRegionTagId region = WorldRegionTagId::CargoBay;
+        WorldAuthoringHotspotType type = WorldAuthoringHotspotType::Encounter;
+        std::string label;
+        std::string summary;
+        bool encounterReady = false;
+    };
+
     class WorldState
     {
     public:
@@ -32,6 +53,15 @@ namespace war
         void setPaletteMode(BgfxThemePaletteMode paletteMode);
         [[nodiscard]] BgfxThemePaletteMode paletteMode() const;
 
+        void clearAuthoringHotspots();
+        void addAuthoringHotspot(const WorldAuthoringHotspot& hotspot);
+
+        [[nodiscard]] const std::vector<WorldAuthoringHotspot>& authoringHotspots() const;
+        [[nodiscard]] const WorldAuthoringHotspot* authoringHotspotAt(TileCoord tile) const;
+
+        void setAuthoringHotspotsVisible(bool visible);
+        [[nodiscard]] bool authoringHotspotsVisible() const;
+
     private:
         void fillRegionRect(int minX, int minY, int maxX, int maxY, WorldRegionTagId tag);
         [[nodiscard]] size_t index(TileCoord tile) const;
@@ -41,5 +71,7 @@ namespace war
         std::vector<WorldRegionTagId> m_regionTags;
         bool m_regionOverlayEnabled = true;
         BgfxThemePaletteMode m_paletteMode = BgfxThemePaletteMode::Default;
+        std::vector<WorldAuthoringHotspot> m_authoringHotspots;
+        bool m_authoringHotspotsVisible = true;
     };
 }

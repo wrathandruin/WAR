@@ -23,11 +23,16 @@ namespace war
             size_t pathIndex,
             bool hasHoveredTile,
             TileCoord hoveredTile,
+            bool hasSelectedTile,
+            TileCoord selectedTile,
+            bool hasActionTargetTile,
+            TileCoord actionTargetTile,
             const std::vector<std::string>& eventLog,
             float lastDeltaTime,
             const POINT& mousePosition) const;
 
     private:
         [[nodiscard]] const char* entityTypeToText(EntityType type) const;
+        [[nodiscard]] const char* hotspotTypeToText(WorldAuthoringHotspotType type) const;
     };
 }

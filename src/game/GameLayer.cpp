@@ -20,18 +20,22 @@ namespace war
 
         const TileCoord spawnTile{ 2, 2 };
         m_playerPosition = m_worldState.world().tileToWorldCenter(spawnTile);
+        m_selectedTile = spawnTile;
+        m_hasSelectedTile = true;
 
         {
             auto preferred = std::make_unique<BgfxRenderDevice>();
             if (preferred->initialize(m_window->getHandle()))
             {
                 m_renderDevice = std::move(preferred);
-                pushEvent("Milestone 28 initialized");
-                pushEvent("bgfx semantic prop hooks / region-aware dressing active");
-                pushEvent("Semantic regions: Cargo Bay | Transit Spine | Med Lab | Command Deck | Hazard Containment");
-                pushEvent("Region-aware props seeded from semantic regions");
+                pushEvent("Milestone 30 initialized");
+                pushEvent("playable slice readability / interaction affordances active");
+                pushEvent("Hover, selection, and move-target readability now support short demos more cleanly");
+                pushEvent("Inspect and interact messaging now name concrete entities and authored anchors");
                 pushEvent("Region boundary overlay is enabled by default");
+                pushEvent("Authored hotspot overlay is enabled by default");
                 pushEvent("Press O to toggle region boundary overlay");
+                pushEvent("Press H to toggle authored hotspot overlay");
                 pushEvent("Press 7 / 8 / 9 for Default / Muted / Vivid palette");
                 pushEvent(std::string("Active backend: ") + m_renderDevice->name());
             }
@@ -41,12 +45,15 @@ namespace war
                 const bool fallbackReady = fallback->initialize(m_window->getHandle());
                 m_renderDevice = std::move(fallback);
 
-                pushEvent("Milestone 28 initialized");
+                pushEvent("Milestone 30 initialized");
                 pushEvent("bgfx unavailable, falling back to GDI");
-                pushEvent("Semantic regions: Cargo Bay | Transit Spine | Med Lab | Command Deck | Hazard Containment");
-                pushEvent("Region-aware props seeded from semantic regions");
+                pushEvent("playable slice readability / interaction affordances active");
+                pushEvent("Hover, selection, and move-target readability now support short demos more cleanly");
+                pushEvent("Inspect and interact messaging now name concrete entities and authored anchors");
                 pushEvent("Region boundary overlay is enabled by default");
+                pushEvent("Authored hotspot overlay is enabled by default");
                 pushEvent("Press O to toggle region boundary overlay");
+                pushEvent("Press H to toggle authored hotspot overlay");
                 pushEvent("Press 7 / 8 / 9 for Default / Muted / Vivid palette");
                 pushEvent(std::string("Active backend: ") + m_renderDevice->name());
                 if (!fallbackReady)
@@ -98,7 +105,11 @@ namespace war
                 m_currentPath,
                 m_pathIndex,
                 m_hasHoveredTile,
-                m_hoveredTile);
+                m_hoveredTile,
+                m_hasSelectedTile,
+                m_selectedTile,
+                m_hasActionTargetTile,
+                m_actionTargetTile);
 
             m_debugOverlayRenderer.render(
                 dc,
@@ -109,6 +120,10 @@ namespace war
                 m_pathIndex,
                 m_hasHoveredTile,
                 m_hoveredTile,
+                m_hasSelectedTile,
+                m_selectedTile,
+                m_hasActionTargetTile,
+                m_actionTargetTile,
                 m_eventLog,
                 m_lastDeltaTime,
                 m_window->getMousePosition());
@@ -122,7 +137,11 @@ namespace war
                 m_currentPath,
                 m_pathIndex,
                 m_hasHoveredTile,
-                m_hoveredTile);
+                m_hoveredTile,
+                m_hasSelectedTile,
+                m_selectedTile,
+                m_hasActionTargetTile,
+                m_actionTargetTile);
 
             m_bgfxDebugFrameRenderer.render(
                 m_worldState,
@@ -161,6 +180,12 @@ namespace war
         {
             const Vec2 world = m_camera.screenToWorld(click.x, click.y);
             const TileCoord targetTile = m_worldState.world().worldToTile(world);
+
+            m_selectedTile = targetTile;
+            m_hasSelectedTile = m_worldState.world().isInBounds(targetTile);
+            m_actionTargetTile = targetTile;
+            m_hasActionTargetTile = m_hasSelectedTile;
+
             m_actions.push({ ActionType::Move, targetTile });
         }
 
@@ -169,6 +194,9 @@ namespace war
         {
             const Vec2 world = m_camera.screenToWorld(rightClick.x, rightClick.y);
             const TileCoord targetTile = m_worldState.world().worldToTile(world);
+
+            m_selectedTile = targetTile;
+            m_hasSelectedTile = m_worldState.world().isInBounds(targetTile);
 
             const bool shiftDown = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
             if (shiftDown)
@@ -205,6 +233,7 @@ namespace war
     void GameLayer::applyAuthoringHotkeys()
     {
         const bool overlayDown = (GetAsyncKeyState('O') & 0x8000) != 0;
+        const bool hotspotDown = (GetAsyncKeyState('H') & 0x8000) != 0;
         const bool palette7Down = (GetAsyncKeyState('7') & 0x8000) != 0;
         const bool palette8Down = (GetAsyncKeyState('8') & 0x8000) != 0;
         const bool palette9Down = (GetAsyncKeyState('9') & 0x8000) != 0;
@@ -214,6 +243,13 @@ namespace war
             const bool newState = !m_worldState.regionOverlayEnabled();
             m_worldState.setRegionOverlayEnabled(newState);
             pushEvent(newState ? "Region boundary overlay enabled" : "Region boundary overlay disabled");
+        }
+
+        if (hotspotDown && !m_hotspotKeyWasDown)
+        {
+            const bool newState = !m_worldState.authoringHotspotsVisible();
+            m_worldState.setAuthoringHotspotsVisible(newState);
+            pushEvent(newState ? "Authored hotspot overlay enabled" : "Authored hotspot overlay disabled");
         }
 
         if (palette7Down && !m_palette7WasDown)
@@ -235,6 +271,7 @@ namespace war
         }
 
         m_overlayKeyWasDown = overlayDown;
+        m_hotspotKeyWasDown = hotspotDown;
         m_palette7WasDown = palette7Down;
         m_palette8WasDown = palette8Down;
         m_palette9WasDown = palette9Down;
@@ -258,6 +295,7 @@ namespace war
 
             if (m_pathIndex >= m_currentPath.size())
             {
+                m_hasActionTargetTile = false;
                 pushEvent("Path complete");
             }
             return;
@@ -273,6 +311,7 @@ namespace war
 
             if (m_pathIndex >= m_currentPath.size())
             {
+                m_hasActionTargetTile = false;
                 pushEvent("Path complete");
             }
             return;

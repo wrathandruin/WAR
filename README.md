@@ -1,38 +1,52 @@
-# WAR — Milestone 28 (bgfx Semantic Prop Hooks / Region-Aware Dressing)
+# WAR — Milestone 30 (Playable Slice Readability / Interaction Affordances)
 
-> Current development milestone: M28 — bgfx Semantic Prop Hooks / Region-Aware Dressing
+> Current development milestone: M30 — Playable Slice Readability / Interaction Affordances
 
 ## Focus
-Begin tying scene props and visual dressing to semantic region data so authored spaces influence more than just tile theming.
+Turn the current prototype from an internal rendering demonstration into a more legible, more self-explanatory playable slice.
 
-M27 expanded region data into scene semantics.
-M28 builds on that by introducing semantic prop population hooks and region-aware prop rendering so Cargo Bay, Transit Spine, Med Lab, Command Deck, and Hazard Containment begin to read as different spaces.
+M29 established authored hotspot anchors and stronger regional dressing.
+M30 builds on that by improving hover feedback, selection readability, interaction prompts, inspect clarity, path legibility, and short-session demo usability.
 
 ## What this milestone does
-- introduces `WorldSemanticDressing` for region-aware test-world prop population
-- seeds entities from semantic region intent instead of ad hoc placement
-- resolves prop placement into valid open tiles inside the intended region
-- adds region-aware entity coloring in both bgfx and GDI renderers
-- preserves region boundary overlays and palette controls from M26
-- preserves world-driven theme resolution from semantic regions
+- adds clearer hover affordances for blocked tiles, walkable tiles, interactables, and authored hotspots
+- adds selected-tile and move-target presentation so click intent is easier to follow
+- improves path readability with stronger destination emphasis
+- improves inspect and interact messaging so runtime feedback reads like slice diagnostics instead of placeholder logging
+- improves debug-overlay context with prompt text, selected tile state, move target state, hotspot detail, and demo-facing controls
+- keeps authored hotspot overlay, region overlay, and palette controls intact
 
-## Region-aware prop dressing after M28
-The current test world now begins to read as:
+## Readability improvements after M30
+The current test world should now be easier to read in a short demo because:
 
-- Cargo Bay: clustered cargo crates
-- Transit Spine: service props along shared routes
-- Med Lab: powered medical terminals and clean storage
-- Command Deck: command consoles and secure lockers
-- Hazard Containment: sealed storage and danger-tinted equipment
+- hovered tiles communicate whether the next action is move, inspect, or interact
+- the last selected tile remains visible as a point of focus
+- an active movement destination is visible as a distinct target marker
+- inspect text reports region, entity, hotspot, and state more clearly
+- interact text names the specific object or authored anchor being used
+- debug text better explains what the player is looking at and what input will do
+
+## Demo controls
+- `LMB`: move / set movement target
+- `RMB`: interact
+- `Shift + RMB`: inspect
+- `MMB drag`: pan camera
+- `Mouse wheel`: zoom
+- `O`: toggle region boundary overlay
+- `H`: toggle authored hotspot overlay
+- `7 / 8 / 9`: Default / Muted / Vivid palette modes
 
 ## Why this matters
-This is the bridge from “regions have names” to “regions affect what is in the scene”.
+M30 is intentionally not a mechanics expansion milestone.
 
-It makes the next milestones safer:
-- region-driven prop expansion
-- richer authored spaces
-- visual storytelling through layout and equipment
-- continued reduction of renderer-local assumptions
+Its job is to make the existing slice legible enough that:
+
+- a new viewer can understand it faster
+- usability and demo review become more honest
+- future mechanics can attach to clearer interaction and feedback patterns
+- the repo can move into M31 and M32 with fewer “what is this supposed to mean?” problems
+
+This keeps the roadmap disciplined: readability and affordances now, production contract and packaging discipline next.
 
 ## Requirements
 The bgfx textured path expects compiled shader binaries at:
@@ -51,7 +65,7 @@ assets/textures/world_atlas.bmp
 ```
 
 ## Next Milestone
-### M29 — bgfx Regional Set Dressing / Encounter Hooks
-- expand semantic prop dressing density and variety
-- prepare authored regions to influence gameplay-facing encounter hooks
-- continue moving scene meaning into the world layer
+### M31 — Canonical Content Contract / Runtime Boundary Cleanup
+- formalize source-controlled truth versus runtime-only mutable state
+- clean up content, asset, and generated-artifact policy boundaries
+- reduce future persistence, packaging, and deployment ambiguity

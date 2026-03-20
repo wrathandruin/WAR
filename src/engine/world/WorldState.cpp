@@ -17,6 +17,8 @@ namespace war
         m_world.generateTestMap();
         m_regionOverlayEnabled = true;
         m_paletteMode = BgfxThemePaletteMode::Default;
+        m_authoringHotspotsVisible = true;
+        clearAuthoringHotspots();
 
         for (int y = 0; y < m_world.getHeight(); ++y)
         {
@@ -35,7 +37,7 @@ namespace war
         fillRegionRect(27, 22, 43, 32, WorldRegionTagId::HazardContainment);
         fillRegionRect(19, 24, 26, 29, WorldRegionTagId::HazardContainment);
 
-        WorldSemanticDressing::populateTestEntities(*this);
+        WorldSemanticDressing::populateAuthoredTestWorld(*this);
     }
 
     WorldGrid& WorldState::world()
@@ -101,6 +103,44 @@ namespace war
     BgfxThemePaletteMode WorldState::paletteMode() const
     {
         return m_paletteMode;
+    }
+
+    void WorldState::clearAuthoringHotspots()
+    {
+        m_authoringHotspots.clear();
+    }
+
+    void WorldState::addAuthoringHotspot(const WorldAuthoringHotspot& hotspot)
+    {
+        m_authoringHotspots.push_back(hotspot);
+    }
+
+    const std::vector<WorldAuthoringHotspot>& WorldState::authoringHotspots() const
+    {
+        return m_authoringHotspots;
+    }
+
+    const WorldAuthoringHotspot* WorldState::authoringHotspotAt(TileCoord tile) const
+    {
+        for (const WorldAuthoringHotspot& hotspot : m_authoringHotspots)
+        {
+            if (hotspot.tile == tile)
+            {
+                return &hotspot;
+            }
+        }
+
+        return nullptr;
+    }
+
+    void WorldState::setAuthoringHotspotsVisible(bool visible)
+    {
+        m_authoringHotspotsVisible = visible;
+    }
+
+    bool WorldState::authoringHotspotsVisible() const
+    {
+        return m_authoringHotspotsVisible;
     }
 
     void WorldState::fillRegionRect(int minX, int minY, int maxX, int maxY, WorldRegionTagId tag)

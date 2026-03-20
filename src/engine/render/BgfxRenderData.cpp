@@ -110,7 +110,12 @@ namespace war
 
         uint32_t pathColor()
         {
-            return rgbaToAbgr(255, 180, 90);
+            return rgbaToAbgr(255, 192, 116, 220);
+        }
+
+        uint32_t pathDestinationColor()
+        {
+            return rgbaToAbgr(255, 220, 142, 240);
         }
 
         uint32_t playerColor()
@@ -118,11 +123,44 @@ namespace war
             return rgbaToAbgr(180, 225, 255);
         }
 
-        uint32_t hoveredColor(bool blocked)
+        uint32_t selectedTileColor()
         {
-            return blocked
-                ? rgbaToAbgr(255, 140, 140, 140)
-                : rgbaToAbgr(240, 230, 100, 140);
+            return rgbaToAbgr(132, 188, 255, 92);
+        }
+
+        uint32_t selectedTileCenterColor()
+        {
+            return rgbaToAbgr(188, 224, 255, 170);
+        }
+
+        uint32_t actionTargetColor()
+        {
+            return rgbaToAbgr(255, 214, 118, 104);
+        }
+
+        uint32_t actionTargetCenterColor()
+        {
+            return rgbaToAbgr(255, 232, 168, 188);
+        }
+
+        bool tileHasInteraction(const WorldState& worldState, TileCoord tile)
+        {
+            return worldState.entities().getAt(tile) != nullptr || worldState.authoringHotspotAt(tile) != nullptr;
+        }
+
+        uint32_t hoveredColor(const WorldState& worldState, TileCoord tile)
+        {
+            if (worldState.world().isBlocked(tile))
+            {
+                return rgbaToAbgr(255, 140, 140, 140);
+            }
+
+            if (tileHasInteraction(worldState, tile))
+            {
+                return rgbaToAbgr(132, 228, 255, 150);
+            }
+
+            return rgbaToAbgr(240, 230, 100, 128);
         }
 
         uint32_t entityColor(const WorldState& worldState, const Entity& entity)
@@ -275,15 +313,80 @@ namespace war
             {
             case EntityType::Crate:
                 return BgfxSpriteMaterialId::Crate;
-
             case EntityType::Terminal:
                 return BgfxSpriteMaterialId::Terminal;
-
             case EntityType::Locker:
                 return BgfxSpriteMaterialId::Locker;
-
             default:
                 return BgfxSpriteMaterialId::Crate;
+            }
+        }
+
+        uint32_t hotspotTileColor(const WorldAuthoringHotspot& hotspot)
+        {
+            switch (hotspot.type)
+            {
+            case WorldAuthoringHotspotType::Encounter:
+                return hotspot.encounterReady
+                    ? rgbaToAbgr(255, 204, 100, 68)
+                    : rgbaToAbgr(214, 176, 92, 56);
+
+            case WorldAuthoringHotspotType::Control:
+                return hotspot.encounterReady
+                    ? rgbaToAbgr(120, 188, 255, 72)
+                    : rgbaToAbgr(96, 148, 212, 56);
+
+            case WorldAuthoringHotspotType::Transit:
+                return hotspot.encounterReady
+                    ? rgbaToAbgr(120, 236, 255, 72)
+                    : rgbaToAbgr(108, 202, 220, 56);
+
+            case WorldAuthoringHotspotType::Loot:
+                return hotspot.encounterReady
+                    ? rgbaToAbgr(238, 222, 138, 72)
+                    : rgbaToAbgr(210, 194, 120, 56);
+
+            case WorldAuthoringHotspotType::Hazard:
+                return hotspot.encounterReady
+                    ? rgbaToAbgr(255, 136, 136, 76)
+                    : rgbaToAbgr(212, 118, 118, 60);
+
+            default:
+                return rgbaToAbgr(240, 240, 240, 56);
+            }
+        }
+
+        uint32_t hotspotCenterColor(const WorldAuthoringHotspot& hotspot)
+        {
+            switch (hotspot.type)
+            {
+            case WorldAuthoringHotspotType::Encounter:
+                return hotspot.encounterReady
+                    ? rgbaToAbgr(255, 214, 112)
+                    : rgbaToAbgr(220, 186, 98);
+
+            case WorldAuthoringHotspotType::Control:
+                return hotspot.encounterReady
+                    ? rgbaToAbgr(128, 198, 255)
+                    : rgbaToAbgr(102, 160, 220);
+
+            case WorldAuthoringHotspotType::Transit:
+                return hotspot.encounterReady
+                    ? rgbaToAbgr(130, 240, 255)
+                    : rgbaToAbgr(112, 208, 226);
+
+            case WorldAuthoringHotspotType::Loot:
+                return hotspot.encounterReady
+                    ? rgbaToAbgr(242, 228, 150)
+                    : rgbaToAbgr(216, 198, 126);
+
+            case WorldAuthoringHotspotType::Hazard:
+                return hotspot.encounterReady
+                    ? rgbaToAbgr(255, 146, 146)
+                    : rgbaToAbgr(220, 124, 124);
+
+            default:
+                return rgbaToAbgr(255, 255, 255);
             }
         }
     }
@@ -295,7 +398,11 @@ namespace war
         const std::vector<TileCoord>& currentPath,
         size_t pathIndex,
         bool hasHoveredTile,
-        TileCoord hoveredTile)
+        TileCoord hoveredTile,
+        bool hasSelectedTile,
+        TileCoord selectedTile,
+        bool hasActionTargetTile,
+        TileCoord actionTargetTile)
     {
         (void)camera;
 
@@ -309,6 +416,11 @@ namespace war
         if (worldState.regionOverlayEnabled())
         {
             data.regionOverlay.quads.reserve(static_cast<size_t>(width) * static_cast<size_t>(height));
+        }
+
+        if (worldState.authoringHotspotsVisible())
+        {
+            data.authoringHotspots.quads.reserve(worldState.authoringHotspots().size() * 4u);
         }
 
         const float boundaryThickness = 8.0f;
@@ -353,29 +465,86 @@ namespace war
 
         if (pathIndex < currentPath.size())
         {
-            data.path.quads.reserve(currentPath.size() - pathIndex);
+            data.path.quads.reserve((currentPath.size() - pathIndex) + 1u);
         }
 
         for (size_t i = pathIndex; i < currentPath.size(); ++i)
         {
+            const Vec2 center = worldState.world().tileToWorldCenter(currentPath[i]);
             data.path.quads.push_back(
-                centeredWorldQuad(worldState.world().tileToWorldCenter(currentPath[i]), 5.0f, pathColor()));
+                centeredWorldQuad(
+                    center,
+                    i + 1 == currentPath.size() ? 6.5f : 5.0f,
+                    i + 1 == currentPath.size() ? pathDestinationColor() : pathColor()));
         }
 
         if (hasHoveredTile && worldState.world().isInBounds(hoveredTile))
         {
             data.hoveredTile.quads.push_back(
-                tileToWorldQuad(worldState, hoveredTile, hoveredColor(worldState.world().isBlocked(hoveredTile))));
+                tileToWorldQuad(worldState, hoveredTile, hoveredColor(worldState, hoveredTile)));
+            if (tileHasInteraction(worldState, hoveredTile))
+            {
+                data.hoveredTile.quads.push_back(
+                    centeredWorldQuad(worldState.world().tileToWorldCenter(hoveredTile), 11.0f, rgbaToAbgr(255, 255, 255, 70)));
+            }
+        }
+
+        if (hasSelectedTile && worldState.world().isInBounds(selectedTile))
+        {
+            data.selectedTile.quads.push_back(
+                tileToWorldQuad(worldState, selectedTile, selectedTileColor()));
+            data.selectedTile.quads.push_back(
+                centeredWorldQuad(worldState.world().tileToWorldCenter(selectedTile), 10.0f, selectedTileCenterColor()));
+        }
+
+        if (hasActionTargetTile && worldState.world().isInBounds(actionTargetTile))
+        {
+            data.actionTarget.quads.push_back(
+                tileToWorldQuad(worldState, actionTargetTile, actionTargetColor()));
+            data.actionTarget.quads.push_back(
+                centeredWorldQuad(worldState.world().tileToWorldCenter(actionTargetTile), 12.0f, actionTargetCenterColor()));
+        }
+
+        if (worldState.authoringHotspotsVisible())
+        {
+            for (const WorldAuthoringHotspot& hotspot : worldState.authoringHotspots())
+            {
+                const Vec2 center = worldState.world().tileToWorldCenter(hotspot.tile);
+                const bool emphasized =
+                    (hasHoveredTile && hotspot.tile == hoveredTile) ||
+                    (hasSelectedTile && hotspot.tile == selectedTile);
+
+                data.authoringHotspots.quads.push_back(
+                    tileToWorldQuad(worldState, hotspot.tile, hotspotTileColor(hotspot)));
+                data.authoringHotspots.quads.push_back(
+                    centeredWorldQuad(center, hotspot.encounterReady ? 10.0f : 8.0f, hotspotCenterColor(hotspot)));
+
+                if (hotspot.encounterReady)
+                {
+                    data.authoringHotspots.quads.push_back(
+                        centeredWorldQuad(center, 16.0f, rgbaToAbgr(255, 255, 255, 48)));
+                }
+
+                if (emphasized)
+                {
+                    data.authoringHotspots.quads.push_back(
+                        centeredWorldQuad(center, 20.0f, rgbaToAbgr(255, 255, 255, 44)));
+                }
+            }
         }
 
         data.actors.quads.reserve(worldState.entities().all().size() + 1u);
 
         for (const Entity& entity : worldState.entities().all())
         {
+            const bool emphasized =
+                (hasHoveredTile && entity.tile == hoveredTile) ||
+                (hasSelectedTile && entity.tile == selectedTile);
+
             data.actors.quads.push_back(
                 centeredWorldTexturedQuad(
                     worldState.world().tileToWorldCenter(entity.tile),
-                    12.0f,
+                    emphasized ? 13.5f : 12.0f,
                     entityColor(worldState, entity),
                     entityMaterial(entity)));
         }

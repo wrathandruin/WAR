@@ -1,6 +1,7 @@
 #include "engine/render/BgfxWorldRenderer.h"
 
 #include <cstring>
+#include <string>
 #include <vector>
 
 #include "engine/render/BgfxSpriteMaterial.h"
@@ -83,6 +84,130 @@ namespace
 
 namespace war
 {
+    namespace
+    {
+        const char* entityTypeToText(EntityType type)
+        {
+            switch (type)
+            {
+            case EntityType::Crate:
+                return "crate";
+            case EntityType::Terminal:
+                return "terminal";
+            case EntityType::Locker:
+                return "locker";
+            default:
+                return "unknown";
+            }
+        }
+
+        const char* entityStateText(const Entity& entity)
+        {
+            switch (entity.type)
+            {
+            case EntityType::Crate:
+                return entity.isOpen ? "open" : "closed";
+            case EntityType::Terminal:
+                return entity.isPowered ? "powered" : "offline";
+            case EntityType::Locker:
+                if (entity.isLocked)
+                {
+                    return "locked";
+                }
+                return entity.isOpen ? "open" : "closed";
+            default:
+                return "unknown";
+            }
+        }
+
+        const char* hotspotTypeToText(WorldAuthoringHotspotType type)
+        {
+            switch (type)
+            {
+            case WorldAuthoringHotspotType::Encounter:
+                return "encounter";
+            case WorldAuthoringHotspotType::Control:
+                return "control";
+            case WorldAuthoringHotspotType::Transit:
+                return "transit";
+            case WorldAuthoringHotspotType::Loot:
+                return "loot";
+            case WorldAuthoringHotspotType::Hazard:
+                return "hazard";
+            default:
+                return "unknown";
+            }
+        }
+
+        std::string tileText(bool hasTile, TileCoord tile)
+        {
+            if (!hasTile)
+            {
+                return "none";
+            }
+
+            return "(" + std::to_string(tile.x) + ", " + std::to_string(tile.y) + ")";
+        }
+
+        std::string contextPrompt(const WorldState& worldState, bool hasHoveredTile, TileCoord hoveredTile)
+        {
+            if (!hasHoveredTile || !worldState.world().isInBounds(hoveredTile))
+            {
+                return "hover a tile to preview actions";
+            }
+
+            if (worldState.world().isBlocked(hoveredTile))
+            {
+                return "blocked tile | Shift+RMB inspect";
+            }
+
+            const Entity* entity = worldState.entities().getAt(hoveredTile);
+            if (entity != nullptr)
+            {
+                return std::string("RMB interact ") + entity->name + " [" + entityTypeToText(entity->type) + ", " + entityStateText(*entity) + "]";
+            }
+
+            const WorldAuthoringHotspot* hotspot = worldState.authoringHotspotAt(hoveredTile);
+            if (hotspot != nullptr)
+            {
+                return std::string("RMB use ") + hotspot->label + " [" + hotspotTypeToText(hotspot->type) + "]";
+            }
+
+            return "LMB move | Shift+RMB inspect terrain";
+        }
+
+        std::string buildStatusMessage(
+            const WorldState& worldState,
+            const std::vector<TileCoord>& currentPath,
+            size_t pathIndex,
+            bool hasHoveredTile,
+            TileCoord hoveredTile,
+            bool hasSelectedTile,
+            TileCoord selectedTile,
+            bool hasActionTargetTile,
+            TileCoord actionTargetTile)
+        {
+            const std::string hovered = tileText(hasHoveredTile && worldState.world().isInBounds(hoveredTile), hoveredTile);
+            const std::string selected = tileText(hasSelectedTile && worldState.world().isInBounds(selectedTile), selectedTile);
+            const std::string moveTarget = tileText(hasActionTargetTile && worldState.world().isInBounds(actionTargetTile), actionTargetTile);
+            const std::string pathDestination =
+                currentPath.empty() || pathIndex >= currentPath.size()
+                    ? "none"
+                    : tileText(true, currentPath.back());
+
+            return std::string("M30 readability active | hover: ")
+                + hovered
+                + " | prompt: "
+                + contextPrompt(worldState, hasHoveredTile, hoveredTile)
+                + " | selected: "
+                + selected
+                + " | move target: "
+                + moveTarget
+                + " | path destination: "
+                + pathDestination;
+        }
+    }
+
     bool BgfxWorldRenderer::render(
         const WorldState& worldState,
         const Camera2D& camera,
@@ -90,7 +215,11 @@ namespace war
         const std::vector<TileCoord>& currentPath,
         size_t pathIndex,
         bool hasHoveredTile,
-        TileCoord hoveredTile)
+        TileCoord hoveredTile,
+        bool hasSelectedTile,
+        TileCoord selectedTile,
+        bool hasActionTargetTile,
+        TileCoord actionTargetTile)
     {
 #if WAR_HAS_BGFX
         ensureSharedBgfxState();
@@ -140,15 +269,31 @@ namespace war
             currentPath,
             pathIndex,
             hasHoveredTile,
-            hoveredTile);
+            hoveredTile,
+            hasSelectedTile,
+            selectedTile,
+            hasActionTargetTile,
+            actionTargetTile);
 
         submitTexturedLayer(renderData.tiles);
         submitColorLayer(renderData.regionOverlay);
         submitColorLayer(renderData.path);
+        submitColorLayer(renderData.selectedTile);
+        submitColorLayer(renderData.actionTarget);
+        submitColorLayer(renderData.authoringHotspots);
         submitColorLayer(renderData.hoveredTile);
         submitTexturedLayer(renderData.actors);
 
-        m_statusMessage = "bgfx world rendered with visible region boundary overlay";
+        m_statusMessage = buildStatusMessage(
+            worldState,
+            currentPath,
+            pathIndex,
+            hasHoveredTile,
+            hoveredTile,
+            hasSelectedTile,
+            selectedTile,
+            hasActionTargetTile,
+            actionTargetTile);
         return true;
 #else
         (void)worldState;
@@ -158,6 +303,10 @@ namespace war
         (void)pathIndex;
         (void)hasHoveredTile;
         (void)hoveredTile;
+        (void)hasSelectedTile;
+        (void)selectedTile;
+        (void)hasActionTargetTile;
+        (void)actionTargetTile;
         m_statusMessage = "bgfx headers not available at compile time";
         return false;
 #endif

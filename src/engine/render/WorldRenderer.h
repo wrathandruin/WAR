@@ -24,24 +24,55 @@ namespace war
             const std::vector<TileCoord>& currentPath,
             size_t pathIndex,
             bool hasHoveredTile,
-            TileCoord hoveredTile) const;
+            TileCoord hoveredTile,
+            bool hasSelectedTile,
+            TileCoord selectedTile,
+            bool hasActionTargetTile,
+            TileCoord actionTargetTile) const;
 
     private:
         void drawTiles(HDC dc, const WorldState& worldState, const Camera2D& camera) const;
-        void drawHoveredTile(
-            HDC dc,
-            const WorldState& worldState,
-            const Camera2D& camera,
-            bool hasHoveredTile,
-            TileCoord hoveredTile) const;
         void drawPath(
             HDC dc,
             const WorldState& worldState,
             const Camera2D& camera,
             const std::vector<TileCoord>& currentPath,
             size_t pathIndex) const;
-        void drawEntities(HDC dc, const WorldState& worldState, const Camera2D& camera) const;
-        void drawPlayer(HDC dc, const Camera2D& camera, const Vec2& playerPosition) const;
+        void drawHoveredTile(
+            HDC dc,
+            const WorldState& worldState,
+            const Camera2D& camera,
+            bool hasHoveredTile,
+            TileCoord hoveredTile) const;
+        void drawSelectedTile(
+            HDC dc,
+            const WorldState& worldState,
+            const Camera2D& camera,
+            bool hasSelectedTile,
+            TileCoord selectedTile) const;
+        void drawActionTarget(
+            HDC dc,
+            const WorldState& worldState,
+            const Camera2D& camera,
+            bool hasActionTargetTile,
+            TileCoord actionTargetTile) const;
+        void drawAuthoringHotspots(
+            HDC dc,
+            const WorldState& worldState,
+            const Camera2D& camera,
+            bool hasHoveredTile,
+            TileCoord hoveredTile,
+            bool hasSelectedTile,
+            TileCoord selectedTile) const;
+        void drawEntities(
+            HDC dc,
+            const WorldState& worldState,
+            const Camera2D& camera,
+            bool hasHoveredTile,
+            TileCoord hoveredTile,
+            bool hasSelectedTile,
+            TileCoord selectedTile) const;
+        void drawPlayer(HDC dc, const WorldState& worldState, const Camera2D& camera, const Vec2& playerPosition) const;
 
         [[nodiscard]] RECT tileToScreenRect(
             const WorldState& worldState,

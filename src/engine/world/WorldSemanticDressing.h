@@ -7,6 +7,6 @@ namespace war
     class WorldSemanticDressing
     {
     public:
-        static void populateTestEntities(WorldState& worldState);
+        static void populateAuthoredTestWorld(WorldState& worldState);
     };
 }

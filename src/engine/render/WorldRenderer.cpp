@@ -1,5 +1,7 @@
 #include "engine/render/WorldRenderer.h"
 
+#include <algorithm>
+
 #include "engine/render/BgfxWorldTheme.h"
 
 namespace war
@@ -162,6 +164,28 @@ namespace war
             }
         }
 
+        COLORREF entityStateAccentColor(const Entity& entity)
+        {
+            switch (entity.type)
+            {
+            case EntityType::Crate:
+                return entity.isOpen ? RGB(178, 178, 178) : RGB(232, 208, 124);
+
+            case EntityType::Terminal:
+                return entity.isPowered ? RGB(122, 238, 255) : RGB(112, 142, 170);
+
+            case EntityType::Locker:
+                if (entity.isLocked)
+                {
+                    return RGB(255, 132, 132);
+                }
+                return entity.isOpen ? RGB(216, 224, 255) : RGB(204, 204, 224);
+
+            default:
+                return RGB(255, 255, 255);
+            }
+        }
+
         COLORREF tileFillColor(
             BgfxWorldThemeId theme,
             BgfxThemePaletteMode paletteMode,
@@ -277,6 +301,52 @@ namespace war
             }
         }
 
+        COLORREF hotspotMarkerColor(const WorldAuthoringHotspot& hotspot)
+        {
+            switch (hotspot.type)
+            {
+            case WorldAuthoringHotspotType::Encounter:
+                return hotspot.encounterReady ? RGB(255, 214, 112) : RGB(220, 186, 98);
+            case WorldAuthoringHotspotType::Control:
+                return hotspot.encounterReady ? RGB(128, 198, 255) : RGB(102, 160, 220);
+            case WorldAuthoringHotspotType::Transit:
+                return hotspot.encounterReady ? RGB(130, 240, 255) : RGB(112, 208, 226);
+            case WorldAuthoringHotspotType::Loot:
+                return hotspot.encounterReady ? RGB(242, 228, 150) : RGB(216, 198, 126);
+            case WorldAuthoringHotspotType::Hazard:
+                return hotspot.encounterReady ? RGB(255, 146, 146) : RGB(220, 124, 124);
+            default:
+                return RGB(255, 255, 255);
+            }
+        }
+
+        COLORREF hoveredOutlineColor(const WorldState& worldState, TileCoord tile)
+        {
+            if (!worldState.world().isInBounds(tile))
+            {
+                return RGB(190, 190, 190);
+            }
+
+            if (worldState.world().isBlocked(tile))
+            {
+                return RGB(232, 120, 120);
+            }
+
+            const Entity* entity = worldState.entities().getAt(tile);
+            if (entity != nullptr)
+            {
+                return RGB(132, 228, 255);
+            }
+
+            const WorldAuthoringHotspot* hotspot = worldState.authoringHotspotAt(tile);
+            if (hotspot != nullptr)
+            {
+                return hotspotMarkerColor(*hotspot);
+            }
+
+            return RGB(242, 226, 122);
+        }
+
         int tileVariant(TileCoord tile)
         {
             const int value = tile.x * 17 + tile.y * 31 + tile.x * tile.y * 3;
@@ -294,7 +364,11 @@ namespace war
         const std::vector<TileCoord>& currentPath,
         size_t pathIndex,
         bool hasHoveredTile,
-        TileCoord hoveredTile) const
+        TileCoord hoveredTile,
+        bool hasSelectedTile,
+        TileCoord selectedTile,
+        bool hasActionTargetTile,
+        TileCoord actionTargetTile) const
     {
         HBRUSH background = CreateSolidBrush(RGB(16, 18, 24));
         FillRect(dc, &clientRect, background);
@@ -302,9 +376,12 @@ namespace war
 
         drawTiles(dc, worldState, camera);
         drawPath(dc, worldState, camera, currentPath, pathIndex);
+        drawSelectedTile(dc, worldState, camera, hasSelectedTile, selectedTile);
+        drawActionTarget(dc, worldState, camera, hasActionTargetTile, actionTargetTile);
+        drawAuthoringHotspots(dc, worldState, camera, hasHoveredTile, hoveredTile, hasSelectedTile, selectedTile);
         drawHoveredTile(dc, worldState, camera, hasHoveredTile, hoveredTile);
-        drawEntities(dc, worldState, camera);
-        drawPlayer(dc, camera, playerPosition);
+        drawEntities(dc, worldState, camera, hasHoveredTile, hoveredTile, hasSelectedTile, selectedTile);
+        drawPlayer(dc, worldState, camera, playerPosition);
     }
 
     void WorldRenderer::drawTiles(HDC dc, const WorldState& worldState, const Camera2D& camera) const
@@ -334,7 +411,8 @@ namespace war
 
                 if (worldState.regionOverlayEnabled())
                 {
-                    const int boundaryThickness = max(4, (rect.right - rect.left) / 6);
+                    const int tileScreenWidth = rect.right - rect.left;
+                    const int boundaryThickness = tileScreenWidth / 6 > 4 ? tileScreenWidth / 6 : 4;
                     const COLORREF boundary = regionBoundaryColor(theme, paletteMode);
 
                     const TileCoord east{ x + 1, y };
@@ -375,33 +453,6 @@ namespace war
         }
     }
 
-    void WorldRenderer::drawHoveredTile(
-        HDC dc,
-        const WorldState& worldState,
-        const Camera2D& camera,
-        bool hasHoveredTile,
-        TileCoord hoveredTile) const
-    {
-        if (!hasHoveredTile || !worldState.world().isInBounds(hoveredTile))
-        {
-            return;
-        }
-
-        const RECT rect = tileToScreenRect(worldState, camera, hoveredTile);
-        HPEN pen = CreatePen(
-            PS_SOLID,
-            2,
-            worldState.world().isBlocked(hoveredTile) ? RGB(220, 100, 100) : RGB(230, 220, 110));
-        HPEN oldPen = static_cast<HPEN>(SelectObject(dc, pen));
-        HBRUSH oldBrush = static_cast<HBRUSH>(SelectObject(dc, GetStockObject(HOLLOW_BRUSH)));
-
-        Rectangle(dc, rect.left, rect.top, rect.right, rect.bottom);
-
-        SelectObject(dc, oldBrush);
-        SelectObject(dc, oldPen);
-        DeleteObject(pen);
-    }
-
     void WorldRenderer::drawPath(
         HDC dc,
         const WorldState& worldState,
@@ -409,20 +460,21 @@ namespace war
         const std::vector<TileCoord>& currentPath,
         size_t pathIndex) const
     {
-        if (currentPath.empty())
+        if (currentPath.empty() || pathIndex >= currentPath.size())
         {
             return;
         }
 
-        HBRUSH brush = CreateSolidBrush(RGB(255, 180, 90));
-        HBRUSH oldBrush = static_cast<HBRUSH>(SelectObject(dc, brush));
-        HPEN pen = CreatePen(PS_SOLID, 1, RGB(255, 210, 130));
+        HPEN pen = CreatePen(PS_SOLID, 3, RGB(255, 190, 112));
         HPEN oldPen = static_cast<HPEN>(SelectObject(dc, pen));
+        HBRUSH brush = CreateSolidBrush(RGB(255, 205, 132));
+        HBRUSH oldBrush = static_cast<HBRUSH>(SelectObject(dc, brush));
 
         for (size_t i = pathIndex; i < currentPath.size(); ++i)
         {
             const Vec2 screen = camera.worldToScreen(worldState.world().tileToWorldCenter(currentPath[i]));
-            const int radius = static_cast<int>(5.0f * camera.getZoom());
+            const int radius = i + 1 == currentPath.size() ? 7 : 5;
+
             Ellipse(dc,
                 static_cast<int>(screen.x) - radius,
                 static_cast<int>(screen.y) - radius,
@@ -443,7 +495,134 @@ namespace war
         DeleteObject(pen);
     }
 
-    void WorldRenderer::drawEntities(HDC dc, const WorldState& worldState, const Camera2D& camera) const
+    void WorldRenderer::drawHoveredTile(
+        HDC dc,
+        const WorldState& worldState,
+        const Camera2D& camera,
+        bool hasHoveredTile,
+        TileCoord hoveredTile) const
+    {
+        if (!hasHoveredTile || !worldState.world().isInBounds(hoveredTile))
+        {
+            return;
+        }
+
+        const RECT rect = tileToScreenRect(worldState, camera, hoveredTile);
+        const COLORREF color = hoveredOutlineColor(worldState, hoveredTile);
+
+        HPEN pen = CreatePen(PS_SOLID, 3, color);
+        HPEN oldPen = static_cast<HPEN>(SelectObject(dc, pen));
+        HBRUSH oldBrush = static_cast<HBRUSH>(SelectObject(dc, GetStockObject(HOLLOW_BRUSH)));
+
+        Rectangle(dc, rect.left, rect.top, rect.right, rect.bottom);
+        Rectangle(dc, rect.left + 4, rect.top + 4, rect.right - 4, rect.bottom - 4);
+
+        SelectObject(dc, oldBrush);
+        SelectObject(dc, oldPen);
+        DeleteObject(pen);
+    }
+
+    void WorldRenderer::drawSelectedTile(
+        HDC dc,
+        const WorldState& worldState,
+        const Camera2D& camera,
+        bool hasSelectedTile,
+        TileCoord selectedTile) const
+    {
+        if (!hasSelectedTile || !worldState.world().isInBounds(selectedTile))
+        {
+            return;
+        }
+
+        const RECT rect = tileToScreenRect(worldState, camera, selectedTile);
+        HPEN pen = CreatePen(PS_DOT, 2, RGB(132, 188, 255));
+        HPEN oldPen = static_cast<HPEN>(SelectObject(dc, pen));
+        HBRUSH oldBrush = static_cast<HBRUSH>(SelectObject(dc, GetStockObject(HOLLOW_BRUSH)));
+
+        Rectangle(dc, rect.left + 2, rect.top + 2, rect.right - 2, rect.bottom - 2);
+
+        SelectObject(dc, oldBrush);
+        SelectObject(dc, oldPen);
+        DeleteObject(pen);
+    }
+
+    void WorldRenderer::drawActionTarget(
+        HDC dc,
+        const WorldState& worldState,
+        const Camera2D& camera,
+        bool hasActionTargetTile,
+        TileCoord actionTargetTile) const
+    {
+        if (!hasActionTargetTile || !worldState.world().isInBounds(actionTargetTile))
+        {
+            return;
+        }
+
+        const RECT rect = tileToScreenRect(worldState, camera, actionTargetTile);
+        HPEN pen = CreatePen(PS_SOLID, 2, RGB(255, 214, 118));
+        HPEN oldPen = static_cast<HPEN>(SelectObject(dc, pen));
+        HBRUSH oldBrush = static_cast<HBRUSH>(SelectObject(dc, GetStockObject(HOLLOW_BRUSH)));
+
+        Rectangle(dc, rect.left + 6, rect.top + 6, rect.right - 6, rect.bottom - 6);
+        MoveToEx(dc, rect.left + 8, (rect.top + rect.bottom) / 2, nullptr);
+        LineTo(dc, rect.right - 8, (rect.top + rect.bottom) / 2);
+        MoveToEx(dc, (rect.left + rect.right) / 2, rect.top + 8, nullptr);
+        LineTo(dc, (rect.left + rect.right) / 2, rect.bottom - 8);
+
+        SelectObject(dc, oldBrush);
+        SelectObject(dc, oldPen);
+        DeleteObject(pen);
+    }
+
+    void WorldRenderer::drawAuthoringHotspots(
+        HDC dc,
+        const WorldState& worldState,
+        const Camera2D& camera,
+        bool hasHoveredTile,
+        TileCoord hoveredTile,
+        bool hasSelectedTile,
+        TileCoord selectedTile) const
+    {
+        if (!worldState.authoringHotspotsVisible())
+        {
+            return;
+        }
+
+        for (const WorldAuthoringHotspot& hotspot : worldState.authoringHotspots())
+        {
+            const RECT rect = tileToScreenRect(worldState, camera, hotspot.tile);
+            const COLORREF color = hotspotMarkerColor(hotspot);
+            const bool emphasized =
+                (hasHoveredTile && hotspot.tile == hoveredTile) ||
+                (hasSelectedTile && hotspot.tile == selectedTile);
+
+            HPEN pen = CreatePen(PS_SOLID, emphasized ? 3 : 2, color);
+            HPEN oldPen = static_cast<HPEN>(SelectObject(dc, pen));
+            HBRUSH oldBrush = static_cast<HBRUSH>(SelectObject(dc, GetStockObject(HOLLOW_BRUSH)));
+
+            Ellipse(dc, rect.left + 8, rect.top + 8, rect.right - 8, rect.bottom - 8);
+
+            SelectObject(dc, oldBrush);
+            SelectObject(dc, oldPen);
+            DeleteObject(pen);
+
+            HBRUSH centerBrush = CreateSolidBrush(color);
+            const int centerX = (rect.left + rect.right) / 2;
+            const int centerY = (rect.top + rect.bottom) / 2;
+            RECT markerRect{ centerX - 4, centerY - 4, centerX + 4, centerY + 4 };
+            FillRect(dc, &markerRect, centerBrush);
+            DeleteObject(centerBrush);
+        }
+    }
+
+    void WorldRenderer::drawEntities(
+        HDC dc,
+        const WorldState& worldState,
+        const Camera2D& camera,
+        bool hasHoveredTile,
+        TileCoord hoveredTile,
+        bool hasSelectedTile,
+        TileCoord selectedTile) const
     {
         for (const Entity& entity : worldState.entities().all())
         {
@@ -453,13 +632,43 @@ namespace war
             HPEN oldPen = static_cast<HPEN>(SelectObject(dc, pen));
 
             const Vec2 screen = camera.worldToScreen(worldState.world().tileToWorldCenter(entity.tile));
-            const int halfSize = static_cast<int>(8.0f * camera.getZoom());
+            const bool emphasized =
+                (hasHoveredTile && entity.tile == hoveredTile) ||
+                (hasSelectedTile && entity.tile == selectedTile);
+            const int halfSize = emphasized
+                ? static_cast<int>(10.0f * camera.getZoom())
+                : static_cast<int>(8.0f * camera.getZoom());
 
             Rectangle(dc,
                 static_cast<int>(screen.x) - halfSize,
                 static_cast<int>(screen.y) - halfSize,
                 static_cast<int>(screen.x) + halfSize,
                 static_cast<int>(screen.y) + halfSize);
+
+            RECT accentRect{
+                static_cast<LONG>(screen.x) + halfSize - 6,
+                static_cast<LONG>(screen.y) - halfSize,
+                static_cast<LONG>(screen.x) + halfSize,
+                static_cast<LONG>(screen.y) - halfSize + 6
+            };
+            HBRUSH accentBrush = CreateSolidBrush(entityStateAccentColor(entity));
+            FillRect(dc, &accentRect, accentBrush);
+            DeleteObject(accentBrush);
+
+            if (emphasized)
+            {
+                HPEN emphasisPen = CreatePen(PS_SOLID, 2, RGB(240, 240, 255));
+                HPEN previousPen = static_cast<HPEN>(SelectObject(dc, emphasisPen));
+                HBRUSH emphasisBrush = static_cast<HBRUSH>(SelectObject(dc, GetStockObject(HOLLOW_BRUSH)));
+                Rectangle(dc,
+                    static_cast<int>(screen.x) - halfSize - 3,
+                    static_cast<int>(screen.y) - halfSize - 3,
+                    static_cast<int>(screen.x) + halfSize + 3,
+                    static_cast<int>(screen.y) + halfSize + 3);
+                SelectObject(dc, emphasisBrush);
+                SelectObject(dc, previousPen);
+                DeleteObject(emphasisPen);
+            }
 
             SelectObject(dc, oldBrush);
             SelectObject(dc, oldPen);
@@ -468,10 +677,20 @@ namespace war
         }
     }
 
-    void WorldRenderer::drawPlayer(HDC dc, const Camera2D& camera, const Vec2& playerPosition) const
+    void WorldRenderer::drawPlayer(HDC dc, const WorldState& worldState, const Camera2D& camera, const Vec2& playerPosition) const
     {
         const Vec2 screen = camera.worldToScreen(playerPosition);
         const int radius = static_cast<int>(12.0f * camera.getZoom());
+
+        const TileCoord playerTile = worldState.world().worldToTile(playerPosition);
+        const RECT playerTileRect = tileToScreenRect(worldState, camera, playerTile);
+        HPEN tilePen = CreatePen(PS_DOT, 1, RGB(96, 166, 220));
+        HPEN oldTilePen = static_cast<HPEN>(SelectObject(dc, tilePen));
+        HBRUSH oldTileBrush = static_cast<HBRUSH>(SelectObject(dc, GetStockObject(HOLLOW_BRUSH)));
+        Rectangle(dc, playerTileRect.left + 10, playerTileRect.top + 10, playerTileRect.right - 10, playerTileRect.bottom - 10);
+        SelectObject(dc, oldTileBrush);
+        SelectObject(dc, oldTilePen);
+        DeleteObject(tilePen);
 
         HBRUSH brush = CreateSolidBrush(RGB(160, 210, 255));
         HBRUSH oldBrush = static_cast<HBRUSH>(SelectObject(dc, brush));

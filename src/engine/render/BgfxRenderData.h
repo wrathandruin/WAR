@@ -47,6 +47,9 @@ namespace war
         BgfxRenderLayer regionOverlay;
         BgfxRenderLayer path;
         BgfxRenderLayer hoveredTile;
+        BgfxRenderLayer selectedTile;
+        BgfxRenderLayer actionTarget;
+        BgfxRenderLayer authoringHotspots;
         BgfxTexturedRenderLayer actors;
     };
 
@@ -60,6 +63,10 @@ namespace war
             const std::vector<TileCoord>& currentPath,
             size_t pathIndex,
             bool hasHoveredTile,
-            TileCoord hoveredTile);
+            TileCoord hoveredTile,
+            bool hasSelectedTile,
+            TileCoord selectedTile,
+            bool hasActionTargetTile,
+            TileCoord actionTargetTile);
     };
 }

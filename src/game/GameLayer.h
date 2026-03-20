@@ -53,6 +53,12 @@ namespace war
         TileCoord m_hoveredTile{};
         bool m_hasHoveredTile = false;
 
+        TileCoord m_selectedTile{};
+        bool m_hasSelectedTile = false;
+
+        TileCoord m_actionTargetTile{};
+        bool m_hasActionTargetTile = false;
+
         std::vector<TileCoord> m_currentPath;
         size_t m_pathIndex = 0;
 
@@ -60,6 +66,7 @@ namespace war
         std::vector<std::string> m_eventLog;
 
         bool m_overlayKeyWasDown = false;
+        bool m_hotspotKeyWasDown = false;
         bool m_palette7WasDown = false;
         bool m_palette8WasDown = false;
         bool m_palette9WasDown = false;

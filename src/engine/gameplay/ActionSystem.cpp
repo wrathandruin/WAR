@@ -1,6 +1,7 @@
 #include "engine/gameplay/ActionSystem.h"
 
 #include <cstdio>
+#include <string>
 #include <utility>
 
 #include "engine/gameplay/Action.h"
@@ -32,6 +33,30 @@ namespace war
             default:
                 return "unknown";
             }
+        }
+
+        const char* hotspotTypeToText(WorldAuthoringHotspotType type)
+        {
+            switch (type)
+            {
+            case WorldAuthoringHotspotType::Encounter:
+                return "encounter";
+            case WorldAuthoringHotspotType::Control:
+                return "control";
+            case WorldAuthoringHotspotType::Transit:
+                return "transit";
+            case WorldAuthoringHotspotType::Loot:
+                return "loot";
+            case WorldAuthoringHotspotType::Hazard:
+                return "hazard";
+            default:
+                return "unknown";
+            }
+        }
+
+        const char* hotspotStateToText(const WorldAuthoringHotspot& hotspot)
+        {
+            return hotspot.encounterReady ? "encounter-ready" : "staged";
         }
     }
 
@@ -130,34 +155,51 @@ namespace war
                     continue;
                 }
 
-                char buffer[256]{};
                 const Entity* entity = worldState.entities().getAt(action.target);
+                const WorldAuthoringHotspot* hotspot = worldState.authoringHotspotAt(action.target);
+
+                std::string message = "Inspect [";
+                message += std::to_string(action.target.x);
+                message += ", ";
+                message += std::to_string(action.target.y);
+                message += "] region=";
+                message += WorldRegionTags::debugName(worldState.regionTag(action.target));
+                message += ", blocked=";
+                message += boolText(worldState.world().isBlocked(action.target));
 
                 if (entity != nullptr)
                 {
-                    std::snprintf(
-                        buffer,
-                        sizeof(buffer),
-                        "Inspect (%d, %d): blocked=%s, entity=%s [%s], state=%s",
-                        action.target.x,
-                        action.target.y,
-                        boolText(worldState.world().isBlocked(action.target)),
-                        entity->name.c_str(),
-                        entityTypeToText(entity->type),
-                        stateText(*entity));
+                    message += ", entity=";
+                    message += entity->name;
+                    message += " [";
+                    message += entityTypeToText(entity->type);
+                    message += ", ";
+                    message += stateText(*entity);
+                    message += "]";
                 }
                 else
                 {
-                    std::snprintf(
-                        buffer,
-                        sizeof(buffer),
-                        "Inspect (%d, %d): blocked=%s, entity=none",
-                        action.target.x,
-                        action.target.y,
-                        boolText(worldState.world().isBlocked(action.target)));
+                    message += ", entity=none";
                 }
 
-                pushEvent(eventLog, buffer);
+                if (hotspot != nullptr)
+                {
+                    message += ", hotspot=";
+                    message += hotspot->label;
+                    message += " [";
+                    message += hotspotTypeToText(hotspot->type);
+                    message += ", ";
+                    message += hotspotStateToText(*hotspot);
+                    message += "]";
+                    message += ", detail=";
+                    message += hotspot->summary;
+                }
+                else
+                {
+                    message += ", hotspot=none";
+                }
+
+                pushEvent(eventLog, message);
             }
             else if (action.type == ActionType::Interact)
             {
@@ -168,58 +210,96 @@ namespace war
                 }
 
                 Entity* entity = worldState.entities().getAt(action.target);
-                if (entity == nullptr)
+                if (entity != nullptr)
+                {
+                    switch (entity->type)
+                    {
+                    case EntityType::Crate:
+                        if (!entity->isOpen)
+                        {
+                            entity->isOpen = true;
+                            pushEvent(eventLog, std::string("You open ") + entity->name + ".");
+                        }
+                        else
+                        {
+                            pushEvent(eventLog, entity->name + std::string(" is already open."));
+                        }
+                        break;
+
+                    case EntityType::Terminal:
+                        entity->isPowered = !entity->isPowered;
+                        if (entity->isPowered)
+                        {
+                            pushEvent(eventLog, std::string("You power on ") + entity->name + ".");
+                        }
+                        else
+                        {
+                            pushEvent(eventLog, std::string("You power down ") + entity->name + ".");
+                        }
+                        break;
+
+                    case EntityType::Locker:
+                        if (entity->isLocked)
+                        {
+                            pushEvent(eventLog, entity->name + std::string(" is locked."));
+                        }
+                        else if (!entity->isOpen)
+                        {
+                            entity->isOpen = true;
+                            pushEvent(eventLog, std::string("You open ") + entity->name + ".");
+                        }
+                        else
+                        {
+                            pushEvent(eventLog, entity->name + std::string(" is already open."));
+                        }
+                        break;
+
+                    default:
+                        pushEvent(eventLog, std::string("You are not sure how to use ") + entity->name + ".");
+                        break;
+                    }
+
+                    continue;
+                }
+
+                const WorldAuthoringHotspot* hotspot = worldState.authoringHotspotAt(action.target);
+                if (hotspot == nullptr)
                 {
                     pushEvent(eventLog, "Nothing to interact with.");
                     continue;
                 }
 
-                switch (entity->type)
+                std::string message = "You use ";
+                message += hotspot->label;
+                message += " [";
+                message += hotspotTypeToText(hotspot->type);
+                message += ", ";
+                message += hotspotStateToText(*hotspot);
+                message += "]";
+
+                switch (hotspot->type)
                 {
-                case EntityType::Crate:
-                    if (!entity->isOpen)
-                    {
-                        entity->isOpen = true;
-                        pushEvent(eventLog, "You open the cargo crate.");
-                    }
-                    else
-                    {
-                        pushEvent(eventLog, "The cargo crate is already open.");
-                    }
+                case WorldAuthoringHotspotType::Encounter:
+                    message += ". This is a future combat-resolution anchor.";
                     break;
-
-                case EntityType::Terminal:
-                    entity->isPowered = !entity->isPowered;
-                    if (entity->isPowered)
-                    {
-                        pushEvent(eventLog, "The operations terminal powers on.");
-                    }
-                    else
-                    {
-                        pushEvent(eventLog, "The operations terminal powers down.");
-                    }
+                case WorldAuthoringHotspotType::Control:
+                    message += ". This is a future mission, gate, or authority control point.";
                     break;
-
-                case EntityType::Locker:
-                    if (entity->isLocked)
-                    {
-                        pushEvent(eventLog, "The maintenance locker is locked.");
-                    }
-                    else if (!entity->isOpen)
-                    {
-                        entity->isOpen = true;
-                        pushEvent(eventLog, "You open the maintenance locker.");
-                    }
-                    else
-                    {
-                        pushEvent(eventLog, "The maintenance locker is already open.");
-                    }
+                case WorldAuthoringHotspotType::Transit:
+                    message += ". This is a future routing and traversal anchor.";
                     break;
-
+                case WorldAuthoringHotspotType::Loot:
+                    message += ". This is a future inventory and recovery anchor.";
+                    break;
+                case WorldAuthoringHotspotType::Hazard:
+                    message += ". This is a future environmental hazard and consequence anchor.";
+                    break;
                 default:
-                    pushEvent(eventLog, "You are not sure how to interact with that.");
+                    message += ".";
                     break;
                 }
+
+                pushEvent(eventLog, message);
             }
         }
     }
