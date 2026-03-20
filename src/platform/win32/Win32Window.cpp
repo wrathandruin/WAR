@@ -91,6 +91,18 @@ namespace war
         return true;
     }
 
+    bool Win32Window::consumeRightClick(POINT& outPoint)
+    {
+        if (!m_hasPendingRightClick)
+        {
+            return false;
+        }
+
+        m_hasPendingRightClick = false;
+        outPoint = m_pendingRightClick;
+        return true;
+    }
+
     int Win32Window::consumeMouseWheelDelta()
     {
         const int value = m_mouseWheelDelta;
@@ -169,6 +181,11 @@ namespace war
         case WM_LBUTTONDOWN:
             m_hasPendingLeftClick = true;
             m_pendingLeftClick = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+            return 0;
+
+        case WM_RBUTTONDOWN:
+            m_hasPendingRightClick = true;
+            m_pendingRightClick = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
             return 0;
 
         case WM_MBUTTONDOWN:

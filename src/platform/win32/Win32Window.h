@@ -9,7 +9,7 @@ namespace war
     public:
         bool create(int width, int height, const wchar_t* title);
         void pollEvents();
-        bool shouldClose() const;
+        [[nodiscard]] bool shouldClose() const;
 
         [[nodiscard]] HWND getHandle() const;
         [[nodiscard]] int getWidth() const;
@@ -17,6 +17,7 @@ namespace war
 
         [[nodiscard]] POINT getMousePosition() const;
         [[nodiscard]] bool consumeLeftClick(POINT& outPoint);
+        [[nodiscard]] bool consumeRightClick(POINT& outPoint);
         [[nodiscard]] int consumeMouseWheelDelta();
         [[nodiscard]] bool isMiddleMouseDown() const;
         [[nodiscard]] POINT consumeMouseDelta();
@@ -33,6 +34,8 @@ namespace war
         POINT m_mousePosition{};
         bool m_hasPendingLeftClick = false;
         POINT m_pendingLeftClick{};
+        bool m_hasPendingRightClick = false;
+        POINT m_pendingRightClick{};
         int m_mouseWheelDelta = 0;
         bool m_middleMouseDown = false;
         POINT m_lastMousePosition{};
