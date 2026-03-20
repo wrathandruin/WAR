@@ -1,38 +1,37 @@
-# WAR — Milestone 27 (bgfx Region Data Expansion / Scene Semantics)
+# WAR — Milestone 28 (bgfx Semantic Prop Hooks / Region-Aware Dressing)
 
-> Current development milestone: M27 — bgfx Region Data Expansion / Scene Semantics
+> Current development milestone: M28 — bgfx Semantic Prop Hooks / Region-Aware Dressing
 
 ## Focus
-Move beyond the simple left/middle/right region split and make region data describe more meaningful authored spaces.
+Begin tying scene props and visual dressing to semantic region data so authored spaces influence more than just tile theming.
 
-M26 made region overlays visible and palette tuning practical.
-M27 builds on that by expanding world-region tagging into a richer semantic layout so the renderer is no longer just showing broad bands of theme, but distinct scene-oriented zones.
+M27 expanded region data into scene semantics.
+M28 builds on that by introducing semantic prop population hooks and region-aware prop rendering so Cargo Bay, Transit Spine, Med Lab, Command Deck, and Hazard Containment begin to read as different spaces.
 
 ## What this milestone does
-- expands `WorldRegionTag` from broad zone buckets into more semantic region types
-- replaces the simple three-band test layout with a richer authored region layout
-- keeps theme resolution driven from world region tags
-- preserves visible region boundary overlays and palette controls from M26
-- keeps the current camera / projection / world-space submission flow intact
+- introduces `WorldSemanticDressing` for region-aware test-world prop population
+- seeds entities from semantic region intent instead of ad hoc placement
+- resolves prop placement into valid open tiles inside the intended region
+- adds region-aware entity coloring in both bgfx and GDI renderers
+- preserves region boundary overlays and palette controls from M26
+- preserves world-driven theme resolution from semantic regions
 
-## Region semantics after M27
-The test world now uses region tags that describe purpose, not just palette:
+## Region-aware prop dressing after M28
+The current test world now begins to read as:
 
-- Cargo Bay
-- Transit Spine
-- Med Lab
-- Command Deck
-- Hazard Containment
-
-These semantic regions still resolve into the existing visual themes, but the map layout is now shaped more like authored spaces than like a basic color split.
+- Cargo Bay: clustered cargo crates
+- Transit Spine: service props along shared routes
+- Med Lab: powered medical terminals and clean storage
+- Command Deck: command consoles and secure lockers
+- Hazard Containment: sealed storage and danger-tinted equipment
 
 ## Why this matters
-This is the bridge from “regions exist” to “regions mean something”.
+This is the bridge from “regions have names” to “regions affect what is in the scene”.
 
 It makes the next milestones safer:
-- authored scene logic tied to visual identity
-- better region-driven layout experimentation
-- easier future integration of props, encounters, and mission semantics
+- region-driven prop expansion
+- richer authored spaces
+- visual storytelling through layout and equipment
 - continued reduction of renderer-local assumptions
 
 ## Requirements
@@ -52,7 +51,7 @@ assets/textures/world_atlas.bmp
 ```
 
 ## Next Milestone
-### M28 — bgfx Semantic Prop Hooks / Region-Aware Dressing
-- begin tying scene props and visual dressing to semantic region data
-- prepare authored spaces to influence more than just tile theming
-- continue pushing content meaning into the world layer instead of the renderer
+### M29 — bgfx Regional Set Dressing / Encounter Hooks
+- expand semantic prop dressing density and variety
+- prepare authored regions to influence gameplay-facing encounter hooks
+- continue moving scene meaning into the world layer

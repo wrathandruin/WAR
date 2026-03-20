@@ -2,254 +2,213 @@
 
 ## Strategic Intent
 
-Wrath and Ruin must become a **deployable, demoable, server-authoritative vertical-slice product** before it becomes a broad sandbox.
+Wrath and Ruin must become a deployable, demoable, server-authoritative vertical-slice product before it becomes a broad sandbox.
 
 The project now has two useful histories:
 
-- the new `WAR` repo proves a cleaner client and roguelike presentation direction
-- the legacy `Wrath-and-Ruin` repo proves production operations, identity flow, runtime discipline, and deployability lessons
+- the new `WAR` repo proves a cleaner top-down client and roguelike presentation direction
+- the legacy `Wrath-and-Ruin` repo proves production operations, runtime discipline, release habits, and deployability lessons
 
-The roadmap must merge those strengths.
+The roadmap must merge those strengths without letting rendering remain the strategic center for too long.
 
----
+## Current Strategic Judgment
 
-## Hard Truths
+The project has enough rendering groundwork to support the next step.
 
-### The New Repo Currently Proves
+The correct move now is:
 
-- local prototype gameplay
-- top-down rendering
-- bgfx rendering and shader ownership
-- first sprite and atlas groundwork
-
-### The New Repo Does Not Yet Prove
-
-- dedicated authoritative server
-- persistence
-- deploy workflow
-- telemetry or crash capture
-- installer/update path
-- market-facing onboarding
-
-### The Legacy Repo Already Proved
-
-- account and portal flow
-- desktop release thinking
-- staging/live runbooks
-- runtime data boundaries
-- smoke, regression, and hotboot culture
-- operational discipline
-
-### Directional Conclusion
-
-Renderer work is no longer the strategic center.
-
-The strategic center is now:
-
-- architecture
-- deployability
-- persistence
-- product usability
-- a narrow but real vertical slice
-
----
+- close the current visual-content loop cleanly
+- lock down content and runtime boundaries
+- establish a local demo and packaging lane
+- stand up the authoritative server foundation
+- build one complete planet-to-space vertical slice
+- harden it into an internal alpha
+- prepare the runway for beta and market readiness
 
 ## North Star
 
-The game must ship a first slice in which a player can:
+The first real slice must let a player:
 
-- join a hosted session
+- connect to a hosted session
 - explore a planetary location
-- move, inspect, loot, and survive
-- fight through a six-second combat encounter
-- modify terrain in a meaningful but limited way
+- move, inspect, loot, and interact
+- survive hazards
+- complete a six-second combat encounter
 - board a ship
-- enter a space layer
+- enter a local space or orbital layer
 - travel to a second destination
-- complete a mission chain
-- return to a persistent world state
+- complete a short mission chain
+- return to persistent state
 
-If work does not move the project toward that loop or make it more deployable and demoable, it is lower priority than it appears.
-
----
+If work does not move the project toward that loop or make it more deployable and demoable, it is lower priority than it first appears.
 
 ## Delivery Ladder
 
-## Foundation
+### Foundation
 
-Goal:
-Give the new repo the production shape required to scale safely.
+Must prove:
 
-Must include:
-
-- runtime data boundaries
+- runtime boundaries
 - build and packaging discipline
 - diagnostics
-- deployability planning
-- clear client/shared/server contract
+- local demoability
+- client/shared/server ownership rules
 
-## Alpha
+### Alpha
 
-Goal:
-Prove one complete, hosted, replayable slice that combines planets and space.
+Must prove:
 
-Must include:
-
-- authoritative server
+- hosted authoritative slice
 - persistence
-- six-second combat
+- planetary gameplay loop
 - ship and space transition
-- mission slice
-- internal deploy and playtest flow
+- mission continuity
+- internal deployment and repeatable testing
 
-## Beta
+### Beta
 
-Goal:
-Make the product ready for outside testers.
+Must prove:
 
-Must include:
+- external onboarding
+- build distribution direction
+- supportable operations
+- stronger UX and accessibility
+- broader content reliability
 
-- onboarding
-- content reliability
-- external support tooling
-- accessibility and UX gains
-- stronger operations and telemetry
+### Market
 
-## Market
+Must prove:
 
-Goal:
-Make the product commercially credible.
-
-Must include:
-
-- installer and update lane
-- release management
-- analytics
-- support readiness
-- market-facing onboarding and packaging
-
----
+- release operations discipline
+- packaging and update strategy
+- analytics and support readiness
+- credible onboarding and first-session flow
 
 ## Legacy Guide Rails
 
-These lessons from the old project should guide all new planning:
+These lessons from the old project should guide all planning:
 
 1. Server authority is not optional.
 2. Runtime drift must be separated from source control.
-3. Staging and live must be runbook-driven.
-4. Account and identity flow should be intentional, not bolted on late.
-5. Regression and smoke tests are part of shipping, not cleanup.
-6. Desktop packaging and updater strategy should be planned before launch crunch.
+3. Staging and live expectations should be defined early.
+4. Account and session flow should be intentional.
+5. Smoke, acceptance, and healthcheck culture should exist before release pressure.
+6. Packaging and updater direction should not be left until the end.
 
----
+## Active Milestone Runway
 
-## Milestone Stack
+The implemented milestone train is treated as current through M28.
 
-The renderer-focused groundwork is considered current through M21-level work.
-The forward roadmap should continue from M22.
+The active tactical roadmap for the next lead developer is M29 through M48 and is detailed in:
 
-## Block 0 - Production Foundation
+- `Docs/Wrath and Ruin - M29-M48 Lead Developer Milestone Plan.md`
+- `Docs/Wrath and Ruin - Milestone Delivery Standard.md`
 
-- M22: Legacy migration assessment and production contract
-- M23: Runtime boundaries, asset policy, and canonical content rules
-- M24: Local demo lane, reproducible packaging checklist, and observability baseline
+### Phase 1 - Visual Closure And Production Contract
 
-## Block 1 - Client Runtime Closure
+- M29: bgfx Regional Set Dressing / Encounter Hooks
+- M30: Playable Slice Readability / Interaction Affordances
+- M31: Canonical Content Contract / Runtime Boundary Cleanup
+- M32: Local Demo Lane / Packaging / Diagnostics Baseline
 
-- M25: bgfx runtime closure and render-path consolidation
-- M26: UI shell, interaction HUD, and diagnostics
-- M27: asset validation and demo-readiness review
+### Phase 2 - Shared Simulation And Authority
 
-## Block 2 - Shared Simulation And Authority
+- M33: Shared Simulation Contract / Fixed-Step Ownership
+- M34: Headless World Host / Dedicated Server Bootstrap
+- M35: Client Intent Protocol / Authoritative Movement And Interaction
+- M36: Replication / Latency Harness / Divergence Diagnostics
 
-- M28: shared simulation and fixed-step ownership
-- M29: headless dedicated server bootstrap
-- M30: command protocol and authoritative movement/interactions
-- M31: replication, latency simulation, and divergence diagnostics
+### Phase 3 - Planetary Gameplay Core
 
-## Block 3 - Planetary Core Loop
+- M37: Persistence Schema / Save-Load / Versioned Migration
+- M38: Actor Runtime / Inventory / Equipment / Loot
+- M39: Survival Hazards / Terrain Consequence / World State
+- M40: Six-Second Combat / Encounter Resolution
 
-- M32: persistence foundation and save/load versioning
-- M33: content pipeline for zones, prefabs, items, and interactables
-- M34: actor model, inventory, and equipment
-- M35: six-second combat controller
-- M36: survival and environment model
-- M37: NPC encounters and planetary slice gate
+### Phase 4 - Space Vertical Slice
 
-## Block 4 - Space Vertical Slice
+- M41: Planetary Mission Slice / Objectives / Gate Logic
+- M42: Ship Runtime / Boarding / Ownership State
+- M43: Orbital Space Layer / Travel State / Navigation Rules
+- M44: Docking / Landing / Cross-Layer Transition Persistence / Return Loop
 
-- M38: ship runtime and boarding
-- M39: local space or orbital traversal
-- M40: landing, docking, and transition flow
-- M41: mission, dialogue, terminal, and session flow
+### Phase 5 - Alpha Hardening And Product Runway
 
-## Block 5 - Alpha Readiness
+- M45: Internal Alpha Package / Hosted Deploy / Telemetry Baseline
+- M46: Alpha Hardening / Crash Capture / Admin Tooling
+- M47: External Beta Onboarding / Launcher-Update Direction / Support Flow
+- M48: Market Foundation / Release Ops / Analytics / Readiness Gate
 
-- M42: deployable server package, telemetry, crash capture, and admin tools
-- M43: alpha content lock, usability pass, and sign-off
+## Nominal Weekly Sprint View
 
-## Block 6 - Beta Readiness
+These weekly bands are planning shorthand.
+AI-assisted execution may compress or expand individual tasks, but the cadence remains useful for production tracking.
 
-- M44: external onboarding and launcher/update direction
-- M45: scalable content authoring and validation pipeline
-- M46: progression, economy-lite, and retention pass
-- M47: beta ops, moderation, support, and analytics
-- M48: accessibility and UX polish
-- M49: beta stability and release-gate review
+### Weeks 1-4
 
-## Block 7 - Market Readiness
+- M29 through M32
+- close the renderer-era content pass
+- establish content, runtime, packaging, and demo rules
 
-- M50: commercial packaging and installer/update lane
-- M51: market onboarding and first-session polish
-- M52: live-ops tooling and release management
-- M53: compliance, support, and storefront readiness
-- M54: market candidate and launch rehearsal
+### Weeks 5-8
 
----
+- M33 through M36
+- stand up shared simulation, authority, and replication visibility
+
+### Weeks 9-12
+
+- M37 through M40
+- add persistence, inventory, hazards, and combat
+
+### Weeks 13-16
+
+- M41 through M44
+- complete the mission-bearing planet-to-space loop
+
+### Weeks 17-20
+
+- M45 through M48
+- host, harden, instrument, support, and evaluate the slice as a product
 
 ## What Must Not Happen
 
 - renderer work continuing as the main strategic branch indefinitely
-- broad sandbox expansion before one slice works
+- broad sandbox expansion before one vertical slice works
 - persistence arriving after too many systems depend on it
-- deployment and packaging deferred until the end
-- runtime/source drift polluting the repo
-- market planning treated as a final-week concern
+- deployment and packaging deferred until late-stage panic
+- runtime and source-control boundaries remaining ambiguous
+- market planning treated as a final-week problem
 
----
-
-## Success Conditions By Horizon
+## Success Conditions
 
 ### Foundation Success
 
 - the repo has clear ownership boundaries
-- demos are repeatable
-- the next architecture steps are safer
+- local demos are repeatable
+- the packaging and diagnostics base is real
 
 ### Alpha Success
 
 - one complete hosted slice exists
-- it is deployable and replayable
+- it is deployable, replayable, and supportable
 - internal testers can use it without constant engineering intervention
 
-### Beta Success
+### Beta Readiness Success
 
-- outside testers can onboard and play repeatedly
-- the project is operationally supportable
+- outside testers can be onboarded through a controlled process
+- distribution, support, and telemetry direction are defined
 
-### Market Success
+### Market Readiness Success
 
-- the game can be packaged, updated, supported, and presented commercially
-
----
+- the game can be packaged, updated, monitored, and presented commercially
 
 ## Final Strategic Rule
 
-The project should be run as:
+Run the project as:
 
 - a new gameplay and client foundation
 - guided by old operational lessons
 - aimed at one excellent slice first
 - extended into beta and market only after the base is strong
 
-That is the most attainable path to an actual product.
+That is the most attainable path to a real product.

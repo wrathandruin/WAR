@@ -125,8 +125,123 @@ namespace war
                 : rgbaToAbgr(240, 230, 100, 140);
         }
 
-        uint32_t entityColor(const Entity& entity)
+        uint32_t entityColor(const WorldState& worldState, const Entity& entity)
         {
+            switch (worldState.regionTag(entity.tile))
+            {
+            case WorldRegionTagId::CargoBay:
+                switch (entity.type)
+                {
+                case EntityType::Crate:
+                    return entity.isLocked
+                        ? rgbaToAbgr(176, 120, 78)
+                        : rgbaToAbgr(212, 168, 104);
+
+                case EntityType::Terminal:
+                    return entity.isPowered
+                        ? rgbaToAbgr(120, 176, 212)
+                        : rgbaToAbgr(96, 124, 148);
+
+                case EntityType::Locker:
+                    return entity.isLocked
+                        ? rgbaToAbgr(188, 150, 118)
+                        : rgbaToAbgr(166, 166, 176);
+
+                default:
+                    break;
+                }
+                break;
+
+            case WorldRegionTagId::TransitSpine:
+                switch (entity.type)
+                {
+                case EntityType::Crate:
+                    return rgbaToAbgr(192, 176, 128);
+
+                case EntityType::Terminal:
+                    return entity.isPowered
+                        ? rgbaToAbgr(146, 214, 244)
+                        : rgbaToAbgr(114, 152, 180);
+
+                case EntityType::Locker:
+                    return entity.isLocked
+                        ? rgbaToAbgr(212, 186, 124)
+                        : rgbaToAbgr(186, 190, 206);
+
+                default:
+                    break;
+                }
+                break;
+
+            case WorldRegionTagId::MedLab:
+                switch (entity.type)
+                {
+                case EntityType::Crate:
+                    return rgbaToAbgr(214, 224, 232);
+
+                case EntityType::Terminal:
+                    return entity.isPowered
+                        ? rgbaToAbgr(134, 236, 255)
+                        : rgbaToAbgr(118, 170, 188);
+
+                case EntityType::Locker:
+                    return entity.isLocked
+                        ? rgbaToAbgr(210, 228, 240)
+                        : rgbaToAbgr(234, 242, 252);
+
+                default:
+                    break;
+                }
+                break;
+
+            case WorldRegionTagId::CommandDeck:
+                switch (entity.type)
+                {
+                case EntityType::Crate:
+                    return rgbaToAbgr(188, 198, 216);
+
+                case EntityType::Terminal:
+                    return entity.isPowered
+                        ? rgbaToAbgr(120, 188, 255)
+                        : rgbaToAbgr(92, 132, 186);
+
+                case EntityType::Locker:
+                    return entity.isLocked
+                        ? rgbaToAbgr(220, 210, 166)
+                        : rgbaToAbgr(212, 220, 236);
+
+                default:
+                    break;
+                }
+                break;
+
+            case WorldRegionTagId::HazardContainment:
+                switch (entity.type)
+                {
+                case EntityType::Crate:
+                    return entity.isLocked
+                        ? rgbaToAbgr(184, 96, 96)
+                        : rgbaToAbgr(158, 84, 84);
+
+                case EntityType::Terminal:
+                    return entity.isPowered
+                        ? rgbaToAbgr(255, 152, 132)
+                        : rgbaToAbgr(164, 98, 98);
+
+                case EntityType::Locker:
+                    return entity.isLocked
+                        ? rgbaToAbgr(232, 118, 118)
+                        : rgbaToAbgr(202, 116, 116);
+
+                default:
+                    break;
+                }
+                break;
+
+            default:
+                break;
+            }
+
             switch (entity.type)
             {
             case EntityType::Crate:
@@ -261,7 +376,7 @@ namespace war
                 centeredWorldTexturedQuad(
                     worldState.world().tileToWorldCenter(entity.tile),
                     12.0f,
-                    entityColor(entity),
+                    entityColor(worldState, entity),
                     entityMaterial(entity)));
         }
 

@@ -463,154 +463,123 @@ Exit Criteria:
 
 ---
 
-## 9. Milestone Pass
+## 9. Active Milestone Pass
 
-The renderer era should be treated as groundwork complete through the current M21-level work.
-The production roadmap should continue from **M22**.
+The implemented milestone train should now be treated as current through **M28**.
 
-### Block 0 - Production Foundation
+The active tactical roadmap for the next lead developer is **M29 through M48** and is detailed in:
 
-- M22: Legacy migration assessment and production contract
-- M23: Runtime data boundaries, asset policy, and canonical content rules
-- M24: Local demo flow, diagnostics baseline, and reproducible packaging checklist
+- `Docs/Wrath and Ruin - M29-M48 Lead Developer Milestone Plan.md`
+- `Docs/Wrath and Ruin - Milestone Delivery Standard.md`
+- `Docs/milestones/WAR_Strategic_Roadmap.md`
 
-### Block 1 - Client Runtime Closure
+### Phase 1 - Visual Closure And Production Contract
 
-- M25: bgfx runtime closure and render-path consolidation
-- M26: UI shell, interaction HUD, and diagnostics pass
-- M27: asset validation, packaging automation, and demo-readiness review
+- M29: bgfx Regional Set Dressing / Encounter Hooks
+- M30: Playable Slice Readability / Interaction Affordances
+- M31: Canonical Content Contract / Runtime Boundary Cleanup
+- M32: Local Demo Lane / Packaging / Diagnostics Baseline
 
-### Block 2 - Authority And Shared Simulation
+### Phase 2 - Shared Simulation And Authority
 
-- M28: shared simulation module and fixed-step ownership
-- M29: headless dedicated server bootstrap
-- M30: command protocol, serialization, and authoritative movement
-- M31: replication harness, latency simulation, and divergence diagnostics
+- M33: Shared Simulation Contract / Fixed-Step Ownership
+- M34: Headless World Host / Dedicated Server Bootstrap
+- M35: Client Intent Protocol / Authoritative Movement And Interaction
+- M36: Replication / Latency Harness / Divergence Diagnostics
 
-### Block 3 - Planetary Core Loop
+### Phase 3 - Planetary Gameplay Core
 
-- M32: persistence foundation and save/load versioning
-- M33: zone, prefab, item, and interactable content pipeline
-- M34: actor model, stats, inventory, and equipment
-- M35: six-second combat controller and action resolution
-- M36: survival hazards, terrain consequences, and environmental state
-- M37: NPC encounters, mission hooks, and planetary slice gate
+- M37: Persistence Schema / Save-Load / Versioned Migration
+- M38: Actor Runtime / Inventory / Equipment / Loot
+- M39: Survival Hazards / Terrain Consequence / World State
+- M40: Six-Second Combat / Encounter Resolution
 
-### Block 4 - Space Vertical Slice
+### Phase 4 - Space Vertical Slice
 
-- M38: ship runtime, boarding, and ownership state
-- M39: local space or orbital traversal
-- M40: landing, docking, and cross-layer transitions
-- M41: mission, dialogue, terminal, and session flow
+- M41: Planetary Mission Slice / Objectives / Gate Logic
+- M42: Ship Runtime / Boarding / Ownership State
+- M43: Orbital Space Layer / Travel State / Navigation Rules
+- M44: Docking / Landing / Cross-Layer Transition Persistence / Return Loop
 
-### Block 5 - Alpha Readiness
+### Phase 5 - Alpha Hardening And Product Runway
 
-- M42: deployable server package, telemetry, crash capture, and admin tools
-- M43: alpha content lock, usability pass, and internal alpha sign-off
+- M45: Internal Alpha Package / Hosted Deploy / Telemetry Baseline
+- M46: Alpha Hardening / Crash Capture / Admin Tooling
+- M47: External Beta Onboarding / Launcher-Update Direction / Support Flow
+- M48: Market Foundation / Release Ops / Analytics / Readiness Gate
 
 ---
 
 ## 10. Nominal Weekly Sprint Bands
 
+These weekly bands are planning shorthand.
+AI-assisted execution may compress or expand individual tasks, but the weekly cadence remains useful for production tracking.
+
 ### Weeks 1-4
 
-- finalize the migration contract
-- document runtime boundaries and production principles
-- define demo and deploy expectations
+- M29 through M32
+- close the renderer-era content pass
+- establish content, runtime, packaging, and demo rules
 
 ### Weeks 5-8
 
-- close renderer/runtime ambiguity
-- add diagnostics and demo UX
+- M33 through M36
+- stand up shared simulation, authority, and replication visibility
 
-### Weeks 9-16
+### Weeks 9-12
 
-- stand up shared simulation and dedicated server
-- prove authoritative localhost sessions
+- M37 through M40
+- add persistence, inventory, hazards, and combat
 
-### Weeks 17-24
+### Weeks 13-16
 
-- build the planetary gameplay loop
-- add persistence, combat, hazards, inventory, and authored encounters
+- M41 through M44
+- complete the mission-bearing planet-to-space loop
 
-### Weeks 25-30
+### Weeks 17-20
 
-- connect ship and space traversal
-- complete the first real planet-to-space mission loop
-
-### Weeks 31-36
-
-- harden alpha
-- package, instrument, deploy, and rehearse
+- M45 through M48
+- host, harden, instrument, support, and evaluate the slice as a product
 
 ---
 
-## 11. Beta Outlook
+## 11. Post-M48 Continuation
 
-Nominal planning baseline: **18 weekly sprints after alpha**
+The next detailed tactical runway should stop at M48 so leadership can assess the product honestly before broadening the plan again.
 
-Beta is where the project becomes ready for sustained outside testing.
+However, the likely continuation after M48 is:
 
-### Beta Priorities
-
-- broader onboarding and account/session flow
-- better UX and accessibility
-- stronger content production velocity
-- more encounter and mission breadth
-- stability under repeated external testing
-- moderation, support, and issue triage flows
-
-### Recommended Beta Milestones
-
-- M44: external tester onboarding, account/session contract, and launcher/update direction
-- M45: content authoring and validation pipeline expansion
-- M46: progression, economy-lite, and retention pass
-- M47: external beta telemetry, moderation, and support operations
-- M48: accessibility, UX polish, and tutorialization
-- M49: beta stability, content broadening, and release-gate review
-
-### Beta Exit
-
-Beta is successful when:
-
-- outside testers can onboard without developer handholding
-- content can be produced and validated at a sustainable rate
-- deployment, monitoring, and rollback are boring
-- the game retains players beyond the first session
+- M49: beta content scale, retention expansion, and release-candidate discipline
+- M50: launcher, installer, and update productionization
+- M51: market onboarding and first-session polish
+- M52: live-ops tooling, analytics hardening, and release management
+- M53: compliance, storefront, support, and policy readiness
+- M54: launch rehearsal, market candidate review, and go/no-go sign-off
 
 ---
 
-## 12. Market Readiness Outlook
+## 12. Horizon Outlook
 
-Nominal planning baseline: **12 weekly sprints after beta**
+### Beta Outlook
 
-Market readiness is about commercial credibility, not just feature count.
+Beta should focus on:
 
-### Market Priorities
+- external onboarding
+- broader content reliability
+- build distribution and updater direction
+- accessibility and UX improvements
+- operational supportability
+- stronger telemetry and retention understanding
 
-- installer, updater, and patch strategy
-- first-session polish and onboarding
-- release ops and rollback
+### Market Readiness Outlook
+
+Market readiness should focus on:
+
+- release-ops discipline
+- installer and update maturity
 - analytics and support tooling
-- community and moderation readiness
-- legal, privacy, and compliance review for the intended release platform
-
-### Recommended Market Milestones
-
-- M50: commercial packaging, installer, and update lane
-- M51: launch onboarding, new-user flow, and retention pass
-- M52: live-ops tooling, analytics, and release management
-- M53: compliance, policy, store, and support readiness
-- M54: market candidate build, release rehearsal, and go/no-go review
-
-### Market Exit
-
-Market readiness is achieved when:
-
-- the team can package and ship repeatably
-- support and incident response are defined
-- onboarding converts new users effectively
-- the product slice is commercially coherent
+- onboarding quality
+- commercial packaging and credibility
 
 ---
 

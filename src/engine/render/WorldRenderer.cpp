@@ -6,8 +6,64 @@ namespace war
 {
     namespace
     {
-        COLORREF entityFillColor(const Entity& entity)
+        COLORREF entityFillColor(const WorldState& worldState, const Entity& entity)
         {
+            switch (worldState.regionTag(entity.tile))
+            {
+            case WorldRegionTagId::CargoBay:
+                switch (entity.type)
+                {
+                case EntityType::Crate: return entity.isLocked ? RGB(176, 120, 78) : RGB(212, 168, 104);
+                case EntityType::Terminal: return entity.isPowered ? RGB(120, 176, 212) : RGB(96, 124, 148);
+                case EntityType::Locker: return entity.isLocked ? RGB(188, 150, 118) : RGB(166, 166, 176);
+                default: break;
+                }
+                break;
+
+            case WorldRegionTagId::TransitSpine:
+                switch (entity.type)
+                {
+                case EntityType::Crate: return RGB(192, 176, 128);
+                case EntityType::Terminal: return entity.isPowered ? RGB(146, 214, 244) : RGB(114, 152, 180);
+                case EntityType::Locker: return entity.isLocked ? RGB(212, 186, 124) : RGB(186, 190, 206);
+                default: break;
+                }
+                break;
+
+            case WorldRegionTagId::MedLab:
+                switch (entity.type)
+                {
+                case EntityType::Crate: return RGB(214, 224, 232);
+                case EntityType::Terminal: return entity.isPowered ? RGB(134, 236, 255) : RGB(118, 170, 188);
+                case EntityType::Locker: return entity.isLocked ? RGB(210, 228, 240) : RGB(234, 242, 252);
+                default: break;
+                }
+                break;
+
+            case WorldRegionTagId::CommandDeck:
+                switch (entity.type)
+                {
+                case EntityType::Crate: return RGB(188, 198, 216);
+                case EntityType::Terminal: return entity.isPowered ? RGB(120, 188, 255) : RGB(92, 132, 186);
+                case EntityType::Locker: return entity.isLocked ? RGB(220, 210, 166) : RGB(212, 220, 236);
+                default: break;
+                }
+                break;
+
+            case WorldRegionTagId::HazardContainment:
+                switch (entity.type)
+                {
+                case EntityType::Crate: return entity.isLocked ? RGB(184, 96, 96) : RGB(158, 84, 84);
+                case EntityType::Terminal: return entity.isPowered ? RGB(255, 152, 132) : RGB(164, 98, 98);
+                case EntityType::Locker: return entity.isLocked ? RGB(232, 118, 118) : RGB(202, 116, 116);
+                default: break;
+                }
+                break;
+
+            default:
+                break;
+            }
+
             switch (entity.type)
             {
             case EntityType::Crate:
@@ -28,8 +84,64 @@ namespace war
             }
         }
 
-        COLORREF entityOutlineColor(const Entity& entity)
+        COLORREF entityOutlineColor(const WorldState& worldState, const Entity& entity)
         {
+            switch (worldState.regionTag(entity.tile))
+            {
+            case WorldRegionTagId::CargoBay:
+                switch (entity.type)
+                {
+                case EntityType::Crate: return RGB(235, 210, 160);
+                case EntityType::Terminal: return RGB(170, 205, 228);
+                case EntityType::Locker: return RGB(208, 190, 170);
+                default: break;
+                }
+                break;
+
+            case WorldRegionTagId::TransitSpine:
+                switch (entity.type)
+                {
+                case EntityType::Crate: return RGB(225, 216, 170);
+                case EntityType::Terminal: return RGB(196, 228, 246);
+                case EntityType::Locker: return RGB(228, 214, 170);
+                default: break;
+                }
+                break;
+
+            case WorldRegionTagId::MedLab:
+                switch (entity.type)
+                {
+                case EntityType::Crate: return RGB(240, 246, 250);
+                case EntityType::Terminal: return RGB(194, 246, 255);
+                case EntityType::Locker: return RGB(245, 250, 255);
+                default: break;
+                }
+                break;
+
+            case WorldRegionTagId::CommandDeck:
+                switch (entity.type)
+                {
+                case EntityType::Crate: return RGB(220, 230, 246);
+                case EntityType::Terminal: return RGB(182, 220, 255);
+                case EntityType::Locker: return RGB(246, 236, 190);
+                default: break;
+                }
+                break;
+
+            case WorldRegionTagId::HazardContainment:
+                switch (entity.type)
+                {
+                case EntityType::Crate: return RGB(220, 150, 150);
+                case EntityType::Terminal: return RGB(255, 188, 168);
+                case EntityType::Locker: return RGB(255, 170, 170);
+                default: break;
+                }
+                break;
+
+            default:
+                break;
+            }
+
             switch (entity.type)
             {
             case EntityType::Crate:
@@ -335,9 +447,9 @@ namespace war
     {
         for (const Entity& entity : worldState.entities().all())
         {
-            HBRUSH brush = CreateSolidBrush(entityFillColor(entity));
+            HBRUSH brush = CreateSolidBrush(entityFillColor(worldState, entity));
             HBRUSH oldBrush = static_cast<HBRUSH>(SelectObject(dc, brush));
-            HPEN pen = CreatePen(PS_SOLID, 1, entityOutlineColor(entity));
+            HPEN pen = CreatePen(PS_SOLID, 1, entityOutlineColor(worldState, entity));
             HPEN oldPen = static_cast<HPEN>(SelectObject(dc, pen));
 
             const Vec2 screen = camera.worldToScreen(worldState.world().tileToWorldCenter(entity.tile));

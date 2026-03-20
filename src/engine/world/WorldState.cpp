@@ -1,6 +1,6 @@
 #include "engine/world/WorldState.h"
 
-#include "engine/gameplay/Entity.h"
+#include "engine/world/WorldSemanticDressing.h"
 
 namespace war
 {
@@ -35,37 +35,7 @@ namespace war
         fillRegionRect(27, 22, 43, 32, WorldRegionTagId::HazardContainment);
         fillRegionRect(19, 24, 26, 29, WorldRegionTagId::HazardContainment);
 
-        m_entities.clear();
-
-        Entity crate{};
-        crate.id = 1;
-        crate.name = "Cargo Crate";
-        crate.type = EntityType::Crate;
-        crate.tile = { 8, 24 };
-        crate.isOpen = false;
-        crate.isLocked = false;
-        crate.isPowered = false;
-        m_entities.add(crate);
-
-        Entity terminal{};
-        terminal.id = 2;
-        terminal.name = "Operations Terminal";
-        terminal.type = EntityType::Terminal;
-        terminal.tile = { 35, 8 };
-        terminal.isOpen = false;
-        terminal.isLocked = false;
-        terminal.isPowered = false;
-        m_entities.add(terminal);
-
-        Entity locker{};
-        locker.id = 3;
-        locker.name = "Containment Locker";
-        locker.type = EntityType::Locker;
-        locker.tile = { 33, 27 };
-        locker.isOpen = false;
-        locker.isLocked = true;
-        locker.isPowered = false;
-        m_entities.add(locker);
+        WorldSemanticDressing::populateTestEntities(*this);
     }
 
     WorldGrid& WorldState::world()

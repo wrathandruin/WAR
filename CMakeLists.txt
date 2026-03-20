@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(WAR
-    VERSION 0.3.8
-    DESCRIPTION "Wrath and Ruin milestone 25"
+    VERSION 0.4.0
+    DESCRIPTION "Wrath and Ruin milestone 28"
     LANGUAGES CXX
 )
 
@@ -33,6 +33,7 @@ set(WAR_SOURCES
     src/engine/render/BgfxDebugFrameRenderer.cpp
     src/engine/world/WorldGrid.cpp
     src/engine/world/WorldRegionTag.cpp
+    src/engine/world/WorldSemanticDressing.cpp
     src/engine/world/Pathfinding.cpp
     src/engine/world/WorldState.cpp
     src/engine/gameplay/EntityManager.cpp
