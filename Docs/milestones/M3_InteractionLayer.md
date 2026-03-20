@@ -22,4 +22,4 @@ Convert input into intent-driven gameplay actions.
 - no contextual use/interact actions yet
 
 ## Next Milestone
-Entity presence, richer inspection, and deeper interaction verbs
+Entity presence, richer inspection, and deeper interaction verbs.

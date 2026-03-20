@@ -5,6 +5,8 @@
 
 #include <windows.h>
 
+#include "engine/gameplay/ActionQueue.h"
+#include "engine/gameplay/Entity.h"
 #include "engine/math/Vec2.h"
 #include "engine/render/Camera2D.h"
 #include "engine/world/WorldGrid.h"
@@ -23,6 +25,7 @@ namespace war
 
     private:
         void updateInput();
+        void processActions();
         void updatePlayer(float dt);
         void pushEvent(const std::string& message);
         void rebuildPathTo(TileCoord targetTile);
@@ -32,14 +35,20 @@ namespace war
         void drawHoveredTile(HDC dc);
         void drawPath(HDC dc);
         void drawPlayer(HDC dc);
+        void drawEntities(HDC dc);
         void drawOverlay(HDC dc);
 
         [[nodiscard]] RECT getClientRect() const;
         [[nodiscard]] RECT tileToScreenRect(TileCoord tile) const;
+        [[nodiscard]] Entity* getEntityAt(TileCoord tile);
+        [[nodiscard]] const Entity* getEntityAt(TileCoord tile) const;
 
         Win32Window* m_window = nullptr;
         Camera2D m_camera{};
         WorldGrid m_world{ 48, 36, 48 };
+        ActionQueue m_actions{};
+
+        std::vector<Entity> m_entities;
 
         Vec2 m_playerPosition{ 0.0f, 0.0f };
         float m_playerSpeed = 210.0f;

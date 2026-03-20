@@ -5,6 +5,7 @@
 #include <cstring>
 #include <string>
 
+#include "engine/gameplay/Action.h"
 #include "engine/world/Pathfinding.h"
 #include "platform/win32/Win32Window.h"
 
@@ -21,9 +22,13 @@ namespace war
         const TileCoord spawnTile{ 2, 2 };
         m_playerPosition = m_world.tileToWorldCenter(spawnTile);
 
-        pushEvent("Milestone 2.1 initialized");
-        pushEvent("WorldGrid ready");
-        pushEvent("Click a walkable tile to path there");
+        m_entities.push_back({ 1, "Cargo Crate", { 10, 10 } });
+        m_entities.push_back({ 2, "Power Junction", { 18, 8 } });
+        m_entities.push_back({ 3, "Maintenance Locker", { 30, 24 } });
+
+        pushEvent("Milestone 4 initialized");
+        pushEvent("Action system ready");
+        pushEvent("Left click to move, right click to inspect");
     }
 
     void GameLayer::update(float dt)
@@ -32,6 +37,7 @@ namespace war
         m_camera.setViewportSize(m_window->getWidth(), m_window->getHeight());
 
         updateInput();
+        processActions();
         updatePlayer(dt);
     }
 
@@ -86,19 +92,15 @@ namespace war
         {
             const Vec2 world = m_camera.screenToWorld(click.x, click.y);
             const TileCoord targetTile = m_world.worldToTile(world);
+            m_actions.push({ ActionType::Move, targetTile });
+        }
 
-            if (!m_world.isInBounds(targetTile))
-            {
-                pushEvent("Move order rejected: out of bounds");
-            }
-            else if (m_world.isBlocked(targetTile))
-            {
-                pushEvent("Move order rejected: target tile blocked");
-            }
-            else
-            {
-                rebuildPathTo(targetTile);
-            }
+        POINT rightClick{};
+        if (m_window->consumeRightClick(rightClick))
+        {
+            const Vec2 world = m_camera.screenToWorld(rightClick.x, rightClick.y);
+            const TileCoord targetTile = m_world.worldToTile(world);
+            m_actions.push({ ActionType::Inspect, targetTile });
         }
 
         const int wheel = m_window->consumeMouseWheelDelta();
@@ -119,6 +121,65 @@ namespace war
         else
         {
             (void)m_window->consumeMouseDelta();
+        }
+    }
+
+    void GameLayer::processActions()
+    {
+        while (m_actions.hasActions())
+        {
+            const Action action = m_actions.pop();
+
+            if (action.type == ActionType::Move)
+            {
+                if (!m_world.isInBounds(action.target))
+                {
+                    pushEvent("Move rejected: target out of bounds");
+                }
+                else if (m_world.isBlocked(action.target))
+                {
+                    pushEvent("Move rejected: target tile blocked");
+                }
+                else
+                {
+                    rebuildPathTo(action.target);
+                }
+            }
+            else if (action.type == ActionType::Inspect)
+            {
+                if (!m_world.isInBounds(action.target))
+                {
+                    pushEvent("Inspect rejected: target out of bounds");
+                    continue;
+                }
+
+                char buffer[160]{};
+                const Entity* entity = getEntityAt(action.target);
+
+                if (entity != nullptr)
+                {
+                    std::snprintf(
+                        buffer,
+                        sizeof(buffer),
+                        "Inspect (%d, %d): blocked=%s, entity=%s",
+                        action.target.x,
+                        action.target.y,
+                        m_world.isBlocked(action.target) ? "yes" : "no",
+                        entity->name.c_str());
+                }
+                else
+                {
+                    std::snprintf(
+                        buffer,
+                        sizeof(buffer),
+                        "Inspect (%d, %d): blocked=%s, entity=none",
+                        action.target.x,
+                        action.target.y,
+                        m_world.isBlocked(action.target) ? "yes" : "no");
+                }
+
+                pushEvent(buffer);
+            }
         }
     }
 
@@ -166,10 +227,12 @@ namespace war
     void GameLayer::pushEvent(const std::string& message)
     {
         m_eventLog.push_back(message);
-        constexpr size_t kMaxEvents = 8;
+        constexpr size_t kMaxEvents = 10;
         if (m_eventLog.size() > kMaxEvents)
         {
-            m_eventLog.erase(m_eventLog.begin(), m_eventLog.begin() + static_cast<std::ptrdiff_t>(m_eventLog.size() - kMaxEvents));
+            m_eventLog.erase(
+                m_eventLog.begin(),
+                m_eventLog.begin() + static_cast<std::ptrdiff_t>(m_eventLog.size() - kMaxEvents));
         }
     }
 
@@ -180,7 +243,7 @@ namespace war
 
         if (path.empty())
         {
-            pushEvent("No path found");
+            pushEvent("Move failed: no path found");
             m_currentPath.clear();
             m_pathIndex = 0;
             return;
@@ -193,7 +256,7 @@ namespace war
         std::snprintf(
             buffer,
             sizeof(buffer),
-            "Path found: %zu nodes to (%d, %d)",
+            "Move queued: %zu nodes to (%d, %d)",
             m_currentPath.size(),
             targetTile.x,
             targetTile.y);
@@ -209,6 +272,7 @@ namespace war
         drawTiles(dc);
         drawPath(dc);
         drawHoveredTile(dc);
+        drawEntities(dc);
         drawPlayer(dc);
         drawOverlay(dc);
     }
@@ -324,6 +388,31 @@ namespace war
         DeleteObject(pen);
     }
 
+    void GameLayer::drawEntities(HDC dc)
+    {
+        HBRUSH brush = CreateSolidBrush(RGB(120, 255, 150));
+        HBRUSH oldBrush = static_cast<HBRUSH>(SelectObject(dc, brush));
+        HPEN pen = CreatePen(PS_SOLID, 1, RGB(200, 255, 210));
+        HPEN oldPen = static_cast<HPEN>(SelectObject(dc, pen));
+
+        for (const Entity& entity : m_entities)
+        {
+            const Vec2 screen = m_camera.worldToScreen(m_world.tileToWorldCenter(entity.tile));
+            const int halfSize = static_cast<int>(8.0f * m_camera.getZoom());
+
+            Rectangle(dc,
+                static_cast<int>(screen.x) - halfSize,
+                static_cast<int>(screen.y) - halfSize,
+                static_cast<int>(screen.x) + halfSize,
+                static_cast<int>(screen.y) + halfSize);
+        }
+
+        SelectObject(dc, oldBrush);
+        SelectObject(dc, oldPen);
+        DeleteObject(brush);
+        DeleteObject(pen);
+    }
+
     void GameLayer::drawOverlay(HDC dc)
     {
         SetBkMode(dc, TRANSPARENT);
@@ -335,19 +424,24 @@ namespace war
         const TileCoord playerTile = m_world.worldToTile(m_playerPosition);
         const bool hoveredBlocked =
             m_world.isInBounds(mouseTile) && m_world.isBlocked(mouseTile);
+        const Entity* hoveredEntity =
+            m_world.isInBounds(mouseTile) ? getEntityAt(mouseTile) : nullptr;
 
-        char buffer[512]{};
+        char buffer[768]{};
         std::snprintf(
             buffer,
             sizeof(buffer),
-            "WAR Milestone 2.1\n"
-            "LMB: move    MMB drag: pan    Wheel: zoom\n"
+            "WAR Milestone 4\n"
+            "LMB: move    RMB: inspect    MMB drag: pan    Wheel: zoom\n"
             "Player world: (%.1f, %.1f)\n"
             "Player tile: (%d, %d)\n"
             "Mouse tile: (%d, %d)\n"
             "Hovered blocked: %s\n"
+            "Hovered entity: %s\n"
             "Camera: (%.1f, %.1f)  Zoom: %.2f\n"
             "Path nodes remaining: %zu\n"
+            "Queued actions: %s\n"
+            "Entities: %zu\n"
             "Frame dt: %.4f",
             m_playerPosition.x,
             m_playerPosition.y,
@@ -356,15 +450,18 @@ namespace war
             mouseTile.x,
             mouseTile.y,
             hoveredBlocked ? "yes" : "no",
+            hoveredEntity ? hoveredEntity->name.c_str() : "none",
             m_camera.getPosition().x,
             m_camera.getPosition().y,
             m_camera.getZoom(),
             m_pathIndex < m_currentPath.size() ? m_currentPath.size() - m_pathIndex : 0,
+            m_actions.hasActions() ? "yes" : "no",
+            m_entities.size(),
             m_lastDeltaTime);
 
         TextOutA(dc, 16, 16, buffer, static_cast<int>(std::strlen(buffer)));
 
-        int y = 175;
+        int y = 208;
         TextOutA(dc, 16, y, "Event Log:", 10);
         y += 22;
 
@@ -405,5 +502,31 @@ namespace war
             static_cast<LONG>(bottomRight.x),
             static_cast<LONG>(bottomRight.y)
         };
+    }
+
+    Entity* GameLayer::getEntityAt(TileCoord tile)
+    {
+        for (Entity& entity : m_entities)
+        {
+            if (entity.tile == tile)
+            {
+                return &entity;
+            }
+        }
+
+        return nullptr;
+    }
+
+    const Entity* GameLayer::getEntityAt(TileCoord tile) const
+    {
+        for (const Entity& entity : m_entities)
+        {
+            if (entity.tile == tile)
+            {
+                return &entity;
+            }
+        }
+
+        return nullptr;
     }
 }

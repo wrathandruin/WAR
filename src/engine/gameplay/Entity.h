@@ -1,6 +1,7 @@
-
 #pragma once
+
 #include <string>
+
 #include "engine/world/WorldGrid.h"
 
 namespace war

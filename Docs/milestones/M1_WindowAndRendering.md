@@ -12,9 +12,9 @@ Establish a visible, interactive application shell for WAR.
 - debug overlay
 
 ## Technical Notes
-- Rendering is intentionally temporary and uses GDI to validate the loop quickly
-- Movement in this milestone is direct and not world-aware
-- This milestone proves the application shell, rendering flow, and basic input path
+- Rendering is intentionally temporary and uses GDI to validate the loop quickly.
+- Movement in this milestone is direct and not world-aware.
+- This milestone proves the application shell, rendering flow, and basic input path.
 
 ## Limitations
 - no world model
@@ -23,4 +23,4 @@ Establish a visible, interactive application shell for WAR.
 - no interaction verbs
 
 ## Next Milestone
-World model, blocked tiles, traversal, and pathfinding
+World model, blocked tiles, traversal, and pathfinding.

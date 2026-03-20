@@ -31,4 +31,4 @@ Introduce a real world representation and make movement world-aware.
 - no terrain editing
 
 ## Next Milestone
-Intent-driven actions and first interaction layer
+Intent-driven actions and first interaction layer.
