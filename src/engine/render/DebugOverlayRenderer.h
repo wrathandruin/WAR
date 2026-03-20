@@ -5,6 +5,7 @@
 
 #include <windows.h>
 
+#include "engine/core/LocalDemoDiagnostics.h"
 #include "engine/core/RuntimePaths.h"
 #include "engine/math/Vec2.h"
 #include "engine/render/Camera2D.h"
@@ -31,7 +32,8 @@ namespace war
             const std::vector<std::string>& eventLog,
             float lastDeltaTime,
             const POINT& mousePosition,
-            const RuntimeBoundaryReport& runtimeBoundaryReport) const;
+            const RuntimeBoundaryReport& runtimeBoundaryReport,
+            const LocalDemoDiagnosticsReport& localDemoDiagnosticsReport) const;
 
     private:
         [[nodiscard]] const char* entityTypeToText(EntityType type) const;

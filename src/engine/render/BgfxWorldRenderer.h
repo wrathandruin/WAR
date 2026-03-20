@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "engine/core/LocalDemoDiagnostics.h"
 #include "engine/core/RuntimePaths.h"
 #include "engine/math/Vec2.h"
 #include "engine/render/BgfxRenderData.h"
@@ -30,7 +31,8 @@ namespace war
             TileCoord selectedTile,
             bool hasActionTargetTile,
             TileCoord actionTargetTile,
-            const RuntimeBoundaryReport& runtimeBoundaryReport);
+            const RuntimeBoundaryReport& runtimeBoundaryReport,
+            const LocalDemoDiagnosticsReport& localDemoDiagnosticsReport);
 
         void shutdown();
 

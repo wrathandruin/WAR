@@ -25,55 +25,51 @@ namespace war
 
         m_runtimeBoundaryReport = RuntimePaths::buildReport();
         RuntimePaths::ensureRuntimeDirectories(m_runtimeBoundaryReport);
+        m_localDemoDiagnosticsReport = LocalDemoDiagnostics::buildReport(m_runtimeBoundaryReport);
+        LocalDemoDiagnostics::writeStartupReport(m_runtimeBoundaryReport, m_localDemoDiagnosticsReport);
 
+        auto pushM32StartupEvents = [this]()
         {
-            auto preferred = std::make_unique<BgfxRenderDevice>();
-            if (preferred->initialize(m_window->getHandle()))
-            {
-                m_renderDevice = std::move(preferred);
-                pushEvent("Milestone 31 initialized");
-                pushEvent("canonical content contract / runtime boundary cleanup active");
-                pushEvent(m_runtimeBoundaryReport.runningFromSourceTree
-                    ? "Runtime mode: source-tree layout"
-                    : "Runtime mode: packaged layout");
-                pushEvent(std::string("Runtime root: ") + RuntimePaths::displayPath(m_runtimeBoundaryReport.runtimeRoot));
-                pushEvent(m_runtimeBoundaryReport.issues.empty()
-                    ? "Runtime boundary contract validated"
-                    : std::string("Runtime boundary warnings: ") + std::to_string(m_runtimeBoundaryReport.issues.size()));
-                pushEvent("Canonical roots: src | assets | Docs | Milestones");
-                pushEvent("Mutable runtime roots: Config | Logs | Saves | CrashDumps");
-                pushEvent("Press O to toggle region boundary overlay");
-                pushEvent("Press H to toggle authored hotspot overlay");
-                pushEvent("Press 7 / 8 / 9 for Default / Muted / Vivid palette");
-                pushEvent(std::string("Active backend: ") + m_renderDevice->name());
-            }
-            else
-            {
-                auto fallback = std::make_unique<GdiRenderDevice>();
-                const bool fallbackReady = fallback->initialize(m_window->getHandle());
-                m_renderDevice = std::move(fallback);
+            pushEvent("Milestone 32 initialized");
+            pushEvent("local demo lane / packaging / diagnostics baseline active");
+            pushEvent(std::string("Build: ")
+                + m_localDemoDiagnosticsReport.buildConfiguration
+                + " | "
+                + m_localDemoDiagnosticsReport.buildTimestamp);
+            pushEvent(m_runtimeBoundaryReport.runningFromSourceTree
+                ? "Runtime mode: source-tree layout"
+                : "Runtime mode: packaged layout");
+            pushEvent(std::string("Startup report: ")
+                + RuntimePaths::displayPath(m_localDemoDiagnosticsReport.startupReportPath));
+            pushEvent(m_localDemoDiagnosticsReport.repoPackagingScriptsReady
+                ? "Repo packaging scripts ready"
+                : "Warning: repo packaging scripts missing");
+            pushEvent(m_localDemoDiagnosticsReport.packagedLaneReady
+                ? "Packaged demo lane staged next to executable"
+                : "Packaged demo lane not yet staged next to executable");
+            pushEvent("Run scripts/build_local_demo_package_win64.bat Release to stage a demo build");
+            pushEvent("Press O / H / 7 / 8 / 9 for review overlays and palette modes");
+        };
 
-                pushEvent("Milestone 31 initialized");
-                pushEvent("bgfx unavailable, falling back to GDI");
-                pushEvent("canonical content contract / runtime boundary cleanup active");
-                pushEvent(m_runtimeBoundaryReport.runningFromSourceTree
-                    ? "Runtime mode: source-tree layout"
-                    : "Runtime mode: packaged layout");
-                pushEvent(std::string("Runtime root: ") + RuntimePaths::displayPath(m_runtimeBoundaryReport.runtimeRoot));
-                pushEvent(m_runtimeBoundaryReport.issues.empty()
-                    ? "Runtime boundary contract validated"
-                    : std::string("Runtime boundary warnings: ") + std::to_string(m_runtimeBoundaryReport.issues.size()));
-                pushEvent("Canonical roots: src | assets | Docs | Milestones");
-                pushEvent("Mutable runtime roots: Config | Logs | Saves | CrashDumps");
-                pushEvent("Press O to toggle region boundary overlay");
-                pushEvent("Press H to toggle authored hotspot overlay");
-                pushEvent("Press 7 / 8 / 9 for Default / Muted / Vivid palette");
-                pushEvent(std::string("Active backend: ") + m_renderDevice->name());
-                if (!fallbackReady)
-                {
-                    pushEvent("Warning: fallback backend failed to initialize");
-                }
-            }
+        auto preferred = std::make_unique<BgfxRenderDevice>();
+        if (preferred->initialize(m_window->getHandle()))
+        {
+            m_renderDevice = std::move(preferred);
+            pushM32StartupEvents();
+            pushEvent(std::string("Active backend: ") + m_renderDevice->name());
+            return;
+        }
+
+        auto fallback = std::make_unique<GdiRenderDevice>();
+        const bool fallbackReady = fallback->initialize(m_window->getHandle());
+        m_renderDevice = std::move(fallback);
+
+        pushM32StartupEvents();
+        pushEvent("bgfx unavailable, falling back to GDI");
+        pushEvent(std::string("Active backend: ") + m_renderDevice->name());
+        if (!fallbackReady)
+        {
+            pushEvent("Warning: fallback backend failed to initialize");
         }
     }
 
@@ -140,7 +136,8 @@ namespace war
                 m_eventLog,
                 m_lastDeltaTime,
                 m_window->getMousePosition(),
-                m_runtimeBoundaryReport);
+                m_runtimeBoundaryReport,
+                m_localDemoDiagnosticsReport);
         }
         else
         {
@@ -156,7 +153,8 @@ namespace war
                 m_selectedTile,
                 m_hasActionTargetTile,
                 m_actionTargetTile,
-                m_runtimeBoundaryReport);
+                m_runtimeBoundaryReport,
+                m_localDemoDiagnosticsReport);
 
             m_bgfxDebugFrameRenderer.render(
                 m_worldState,

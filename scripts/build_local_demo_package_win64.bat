@@ -1,0 +1,72 @@
+@echo off
+setlocal enableextensions enabledelayedexpansion
+
+set "SCRIPT_DIR=%~dp0"
+for %%I in ("%SCRIPT_DIR%..") do set "REPO_ROOT=%%~fI"
+set "CONFIG=%~1"
+if "%CONFIG%"=="" set "CONFIG=Release"
+set "PLATFORM=x64"
+
+set "PROJECT_FILE=%REPO_ROOT%\WAR.vcxproj"
+set "BUILD_OUTPUT_DIR=%REPO_ROOT%\bin\%CONFIG%"
+set "EXE_PATH=%BUILD_OUTPUT_DIR%\WAR.exe"
+set "PDB_PATH=%BUILD_OUTPUT_DIR%\WAR.pdb"
+set "STAGE_ROOT=%REPO_ROOT%\out\local_demo\WAR_M32_%CONFIG%"
+set "RUNTIME_STAGE=%STAGE_ROOT%\runtime"
+set "MANIFEST_PATH=%STAGE_ROOT%\demo_manifest.txt"
+
+if not exist "%PROJECT_FILE%" (
+    echo [M32] ERROR: WAR.vcxproj not found at "%PROJECT_FILE%".
+    exit /b 1
+)
+
+where msbuild >nul 2>nul
+if errorlevel 1 (
+    echo [M32] ERROR: msbuild was not found on PATH.
+    exit /b 1
+)
+
+echo [M32] Building WAR %CONFIG%|%PLATFORM%...
+msbuild "%PROJECT_FILE%" /m /nologo /p:Configuration=%CONFIG%;Platform=%PLATFORM%
+if errorlevel 1 (
+    echo [M32] ERROR: build failed.
+    exit /b 1
+)
+
+if not exist "%EXE_PATH%" (
+    echo [M32] ERROR: expected executable missing at "%EXE_PATH%".
+    exit /b 1
+)
+
+if exist "%STAGE_ROOT%" rmdir /s /q "%STAGE_ROOT%"
+mkdir "%STAGE_ROOT%" || exit /b 1
+mkdir "%STAGE_ROOT%\assets" || exit /b 1
+mkdir "%RUNTIME_STAGE%\Config" || exit /b 1
+mkdir "%RUNTIME_STAGE%\Logs" || exit /b 1
+mkdir "%RUNTIME_STAGE%\Saves" || exit /b 1
+mkdir "%RUNTIME_STAGE%\CrashDumps" || exit /b 1
+mkdir "%STAGE_ROOT%\Docs" || exit /b 1
+
+copy /y "%EXE_PATH%" "%STAGE_ROOT%\WAR.exe" >nul || exit /b 1
+if exist "%PDB_PATH%" copy /y "%PDB_PATH%" "%STAGE_ROOT%\WAR.pdb" >nul
+if exist "%REPO_ROOT%\assets" xcopy /y /i /e "%REPO_ROOT%\assets" "%STAGE_ROOT%\assets\" >nul
+if exist "%REPO_ROOT%\Docs\Wrath and Ruin - Local Demo Lane and Packaging Baseline.md" copy /y "%REPO_ROOT%\Docs\Wrath and Ruin - Local Demo Lane and Packaging Baseline.md" "%STAGE_ROOT%\Docs\" >nul
+if exist "%REPO_ROOT%\Milestones\M32_Local_Demo_Lane_Packaging_Diagnostics_Baseline.md" copy /y "%REPO_ROOT%\Milestones\M32_Local_Demo_Lane_Packaging_Diagnostics_Baseline.md" "%STAGE_ROOT%\Docs\" >nul
+if exist "%REPO_ROOT%\scripts\launch_local_demo_win64.bat" copy /y "%REPO_ROOT%\scripts\launch_local_demo_win64.bat" "%STAGE_ROOT%\launch_local_demo_win64.bat" >nul
+if exist "%REPO_ROOT%\scripts\smoke_test_local_demo_win64.bat" copy /y "%REPO_ROOT%\scripts\smoke_test_local_demo_win64.bat" "%STAGE_ROOT%\smoke_test_local_demo_win64.bat" >nul
+
+(
+    echo WAR Local Demo Manifest
+    echo Milestone: M32 - Local Demo Lane / Packaging / Diagnostics Baseline
+    echo Configuration: %CONFIG%
+    echo Platform: %PLATFORM%
+    echo Stage root: %STAGE_ROOT%
+    echo Executable: %STAGE_ROOT%\WAR.exe
+    echo Asset root: %STAGE_ROOT%\assets
+    echo Runtime root: %RUNTIME_STAGE%
+    echo Launch script: %STAGE_ROOT%\launch_local_demo_win64.bat
+    echo Smoke test script: %STAGE_ROOT%\smoke_test_local_demo_win64.bat
+) > "%MANIFEST_PATH%"
+
+echo [M32] Local demo package staged at "%STAGE_ROOT%".
+exit /b 0

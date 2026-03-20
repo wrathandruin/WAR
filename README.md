@@ -1,63 +1,39 @@
-# WAR — Milestone 31 (Canonical Content Contract / Runtime Boundary Cleanup)
+# WAR — Milestone 32 (Local Demo Lane / Packaging / Diagnostics Baseline)
 
-> Current development milestone: M31 — Canonical Content Contract / Runtime Boundary Cleanup
+> Current development milestone: M32 — Local Demo Lane / Packaging / Diagnostics Baseline
 
 ## Focus
-Turn repo layout and runtime ownership into explicit production rules instead of tribal knowledge.
+Turn the repo from a manually prepared local prototype into a repeatable local demo lane with package staging, startup reporting, and smoke-test discipline.
 
-M29 established authored encounter-ready anchors.
-M30 improved readability and interaction affordances.
-M31 formalizes what belongs in source control, what belongs in runtime-only directories, and how the client should resolve and create runtime roots during local development versus packaged execution.
+M31 established source-versus-runtime ownership.
+M32 uses that contract to define how a local demo build should be staged, launched, checked, and diagnosed.
 
 ## What this milestone does
-- adds a runtime-boundary report and directory resolver in `RuntimePaths`
-- establishes explicit runtime roots for `Config`, `Logs`, `Saves`, and `CrashDumps`
-- creates those runtime directories on boot so mutable state has a defined home
-- distinguishes source-tree execution from packaged execution at runtime
-- surfaces repo root, asset root, runtime root, and boundary issues in diagnostics
-- updates `.gitignore` so runtime-only mutable data stops competing with versioned source
-- adds a dedicated runtime-boundary contract document for the repo
+- adds `LocalDemoDiagnostics` so startup generates a local demo readiness report in `Runtime/Logs/`
+- adds a repo-side packaging script at `scripts/build_local_demo_package_win64.bat`
+- adds launch and smoke-test starter scripts for staged demo builds
+- surfaces build configuration, startup-report path, packaged-lane readiness, and script availability in runtime diagnostics
+- updates the README and dedicated M32 docs so demo prep stops living in memory
 
-## Canonical versus runtime after M31
-Canonical source-controlled truth now means:
+## Local demo lane after M32
+A disciplined local demo lane now means:
 
-- `src/` for code
-- `assets/` for versioned shaders and textures
-- `Docs/` for production docs and policy
-- `Milestones/` for milestone handoffs
-- build and project files that define the trunk
+- the build can be staged into `out/local_demo/`
+- the staged package uses executable-local `assets/` and `runtime/` roots
+- startup writes a concrete report describing runtime and packaging state
+- launch and smoke-test scripts exist as first-class repo assets
+- diagnostics explain whether the package is really ready or still only a source-tree run
 
-Runtime-only mutable state now means:
-
-- `Runtime/Config/`
-- `Runtime/Logs/`
-- `Runtime/Saves/`
-- `Runtime/CrashDumps/`
-
-Local source-tree runs resolve runtime state into the repo `Runtime/` root.
-Packaged runs resolve runtime state into an executable-local `runtime/` root.
-
-## Operational proof after M31
-On startup, diagnostics should make these things visible:
-
-- whether the build is running from a source-tree or packaged layout
-- which repo and asset roots were resolved
-- which runtime root is active
-- whether required runtime directories were created
-- whether the asset/runtime contract has warnings
+## Intended operator flow
+1. Build WAR in `Release|x64`.
+2. Run `scripts/build_local_demo_package_win64.bat Release`.
+3. Launch the staged package with `launch_local_demo_win64.bat`.
+4. Run `smoke_test_local_demo_win64.bat` to verify demo prerequisites and emit a report.
 
 ## Why this matters
-M31 is a production milestone.
+M32 is where demoability becomes production work instead of habit.
 
-It reduces future risk in:
-
-- persistence work
-- packaging and demo lanes
-- deployable server/client layout
-- asset-pipeline discipline
-- save, log, and crash-data hygiene
-
-This is the milestone that stops the repo from drifting into source-versus-runtime ambiguity before persistence, packaging, and server authority expand the cost of mistakes.
+That matters because the roadmap requires a clean local demo lane before shared simulation, authority, persistence, and hosted runtime work expand the support surface.
 
 ## Requirements
 The bgfx textured path expects compiled shader binaries at:
@@ -76,7 +52,7 @@ assets/textures/world_atlas.bmp
 ```
 
 ## Next Milestone
-### M32 — Local Demo Lane / Packaging / Diagnostics Baseline
-- create a repeatable local build-and-launch lane
-- formalize demo preparation and startup checks
-- move from repo contract into reproducible packaging discipline
+### M33 — Shared Simulation Contract / Fixed-Step Ownership
+- define a shared gameplay-state contract between client and future host
+- establish fixed-step ownership and simulation cadence boundaries
+- stop treating local presentation as the source of gameplay truth

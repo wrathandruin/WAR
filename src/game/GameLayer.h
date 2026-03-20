@@ -6,6 +6,7 @@
 
 #include <windows.h>
 
+#include "engine/core/LocalDemoDiagnostics.h"
 #include "engine/core/RuntimePaths.h"
 #include "engine/gameplay/ActionQueue.h"
 #include "engine/math/Vec2.h"
@@ -42,6 +43,7 @@ namespace war
         Camera2D m_camera{};
         WorldState m_worldState{};
         RuntimeBoundaryReport m_runtimeBoundaryReport{};
+        LocalDemoDiagnosticsReport m_localDemoDiagnosticsReport{};
         ActionQueue m_actions{};
         WorldRenderer m_worldRenderer{};
         DebugOverlayRenderer m_debugOverlayRenderer{};
