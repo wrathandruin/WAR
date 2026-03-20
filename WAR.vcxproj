@@ -100,6 +100,8 @@
     <ClCompile Include="src\engine\core\Log.cpp" />
     <ClCompile Include="src\engine\math\Vec2.cpp" />
     <ClCompile Include="src\engine\render\Camera2D.cpp" />
+    <ClCompile Include="src\engine\render\WorldRenderer.cpp" />
+    <ClCompile Include="src\engine\render\DebugOverlayRenderer.cpp" />
     <ClCompile Include="src\engine\world\WorldGrid.cpp" />
     <ClCompile Include="src\engine\world\Pathfinding.cpp" />
     <ClCompile Include="src\engine\world\WorldState.cpp" />
@@ -115,6 +117,8 @@
     <ClInclude Include="src\engine\core\Log.h" />
     <ClInclude Include="src\engine\math\Vec2.h" />
     <ClInclude Include="src\engine\render\Camera2D.h" />
+    <ClInclude Include="src\engine\render\WorldRenderer.h" />
+    <ClInclude Include="src\engine\render\DebugOverlayRenderer.h" />
     <ClInclude Include="src\engine\world\WorldGrid.h" />
     <ClInclude Include="src\engine\world\Pathfinding.h" />
     <ClInclude Include="src\engine\world\WorldState.h" />

@@ -8,6 +8,8 @@
 #include "engine/gameplay/ActionQueue.h"
 #include "engine/math/Vec2.h"
 #include "engine/render/Camera2D.h"
+#include "engine/render/DebugOverlayRenderer.h"
+#include "engine/render/WorldRenderer.h"
 #include "engine/world/WorldGrid.h"
 #include "engine/world/WorldState.h"
 
@@ -28,21 +30,14 @@ namespace war
         void updatePlayer(float dt);
         void pushEvent(const std::string& message);
 
-        void drawWorld(HDC dc, const RECT& clientRect);
-        void drawTiles(HDC dc);
-        void drawHoveredTile(HDC dc);
-        void drawPath(HDC dc);
-        void drawPlayer(HDC dc);
-        void drawEntities(HDC dc);
-        void drawOverlay(HDC dc);
-
         [[nodiscard]] RECT getClientRect() const;
-        [[nodiscard]] RECT tileToScreenRect(TileCoord tile) const;
 
         Win32Window* m_window = nullptr;
         Camera2D m_camera{};
         WorldState m_worldState{};
         ActionQueue m_actions{};
+        WorldRenderer m_worldRenderer{};
+        DebugOverlayRenderer m_debugOverlayRenderer{};
 
         Vec2 m_playerPosition{ 0.0f, 0.0f };
         float m_playerSpeed = 210.0f;
