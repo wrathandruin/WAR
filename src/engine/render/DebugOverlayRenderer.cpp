@@ -155,7 +155,8 @@ namespace war
         TileCoord actionTargetTile,
         const std::vector<std::string>& eventLog,
         float lastDeltaTime,
-        const POINT& mousePosition) const
+        const POINT& mousePosition,
+        const RuntimeBoundaryReport& runtimeBoundaryReport) const
     {
         SetBkMode(dc, TRANSPARENT);
         SetTextColor(dc, RGB(225, 225, 225));
@@ -182,12 +183,20 @@ namespace war
             currentPath.empty() || pathIndex >= currentPath.size()
                 ? "none"
                 : tileText(true, currentPath.back());
+        const std::string repoRoot = RuntimePaths::displayPath(runtimeBoundaryReport.repoRoot);
+        const std::string assetRoot = RuntimePaths::displayPath(runtimeBoundaryReport.assetRoot);
+        const std::string runtimeRoot = RuntimePaths::displayPath(runtimeBoundaryReport.runtimeRoot);
+        const std::string configRoot = RuntimePaths::displayPath(runtimeBoundaryReport.configDirectory);
+        const std::string logsRoot = RuntimePaths::displayPath(runtimeBoundaryReport.logsDirectory);
+        const std::string savesRoot = RuntimePaths::displayPath(runtimeBoundaryReport.savesDirectory);
+        const std::string crashRoot = RuntimePaths::displayPath(runtimeBoundaryReport.crashDirectory);
+        const char* runtimeIssue = runtimeBoundaryReport.issues.empty() ? "none" : runtimeBoundaryReport.issues.front().c_str();
 
-        char buffer[2048]{};
+        char buffer[3072]{};
         std::snprintf(
             buffer,
             sizeof(buffer),
-            "WAR Milestone 30\n"
+            "WAR Milestone 31\n"
             "LMB: move    RMB: interact    Shift+RMB: inspect    MMB drag: pan    Wheel: zoom\n"
             "Authoring: O region overlay    H hotspot overlay    7/8/9 palette\n"
             "Player world: (%.1f, %.1f)\n"
@@ -207,6 +216,13 @@ namespace war
             "Selected tile: %s\n"
             "Move target: %s\n"
             "Path destination: %s\n"
+            "Runtime mode: %s\n"
+            "Repo root: %s\n"
+            "Asset root: %s\n"
+            "Runtime root: %s\n"
+            "Runtime dirs: cfg=%s  log=%s\n"
+            "Runtime dirs: save=%s  crash=%s\n"
+            "Runtime issue: %s\n"
             "Region overlay: %s\n"
             "Hotspot overlay: %s\n"
             "Camera: (%.1f, %.1f)  Zoom: %.2f\n"
@@ -236,6 +252,15 @@ namespace war
             selected.c_str(),
             actionTarget.c_str(),
             pathDestination.c_str(),
+            runtimeBoundaryReport.runningFromSourceTree ? "source-tree" : "packaged",
+            repoRoot.c_str(),
+            assetRoot.c_str(),
+            runtimeRoot.c_str(),
+            configRoot.c_str(),
+            logsRoot.c_str(),
+            savesRoot.c_str(),
+            crashRoot.c_str(),
+            runtimeIssue,
             worldState.regionOverlayEnabled() ? "on" : "off",
             worldState.authoringHotspotsVisible() ? "on" : "off",
             camera.getPosition().x,
@@ -248,7 +273,7 @@ namespace war
 
         TextOutA(dc, 16, 16, buffer, static_cast<int>(std::strlen(buffer)));
 
-        int y = 392;
+        int y = 560;
         TextOutA(dc, 16, y, "Event Log:", 10);
         y += 22;
 

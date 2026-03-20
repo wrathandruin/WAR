@@ -1,52 +1,63 @@
-# WAR — Milestone 30 (Playable Slice Readability / Interaction Affordances)
+# WAR — Milestone 31 (Canonical Content Contract / Runtime Boundary Cleanup)
 
-> Current development milestone: M30 — Playable Slice Readability / Interaction Affordances
+> Current development milestone: M31 — Canonical Content Contract / Runtime Boundary Cleanup
 
 ## Focus
-Turn the current prototype from an internal rendering demonstration into a more legible, more self-explanatory playable slice.
+Turn repo layout and runtime ownership into explicit production rules instead of tribal knowledge.
 
-M29 established authored hotspot anchors and stronger regional dressing.
-M30 builds on that by improving hover feedback, selection readability, interaction prompts, inspect clarity, path legibility, and short-session demo usability.
+M29 established authored encounter-ready anchors.
+M30 improved readability and interaction affordances.
+M31 formalizes what belongs in source control, what belongs in runtime-only directories, and how the client should resolve and create runtime roots during local development versus packaged execution.
 
 ## What this milestone does
-- adds clearer hover affordances for blocked tiles, walkable tiles, interactables, and authored hotspots
-- adds selected-tile and move-target presentation so click intent is easier to follow
-- improves path readability with stronger destination emphasis
-- improves inspect and interact messaging so runtime feedback reads like slice diagnostics instead of placeholder logging
-- improves debug-overlay context with prompt text, selected tile state, move target state, hotspot detail, and demo-facing controls
-- keeps authored hotspot overlay, region overlay, and palette controls intact
+- adds a runtime-boundary report and directory resolver in `RuntimePaths`
+- establishes explicit runtime roots for `Config`, `Logs`, `Saves`, and `CrashDumps`
+- creates those runtime directories on boot so mutable state has a defined home
+- distinguishes source-tree execution from packaged execution at runtime
+- surfaces repo root, asset root, runtime root, and boundary issues in diagnostics
+- updates `.gitignore` so runtime-only mutable data stops competing with versioned source
+- adds a dedicated runtime-boundary contract document for the repo
 
-## Readability improvements after M30
-The current test world should now be easier to read in a short demo because:
+## Canonical versus runtime after M31
+Canonical source-controlled truth now means:
 
-- hovered tiles communicate whether the next action is move, inspect, or interact
-- the last selected tile remains visible as a point of focus
-- an active movement destination is visible as a distinct target marker
-- inspect text reports region, entity, hotspot, and state more clearly
-- interact text names the specific object or authored anchor being used
-- debug text better explains what the player is looking at and what input will do
+- `src/` for code
+- `assets/` for versioned shaders and textures
+- `Docs/` for production docs and policy
+- `Milestones/` for milestone handoffs
+- build and project files that define the trunk
 
-## Demo controls
-- `LMB`: move / set movement target
-- `RMB`: interact
-- `Shift + RMB`: inspect
-- `MMB drag`: pan camera
-- `Mouse wheel`: zoom
-- `O`: toggle region boundary overlay
-- `H`: toggle authored hotspot overlay
-- `7 / 8 / 9`: Default / Muted / Vivid palette modes
+Runtime-only mutable state now means:
+
+- `Runtime/Config/`
+- `Runtime/Logs/`
+- `Runtime/Saves/`
+- `Runtime/CrashDumps/`
+
+Local source-tree runs resolve runtime state into the repo `Runtime/` root.
+Packaged runs resolve runtime state into an executable-local `runtime/` root.
+
+## Operational proof after M31
+On startup, diagnostics should make these things visible:
+
+- whether the build is running from a source-tree or packaged layout
+- which repo and asset roots were resolved
+- which runtime root is active
+- whether required runtime directories were created
+- whether the asset/runtime contract has warnings
 
 ## Why this matters
-M30 is intentionally not a mechanics expansion milestone.
+M31 is a production milestone.
 
-Its job is to make the existing slice legible enough that:
+It reduces future risk in:
 
-- a new viewer can understand it faster
-- usability and demo review become more honest
-- future mechanics can attach to clearer interaction and feedback patterns
-- the repo can move into M31 and M32 with fewer “what is this supposed to mean?” problems
+- persistence work
+- packaging and demo lanes
+- deployable server/client layout
+- asset-pipeline discipline
+- save, log, and crash-data hygiene
 
-This keeps the roadmap disciplined: readability and affordances now, production contract and packaging discipline next.
+This is the milestone that stops the repo from drifting into source-versus-runtime ambiguity before persistence, packaging, and server authority expand the cost of mistakes.
 
 ## Requirements
 The bgfx textured path expects compiled shader binaries at:
@@ -65,7 +76,7 @@ assets/textures/world_atlas.bmp
 ```
 
 ## Next Milestone
-### M31 — Canonical Content Contract / Runtime Boundary Cleanup
-- formalize source-controlled truth versus runtime-only mutable state
-- clean up content, asset, and generated-artifact policy boundaries
-- reduce future persistence, packaging, and deployment ambiguity
+### M32 — Local Demo Lane / Packaging / Diagnostics Baseline
+- create a repeatable local build-and-launch lane
+- formalize demo preparation and startup checks
+- move from repo contract into reproducible packaging discipline

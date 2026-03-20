@@ -1,8 +1,29 @@
+# Canonical source-controlled assets live under assets/shaders and assets/textures.
+# Mutable runtime data belongs under Runtime/ and must not be committed.
+
 # Private/local assets
 /assets/*
 !/assets/.gitkeep
 !/assets/shaders/
 !/assets/shaders/**
+!/assets/textures/
+!/assets/textures/**
+
+# Runtime-only mutable state
+/Runtime/**
+!/Runtime/
+!/Runtime/Config/
+!/Runtime/Config/.gitkeep
+!/Runtime/Logs/
+!/Runtime/Logs/.gitkeep
+!/Runtime/Saves/
+!/Runtime/Saves/.gitkeep
+!/Runtime/CrashDumps/
+!/Runtime/CrashDumps/.gitkeep
+
+# Packaging outputs
+/Packaging/output/
+/Packaging/staging/
 
 # Build folders
 /build/

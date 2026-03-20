@@ -23,17 +23,25 @@ namespace war
         m_selectedTile = spawnTile;
         m_hasSelectedTile = true;
 
+        m_runtimeBoundaryReport = RuntimePaths::buildReport();
+        RuntimePaths::ensureRuntimeDirectories(m_runtimeBoundaryReport);
+
         {
             auto preferred = std::make_unique<BgfxRenderDevice>();
             if (preferred->initialize(m_window->getHandle()))
             {
                 m_renderDevice = std::move(preferred);
-                pushEvent("Milestone 30 initialized");
-                pushEvent("playable slice readability / interaction affordances active");
-                pushEvent("Hover, selection, and move-target readability now support short demos more cleanly");
-                pushEvent("Inspect and interact messaging now name concrete entities and authored anchors");
-                pushEvent("Region boundary overlay is enabled by default");
-                pushEvent("Authored hotspot overlay is enabled by default");
+                pushEvent("Milestone 31 initialized");
+                pushEvent("canonical content contract / runtime boundary cleanup active");
+                pushEvent(m_runtimeBoundaryReport.runningFromSourceTree
+                    ? "Runtime mode: source-tree layout"
+                    : "Runtime mode: packaged layout");
+                pushEvent(std::string("Runtime root: ") + RuntimePaths::displayPath(m_runtimeBoundaryReport.runtimeRoot));
+                pushEvent(m_runtimeBoundaryReport.issues.empty()
+                    ? "Runtime boundary contract validated"
+                    : std::string("Runtime boundary warnings: ") + std::to_string(m_runtimeBoundaryReport.issues.size()));
+                pushEvent("Canonical roots: src | assets | Docs | Milestones");
+                pushEvent("Mutable runtime roots: Config | Logs | Saves | CrashDumps");
                 pushEvent("Press O to toggle region boundary overlay");
                 pushEvent("Press H to toggle authored hotspot overlay");
                 pushEvent("Press 7 / 8 / 9 for Default / Muted / Vivid palette");
@@ -45,13 +53,18 @@ namespace war
                 const bool fallbackReady = fallback->initialize(m_window->getHandle());
                 m_renderDevice = std::move(fallback);
 
-                pushEvent("Milestone 30 initialized");
+                pushEvent("Milestone 31 initialized");
                 pushEvent("bgfx unavailable, falling back to GDI");
-                pushEvent("playable slice readability / interaction affordances active");
-                pushEvent("Hover, selection, and move-target readability now support short demos more cleanly");
-                pushEvent("Inspect and interact messaging now name concrete entities and authored anchors");
-                pushEvent("Region boundary overlay is enabled by default");
-                pushEvent("Authored hotspot overlay is enabled by default");
+                pushEvent("canonical content contract / runtime boundary cleanup active");
+                pushEvent(m_runtimeBoundaryReport.runningFromSourceTree
+                    ? "Runtime mode: source-tree layout"
+                    : "Runtime mode: packaged layout");
+                pushEvent(std::string("Runtime root: ") + RuntimePaths::displayPath(m_runtimeBoundaryReport.runtimeRoot));
+                pushEvent(m_runtimeBoundaryReport.issues.empty()
+                    ? "Runtime boundary contract validated"
+                    : std::string("Runtime boundary warnings: ") + std::to_string(m_runtimeBoundaryReport.issues.size()));
+                pushEvent("Canonical roots: src | assets | Docs | Milestones");
+                pushEvent("Mutable runtime roots: Config | Logs | Saves | CrashDumps");
                 pushEvent("Press O to toggle region boundary overlay");
                 pushEvent("Press H to toggle authored hotspot overlay");
                 pushEvent("Press 7 / 8 / 9 for Default / Muted / Vivid palette");
@@ -126,7 +139,8 @@ namespace war
                 m_actionTargetTile,
                 m_eventLog,
                 m_lastDeltaTime,
-                m_window->getMousePosition());
+                m_window->getMousePosition(),
+                m_runtimeBoundaryReport);
         }
         else
         {
@@ -141,7 +155,8 @@ namespace war
                 m_hasSelectedTile,
                 m_selectedTile,
                 m_hasActionTargetTile,
-                m_actionTargetTile);
+                m_actionTargetTile,
+                m_runtimeBoundaryReport);
 
             m_bgfxDebugFrameRenderer.render(
                 m_worldState,

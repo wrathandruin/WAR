@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.21)
 
 project(WAR
     VERSION 0.5.0
-    DESCRIPTION "Wrath and Ruin milestone 30"
+    DESCRIPTION "Wrath and Ruin milestone 31"
     LANGUAGES CXX
 )
 
@@ -15,6 +15,7 @@ set(WAR_SOURCES
     src/engine/core/Application.cpp
     src/engine/core/Timer.cpp
     src/engine/core/Log.cpp
+    src/engine/core/RuntimePaths.cpp
     src/engine/math/Vec2.cpp
     src/engine/render/Camera2D.cpp
     src/engine/render/WorldRenderer.cpp

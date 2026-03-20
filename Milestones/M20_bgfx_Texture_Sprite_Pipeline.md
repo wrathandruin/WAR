@@ -1,101 +1,70 @@
-# M20 — bgfx Texture / Sprite Pipeline
+# Title
 
-> Current development milestone: M20 — bgfx Texture / Sprite Pipeline
+**M20 — bgfx Texture / Sprite Pipeline**
 
-## Focus
-Move the bgfx renderer beyond placeholder flat-color geometry and establish the first proper textured rendering path.
+# Description
 
-M19 cleaned up shader ownership, asset-path handling, and build clarity.
-M20 builds on that foundation by introducing textured quads, sprite-ready shader flow, and explicit texture asset loading.
+M20 moves the bgfx renderer beyond flat-color placeholder world rendering and establishes the first proper textured content path.
 
-## What this milestone does
-- introduces a textured bgfx shader/program path alongside the existing solid-color path
-- adds textured quad submission for bgfx
-- introduces explicit texture asset loading for renderer-owned assets
-- separates solid-color rendering from textured sprite rendering
-- establishes the first sprite-capable material path for world visuals
-- keeps the current camera / projection / world-space pipeline intact
+M18 introduced the world-space camera and projection cleanup, and M19 separated shader ownership plus asset-path handling from `BgfxWorldRenderer`. M20 builds directly on that foundation by adding a textured shader/program path alongside the solid-color path, so the renderer can begin drawing sprite-backed elements without destabilizing the current world-space pipeline.
 
-## Renderer architecture after M20
-The bgfx world path is now split into:
+This milestone is the first point where the renderer starts shifting from purely technical validation toward actual game-facing visuals.
 
-1. **Build world-space render data**
-   - tiles
-   - path nodes
-   - hovered tile
-   - entity sprites
-   - player sprite
+# Download
 
-2. **Build view/projection**
-   - use the active camera
-   - compute visible world extents
-   - submit world-space geometry through bgfx
+M20 milestone document:
 
-3. **Load renderer assets**
-   - resolve shader asset paths
-   - load solid-color shader program
-   - load textured shader program
-   - load texture assets required by the textured path
+[M20_bgfx_Texture_Sprite_Pipeline.md](sandbox:/mnt/data/Milestones/M20_bgfx_Texture_Sprite_Pipeline.md)
 
-4. **Submit render layers**
-   - submit solid-color layers through the color program
-   - submit textured layers through the textured program
-   - preserve current world ordering and visibility behavior
+# Included
 
-## Why this matters
-Until now, the bgfx renderer has proven the world-space camera path with flat-color placeholder visuals.
-That was the right bridge milestone, but it is not a viable long-term visual pipeline.
+- first textured bgfx shader/program path alongside the existing color path
+- textured quad submission for world-space sprite rendering
+- explicit texture asset loading for renderer-owned assets
+- separation between solid-color rendering and textured rendering responsibilities
+- initial migration of player and entity visuals toward texture-backed rendering
+- build/tooling updates to compile and stage the texture shader path
+- milestone write-up in milestone-folder format
 
-M20 matters because it creates the first real content path for:
-- sprites
-- textured props
-- texture-backed tiles
-- future atlas work
-- cleaner separation between debug geometry and art-driven rendering
+# What should be seen visually
 
-## Runtime shader layout
-```text
-assets/shaders/dx11/vs_color.bin
-assets/shaders/dx11/fs_color.bin
-assets/shaders/dx11/vs_texture.bin
-assets/shaders/dx11/fs_texture.bin
-```
+The game should still behave the same in terms of camera movement, zoom, panning, hover logic, path rendering, and interaction flow.
 
-## Texture asset layout
-```text
-assets/textures/player.bmp
-assets/textures/crate.bmp
-assets/textures/terminal.bmp
-assets/textures/locker.bmp
-```
+The intended visible difference in M20 is:
 
-## Files touched in this milestone
-- `assets/shaders/src/vs_texture.sc`
-- `assets/shaders/src/fs_texture.sc`
-- `assets/shaders/src/varying_texture.def.sc`
-- `assets/textures/player.bmp`
-- `assets/textures/crate.bmp`
-- `assets/textures/terminal.bmp`
-- `assets/textures/locker.bmp`
-- `scripts/build_shaders_win64.bat`
-- `src/engine/render/RenderAssetPaths.h`
-- `src/engine/render/RenderAssetPaths.cpp`
-- `src/engine/render/BgfxShaderProgram.h`
-- `src/engine/render/BgfxShaderProgram.cpp`
-- `src/engine/render/BgfxTextureAsset.h`
-- `src/engine/render/BgfxTextureAsset.cpp`
-- `src/engine/render/BgfxRenderData.h`
-- `src/engine/render/BgfxRenderData.cpp`
-- `src/engine/render/BgfxWorldRenderer.h`
-- `src/engine/render/BgfxWorldRenderer.cpp`
-- `src/game/GameLayer.cpp`
-- `CMakeLists.txt`
-- `WAR.vcxproj`
-- `WAR.vcxproj.filters`
+- the player should render through the new textured path instead of only as a flat-color placeholder shape
+- interactive entities such as the crate, terminal, and locker should begin appearing as texture-backed sprite visuals rather than only simple colored geometry
+- tiles, path markers, and hovered tile feedback can remain on the solid-color path for stability during this first texture milestone
 
-## Next Milestone
-### M21 — bgfx Atlas / Material Organization
-- introduce atlas support
-- reduce per-draw texture switching
-- define sprite/material descriptors more cleanly
-- prepare the renderer for larger-scale art integration
+In other words, the world should still look like the same game scene, but the most important “readable” actors in the scene should start looking like real sprite elements instead of debug primitives.
+
+# Why this is important
+
+This milestone matters because it proves that the cleaned-up renderer architecture can now support actual textured content.
+
+Without M20, the renderer is technically cleaner but still visually locked to placeholder geometry. With M20 in place:
+
+- the bgfx path becomes capable of real sprite-backed world presentation
+- the project gains a clean bridge from debug visuals to art-driven visuals
+- solid-color and textured rendering paths are clearly separated
+- the renderer becomes ready for asset scaling rather than only proving internal correctness
+- future sprite, atlas, and material work can be added on top of an already working textured foundation
+
+M20 is the milestone where the renderer stops being only infrastructure and starts becoming production-facing.
+
+# What should be coming up in the next milestone
+
+**M21 — bgfx Atlas / Material Organization**
+
+The next milestone should organize the textured path so it scales cleanly.
+
+That should include:
+
+- atlas support for texture organization
+- reduced per-draw texture switching
+- cleaner sprite/material descriptors
+- preparation for broader art integration without bloating the renderer
+- a more structured content-facing rendering path built on the stable M20 textured foundation
+
+M20 proves textured rendering.
+M21 should make textured rendering efficient, organized, and ready to grow.

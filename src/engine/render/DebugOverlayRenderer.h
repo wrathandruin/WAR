@@ -5,6 +5,7 @@
 
 #include <windows.h>
 
+#include "engine/core/RuntimePaths.h"
 #include "engine/math/Vec2.h"
 #include "engine/render/Camera2D.h"
 #include "engine/world/WorldState.h"
@@ -29,7 +30,8 @@ namespace war
             TileCoord actionTargetTile,
             const std::vector<std::string>& eventLog,
             float lastDeltaTime,
-            const POINT& mousePosition) const;
+            const POINT& mousePosition,
+            const RuntimeBoundaryReport& runtimeBoundaryReport) const;
 
     private:
         [[nodiscard]] const char* entityTypeToText(EntityType type) const;

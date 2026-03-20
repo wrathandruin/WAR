@@ -6,6 +6,7 @@
 
 #include <windows.h>
 
+#include "engine/core/RuntimePaths.h"
 #include "engine/gameplay/ActionQueue.h"
 #include "engine/math/Vec2.h"
 #include "engine/render/BgfxDebugFrameRenderer.h"
@@ -40,6 +41,7 @@ namespace war
         IWindow* m_window = nullptr;
         Camera2D m_camera{};
         WorldState m_worldState{};
+        RuntimeBoundaryReport m_runtimeBoundaryReport{};
         ActionQueue m_actions{};
         WorldRenderer m_worldRenderer{};
         DebugOverlayRenderer m_debugOverlayRenderer{};

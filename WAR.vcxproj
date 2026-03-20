@@ -108,6 +108,7 @@ if exist "$(ProjectDir)assets\textures" xcopy /Y /I /E "$(ProjectDir)assets\text
     <ClCompile Include="src\engine\core\Application.cpp" />
     <ClCompile Include="src\engine\core\Timer.cpp" />
     <ClCompile Include="src\engine\core\Log.cpp" />
+    <ClCompile Include="src\engine\core\RuntimePaths.cpp" />
     <ClCompile Include="src\engine\math\Vec2.cpp" />
     <ClCompile Include="src\engine\render\Camera2D.cpp" />
     <ClCompile Include="src\engine\render\WorldRenderer.cpp" />
@@ -139,6 +140,7 @@ if exist "$(ProjectDir)assets\textures" xcopy /Y /I /E "$(ProjectDir)assets\text
     <ClInclude Include="src\engine\core\Application.h" />
     <ClInclude Include="src\engine\core\Timer.h" />
     <ClInclude Include="src\engine\core\Log.h" />
+    <ClInclude Include="src\engine\core\RuntimePaths.h" />
     <ClInclude Include="src\engine\math\Vec2.h" />
     <ClInclude Include="src\engine\render\Camera2D.h" />
     <ClInclude Include="src\engine\render\WorldRenderer.h" />

@@ -185,7 +185,8 @@ namespace war
             bool hasSelectedTile,
             TileCoord selectedTile,
             bool hasActionTargetTile,
-            TileCoord actionTargetTile)
+            TileCoord actionTargetTile,
+            const RuntimeBoundaryReport& runtimeBoundaryReport)
         {
             const std::string hovered = tileText(hasHoveredTile && worldState.world().isInBounds(hoveredTile), hoveredTile);
             const std::string selected = tileText(hasSelectedTile && worldState.world().isInBounds(selectedTile), selectedTile);
@@ -195,7 +196,13 @@ namespace war
                     ? "none"
                     : tileText(true, currentPath.back());
 
-            return std::string("M30 readability active | hover: ")
+            return std::string("M31 runtime contract active | mode: ")
+                + (runtimeBoundaryReport.runningFromSourceTree ? "source-tree" : "packaged")
+                + " | runtime root: "
+                + RuntimePaths::displayPath(runtimeBoundaryReport.runtimeRoot)
+                + " | issues: "
+                + (runtimeBoundaryReport.issues.empty() ? std::string("none") : runtimeBoundaryReport.issues.front())
+                + " | hover: "
                 + hovered
                 + " | prompt: "
                 + contextPrompt(worldState, hasHoveredTile, hoveredTile)
@@ -219,7 +226,8 @@ namespace war
         bool hasSelectedTile,
         TileCoord selectedTile,
         bool hasActionTargetTile,
-        TileCoord actionTargetTile)
+        TileCoord actionTargetTile,
+        const RuntimeBoundaryReport& runtimeBoundaryReport)
     {
 #if WAR_HAS_BGFX
         ensureSharedBgfxState();
@@ -293,7 +301,8 @@ namespace war
             hasSelectedTile,
             selectedTile,
             hasActionTargetTile,
-            actionTargetTile);
+            actionTargetTile,
+            runtimeBoundaryReport);
         return true;
 #else
         (void)worldState;
@@ -307,6 +316,7 @@ namespace war
         (void)selectedTile;
         (void)hasActionTargetTile;
         (void)actionTargetTile;
+        (void)runtimeBoundaryReport;
         m_statusMessage = "bgfx headers not available at compile time";
         return false;
 #endif
