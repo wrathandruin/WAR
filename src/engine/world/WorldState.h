@@ -1,8 +1,11 @@
 #pragma once
 
+#include <cstddef>
+#include <vector>
+
 #include "engine/gameplay/EntityManager.h"
-#include "engine/render/BgfxWorldTheme.h"
 #include "engine/world/WorldGrid.h"
+#include "engine/world/WorldRegionTag.h"
 
 namespace war
 {
@@ -19,12 +22,15 @@ namespace war
         [[nodiscard]] EntityManager& entities();
         [[nodiscard]] const EntityManager& entities() const;
 
-        void setVisualTheme(BgfxWorldThemeId theme);
-        [[nodiscard]] BgfxWorldThemeId visualTheme() const;
+        void setRegionTag(TileCoord tile, WorldRegionTagId tag);
+        [[nodiscard]] WorldRegionTagId regionTag(TileCoord tile) const;
+        [[nodiscard]] BgfxWorldThemeId visualThemeForTile(TileCoord tile) const;
 
     private:
+        [[nodiscard]] size_t index(TileCoord tile) const;
+
         WorldGrid m_world;
         EntityManager m_entities;
-        BgfxWorldThemeId m_visualTheme = BgfxWorldThemeId::Industrial;
+        std::vector<WorldRegionTagId> m_regionTags;
     };
 }

@@ -1,26 +1,26 @@
-# WAR — Milestone 24 (bgfx Theme Sets / Authoring Hooks)
+# WAR — Milestone 25 (bgfx Content Tagging / Region Hooks)
 
-> Current development milestone: M24 — bgfx Theme Sets / Authoring Hooks
+> Current development milestone: M25 — bgfx Content Tagging / Region Hooks
 
 ## Focus
-Group tile visuals into explicit scene themes and add lightweight runtime authoring hooks for switching them without rewriting renderer code.
+Drive tile theming from authored world-region tags instead of manual runtime theme switching.
 
-M23 introduced tile variants and centralized tile visual selection.
-M24 builds on that by introducing theme-oriented material sets and a world-state theme selector so scene styling can change through authored intent instead of renderer churn.
+M24 introduced theme sets and lightweight runtime authoring hooks.
+M25 builds on that by wiring theme selection into the world itself through region tagging, so visual themes can come from scene structure instead of direct user toggles.
 
 ## What this milestone does
-- introduces `BgfxWorldTheme` as the theme/material grouping layer
-- stores the active world visual theme inside `WorldState`
-- updates `BgfxTileVisuals` to resolve tile materials and tints through the active theme
-- adds lightweight runtime theme switching hooks in `GameLayer`
+- introduces `WorldRegionTag` as the world-side content tagging layer
+- stores region tags per tile inside `WorldState`
+- resolves tile themes from authored region tags instead of a single global theme
 - keeps actor materials on the shared atlas path
+- removes dependence on runtime theme hotkeys for the primary scene look
 - preserves the current camera / projection / world-space submission flow
 
 ## Renderer architecture
 The bgfx world path is now split into:
 
 1. **Build world-space render data**
-   - themed tile sprite layer
+   - region-driven tile sprite layer
    - path overlay
    - hovered tile overlay
    - actor sprite layer
@@ -33,7 +33,7 @@ The bgfx world path is now split into:
 3. **Resolve materials**
    - map sprite material ids to atlas UV regions
    - resolve tile materials through `BgfxTileVisuals`
-   - group tile materials through `BgfxWorldTheme`
+   - resolve tile themes through world region tags
 
 4. **Load renderer assets**
    - resolve shader asset paths
@@ -42,12 +42,12 @@ The bgfx world path is now split into:
    - load the shared sprite atlas texture
 
 ## Why this matters
-This is the bridge from “tile visuals can vary” to “scene visuals can be steered by explicit themes”.
+This is the bridge from “themes can be switched” to “themes can be authored into the world”.
 
 It makes the next milestones safer:
-- theme-based content styling
-- richer authoring control
-- broader atlas expansion
+- zone-based scene styling
+- richer content authoring
+- better separation between logic and rendering
 - cleaner visual iteration
 
 ## Requirements
@@ -67,7 +67,7 @@ assets/textures/world_atlas.bmp
 ```
 
 ## Next Milestone
-### M25 — bgfx Content Tagging / Region Hooks
-- introduce map-region visual tagging hooks
-- prepare theme selection to be driven by authored world zones
-- continue reducing hardcoded visual assumptions
+### M26 — bgfx Region Authoring Overlay / Palette Hooks
+- surface region-theme boundaries more explicitly in tooling/debug views
+- prepare region tags for broader content authoring workflows
+- continue removing hardcoded scene assumptions

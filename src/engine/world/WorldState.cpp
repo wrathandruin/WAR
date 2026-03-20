@@ -7,12 +7,35 @@ namespace war
     WorldState::WorldState()
         : m_world(48, 36, 48)
     {
+        m_regionTags.resize(
+            static_cast<size_t>(m_world.getWidth()) * static_cast<size_t>(m_world.getHeight()),
+            WorldRegionTagId::IndustrialZone);
     }
 
     void WorldState::initializeTestWorld()
     {
         m_world.generateTestMap();
-        m_visualTheme = BgfxWorldThemeId::Industrial;
+
+        for (int y = 0; y < m_world.getHeight(); ++y)
+        {
+            for (int x = 0; x < m_world.getWidth(); ++x)
+            {
+                const TileCoord tile{ x, y };
+
+                if (x < 16)
+                {
+                    setRegionTag(tile, WorldRegionTagId::IndustrialZone);
+                }
+                else if (x < 32)
+                {
+                    setRegionTag(tile, WorldRegionTagId::SterileZone);
+                }
+                else
+                {
+                    setRegionTag(tile, WorldRegionTagId::EmergencyZone);
+                }
+            }
+        }
 
         m_entities.clear();
 
@@ -67,13 +90,34 @@ namespace war
         return m_entities;
     }
 
-    void WorldState::setVisualTheme(BgfxWorldThemeId theme)
+    void WorldState::setRegionTag(TileCoord tile, WorldRegionTagId tag)
     {
-        m_visualTheme = theme;
+        if (!m_world.isInBounds(tile))
+        {
+            return;
+        }
+
+        m_regionTags[index(tile)] = tag;
     }
 
-    BgfxWorldThemeId WorldState::visualTheme() const
+    WorldRegionTagId WorldState::regionTag(TileCoord tile) const
     {
-        return m_visualTheme;
+        if (!m_world.isInBounds(tile))
+        {
+            return WorldRegionTagId::IndustrialZone;
+        }
+
+        return m_regionTags[index(tile)];
+    }
+
+    BgfxWorldThemeId WorldState::visualThemeForTile(TileCoord tile) const
+    {
+        return WorldRegionTags::themeFor(regionTag(tile));
+    }
+
+    size_t WorldState::index(TileCoord tile) const
+    {
+        return static_cast<size_t>(tile.y) * static_cast<size_t>(m_world.getWidth())
+             + static_cast<size_t>(tile.x);
     }
 }

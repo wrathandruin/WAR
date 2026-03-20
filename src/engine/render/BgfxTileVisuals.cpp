@@ -34,7 +34,7 @@ namespace war
         const WorldState& worldState,
         TileCoord tile)
     {
-        const BgfxWorldThemeId theme = worldState.visualTheme();
+        const BgfxWorldThemeId theme = worldState.visualThemeForTile(tile);
         const bool blocked = worldState.world().isBlocked(tile);
 
         if (blocked)
@@ -49,7 +49,7 @@ namespace war
         const WorldState& worldState,
         TileCoord tile)
     {
-        const BgfxWorldThemeId theme = worldState.visualTheme();
+        const BgfxWorldThemeId theme = worldState.visualThemeForTile(tile);
         const bool blocked = worldState.world().isBlocked(tile);
 
         if (blocked)

@@ -125,6 +125,7 @@ if exist "$(ProjectDir)assets\textures" xcopy /Y /I /E "$(ProjectDir)assets\text
     <ClCompile Include="src\engine\render\BgfxRenderDevice.cpp" />
     <ClCompile Include="src\engine\render\BgfxDebugFrameRenderer.cpp" />
     <ClCompile Include="src\engine\world\WorldGrid.cpp" />
+    <ClCompile Include="src\engine\world\WorldRegionTag.cpp" />
     <ClCompile Include="src\engine\world\Pathfinding.cpp" />
     <ClCompile Include="src\engine\world\WorldState.cpp" />
     <ClCompile Include="src\engine\gameplay\EntityManager.cpp" />
@@ -156,6 +157,7 @@ if exist "$(ProjectDir)assets\textures" xcopy /Y /I /E "$(ProjectDir)assets\text
     <ClInclude Include="src\engine\render\BgfxRenderDevice.h" />
     <ClInclude Include="src\engine\render\BgfxDebugFrameRenderer.h" />
     <ClInclude Include="src\engine\world\WorldGrid.h" />
+    <ClInclude Include="src\engine\world\WorldRegionTag.h" />
     <ClInclude Include="src\engine\world\Pathfinding.h" />
     <ClInclude Include="src\engine\world\WorldState.h" />
     <ClInclude Include="src\engine\gameplay\Action.h" />

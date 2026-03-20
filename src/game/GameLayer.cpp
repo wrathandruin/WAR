@@ -6,7 +6,6 @@
 #include "engine/gameplay/Action.h"
 #include "engine/gameplay/ActionSystem.h"
 #include "engine/render/BgfxRenderDevice.h"
-#include "engine/render/BgfxWorldTheme.h"
 #include "engine/render/GdiRenderDevice.h"
 
 namespace war
@@ -27,10 +26,10 @@ namespace war
             if (preferred->initialize(m_window->getHandle()))
             {
                 m_renderDevice = std::move(preferred);
-                pushEvent("Milestone 24 initialized");
-                pushEvent("bgfx theme sets / authoring hooks active");
+                pushEvent("Milestone 25 initialized");
+                pushEvent("bgfx content tagging / region hooks active");
+                pushEvent("World zones: Industrial | Sterile | Emergency");
                 pushEvent(std::string("Active backend: ") + m_renderDevice->name());
-                pushEvent(std::string("Theme: ") + BgfxWorldTheme::debugName(m_worldState.visualTheme()));
             }
             else
             {
@@ -38,8 +37,9 @@ namespace war
                 const bool fallbackReady = fallback->initialize(m_window->getHandle());
                 m_renderDevice = std::move(fallback);
 
-                pushEvent("Milestone 24 initialized");
+                pushEvent("Milestone 25 initialized");
                 pushEvent("bgfx unavailable, falling back to GDI");
+                pushEvent("World zones: Industrial | Sterile | Emergency");
                 pushEvent(std::string("Active backend: ") + m_renderDevice->name());
                 if (!fallbackReady)
                 {
@@ -139,8 +139,6 @@ namespace war
 
     void GameLayer::updateInput()
     {
-        applyThemeHotkeys();
-
         const POINT mouse = m_window->getMousePosition();
         const Vec2 mouseWorld = m_camera.screenToWorld(mouse.x, mouse.y);
         const TileCoord hovered = m_worldState.world().worldToTile(mouseWorld);
@@ -192,35 +190,6 @@ namespace war
         {
             (void)m_window->consumeMouseDelta();
         }
-    }
-
-    void GameLayer::applyThemeHotkeys()
-    {
-        const bool key1Down = (GetAsyncKeyState('1') & 0x8000) != 0;
-        const bool key2Down = (GetAsyncKeyState('2') & 0x8000) != 0;
-        const bool key3Down = (GetAsyncKeyState('3') & 0x8000) != 0;
-
-        if (key1Down && !m_themeKey1WasDown)
-        {
-            m_worldState.setVisualTheme(BgfxWorldThemeId::Industrial);
-            pushEvent("Theme set: Industrial");
-        }
-
-        if (key2Down && !m_themeKey2WasDown)
-        {
-            m_worldState.setVisualTheme(BgfxWorldThemeId::Sterile);
-            pushEvent("Theme set: Sterile");
-        }
-
-        if (key3Down && !m_themeKey3WasDown)
-        {
-            m_worldState.setVisualTheme(BgfxWorldThemeId::Emergency);
-            pushEvent("Theme set: Emergency");
-        }
-
-        m_themeKey1WasDown = key1Down;
-        m_themeKey2WasDown = key2Down;
-        m_themeKey3WasDown = key3Down;
     }
 
     void GameLayer::updatePlayer(float dt)
