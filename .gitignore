@@ -1,0 +1,27 @@
+# Build folders
+/build/
+/out/
+/bin/
+/obj/
+/.vs/
+/.vscode/ipch/
+
+# CMake
+CMakeUserPresets.json
+CMakeCache.txt
+CMakeFiles/
+cmake-build-*/
+compile_commands.json
+
+# Visual Studio
+*.VC.db
+*.VC.opendb
+*.suo
+*.user
+*.userosscache
+*.pdb
+*.ilk
+
+# Logs / temp
+*.log
+*.tmp
