@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(WAR
-    VERSION 0.2.0
-    DESCRIPTION "Wrath and Ruin milestone 1"
+    VERSION 0.3.1
+    DESCRIPTION "Wrath and Ruin milestone 2.1"
     LANGUAGES CXX
 )
 
@@ -17,6 +17,8 @@ add_executable(WAR WIN32
     src/engine/core/Log.cpp
     src/engine/math/Vec2.cpp
     src/engine/render/Camera2D.cpp
+    src/engine/world/WorldGrid.cpp
+    src/engine/world/Pathfinding.cpp
     src/platform/win32/Win32Window.cpp
     src/game/GameLayer.cpp
 )

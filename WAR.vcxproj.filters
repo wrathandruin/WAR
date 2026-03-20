@@ -18,6 +18,8 @@
     <ClCompile Include="src\engine\core\Log.cpp"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="src\engine\math\Vec2.cpp"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="src\engine\render\Camera2D.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\engine\world\WorldGrid.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\engine\world\Pathfinding.cpp"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="src\platform\win32\Win32Window.cpp"><Filter>Source Files</Filter></ClCompile>
     <ClCompile Include="src\game\GameLayer.cpp"><Filter>Source Files</Filter></ClCompile>
   </ItemGroup>
@@ -28,6 +30,8 @@
     <ClInclude Include="src\engine\core\Log.h"><Filter>Header Files</Filter></ClInclude>
     <ClInclude Include="src\engine\math\Vec2.h"><Filter>Header Files</Filter></ClInclude>
     <ClInclude Include="src\engine\render\Camera2D.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\world\WorldGrid.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\world\Pathfinding.h"><Filter>Header Files</Filter></ClInclude>
     <ClInclude Include="src\platform\win32\Win32Window.h"><Filter>Header Files</Filter></ClInclude>
     <ClInclude Include="src\game\GameLayer.h"><Filter>Header Files</Filter></ClInclude>
   </ItemGroup>

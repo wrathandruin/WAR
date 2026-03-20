@@ -16,6 +16,6 @@ namespace war
     Vec2 operator-(Vec2 lhs, const Vec2& rhs);
     Vec2 operator*(Vec2 lhs, float scalar);
 
-    float length(const Vec2& value);
-    Vec2 normalize(const Vec2& value);
+    [[nodiscard]] float length(const Vec2& value);
+    [[nodiscard]] Vec2 normalize(const Vec2& value);
 }

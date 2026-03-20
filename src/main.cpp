@@ -1,4 +1,5 @@
 #include <windows.h>
+
 #include "engine/core/Application.h"
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)

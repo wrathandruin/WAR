@@ -1,30 +1,29 @@
 #include "game/GameLayer.h"
 
-#include <windows.h>
-
-#include <cmath>
+#include <algorithm>
 #include <cstdio>
+#include <cstring>
+#include <string>
 
-#include "engine/math/Vec2.h"
+#include "engine/world/Pathfinding.h"
 #include "platform/win32/Win32Window.h"
 
 namespace war
 {
-    namespace
-    {
-        constexpr int kGridSize = 64;
-        constexpr int kGridExtent = 80;
-    }
-
     void GameLayer::initialize(Win32Window& window)
     {
         m_window = &window;
         m_camera.setViewportSize(window.getWidth(), window.getHeight());
         m_camera.setPosition({ 0.0f, 0.0f });
 
-        m_playerPosition = { 0.0f, 0.0f };
-        m_moveTarget = m_playerPosition;
-        m_lastClickWorld = m_playerPosition;
+        m_world.generateTestMap();
+
+        const TileCoord spawnTile{ 2, 2 };
+        m_playerPosition = m_world.tileToWorldCenter(spawnTile);
+
+        pushEvent("Milestone 2.1 initialized");
+        pushEvent("WorldGrid ready");
+        pushEvent("Click a walkable tile to path there");
     }
 
     void GameLayer::update(float dt)
@@ -32,7 +31,7 @@ namespace war
         m_lastDeltaTime = dt;
         m_camera.setViewportSize(m_window->getWidth(), m_window->getHeight());
 
-        updateInput(dt);
+        updateInput();
         updatePlayer(dt);
     }
 
@@ -48,6 +47,12 @@ namespace war
         RECT clientRect = getClientRect();
         const int width = clientRect.right - clientRect.left;
         const int height = clientRect.bottom - clientRect.top;
+
+        if (width <= 0 || height <= 0)
+        {
+            ReleaseDC(hwnd, windowDc);
+            return;
+        }
 
         HDC memoryDc = CreateCompatibleDC(windowDc);
         HBITMAP backBuffer = CreateCompatibleBitmap(windowDc, width, height);
@@ -67,22 +72,39 @@ namespace war
     {
     }
 
-    void GameLayer::updateInput(float)
+    void GameLayer::updateInput()
     {
+        const POINT mouse = m_window->getMousePosition();
+        const Vec2 mouseWorld = m_camera.screenToWorld(mouse.x, mouse.y);
+        const TileCoord hovered = m_world.worldToTile(mouseWorld);
+
+        m_hasHoveredTile = m_world.isInBounds(hovered);
+        m_hoveredTile = hovered;
+
         POINT click{};
         if (m_window->consumeLeftClick(click))
         {
             const Vec2 world = m_camera.screenToWorld(click.x, click.y);
-            m_moveTarget = world;
-            m_lastClickWorld = world;
-            m_hasMoveTarget = true;
+            const TileCoord targetTile = m_world.worldToTile(world);
+
+            if (!m_world.isInBounds(targetTile))
+            {
+                pushEvent("Move order rejected: out of bounds");
+            }
+            else if (m_world.isBlocked(targetTile))
+            {
+                pushEvent("Move order rejected: target tile blocked");
+            }
+            else
+            {
+                rebuildPathTo(targetTile);
+            }
         }
 
         const int wheel = m_window->consumeMouseWheelDelta();
         if (wheel != 0)
         {
-            const float zoomStep = wheel > 0 ? 0.10f : -0.10f;
-            m_camera.zoomBy(zoomStep);
+            m_camera.zoomBy(wheel > 0 ? 0.10f : -0.10f);
         }
 
         if (m_window->isMiddleMouseDown())
@@ -102,18 +124,24 @@ namespace war
 
     void GameLayer::updatePlayer(float dt)
     {
-        if (!m_hasMoveTarget)
+        if (m_currentPath.empty() || m_pathIndex >= m_currentPath.size())
         {
             return;
         }
 
-        const Vec2 toTarget = m_moveTarget - m_playerPosition;
+        const Vec2 waypoint = m_world.tileToWorldCenter(m_currentPath[m_pathIndex]);
+        const Vec2 toTarget = waypoint - m_playerPosition;
         const float distance = length(toTarget);
 
-        if (distance < 2.0f)
+        if (distance < 1.0f)
         {
-            m_playerPosition = m_moveTarget;
-            m_hasMoveTarget = false;
+            m_playerPosition = waypoint;
+            ++m_pathIndex;
+
+            if (m_pathIndex >= m_currentPath.size())
+            {
+                pushEvent("Path complete");
+            }
             return;
         }
 
@@ -122,66 +150,156 @@ namespace war
 
         if (step >= distance)
         {
-            m_playerPosition = m_moveTarget;
-            m_hasMoveTarget = false;
+            m_playerPosition = waypoint;
+            ++m_pathIndex;
+
+            if (m_pathIndex >= m_currentPath.size())
+            {
+                pushEvent("Path complete");
+            }
             return;
         }
 
         m_playerPosition += direction * step;
     }
 
+    void GameLayer::pushEvent(const std::string& message)
+    {
+        m_eventLog.push_back(message);
+        constexpr size_t kMaxEvents = 8;
+        if (m_eventLog.size() > kMaxEvents)
+        {
+            m_eventLog.erase(m_eventLog.begin(), m_eventLog.begin() + static_cast<std::ptrdiff_t>(m_eventLog.size() - kMaxEvents));
+        }
+    }
+
+    void GameLayer::rebuildPathTo(TileCoord targetTile)
+    {
+        const TileCoord startTile = m_world.worldToTile(m_playerPosition);
+        std::vector<TileCoord> path = Pathfinding::findPath(m_world, startTile, targetTile);
+
+        if (path.empty())
+        {
+            pushEvent("No path found");
+            m_currentPath.clear();
+            m_pathIndex = 0;
+            return;
+        }
+
+        m_currentPath = std::move(path);
+        m_pathIndex = m_currentPath.size() > 1 ? 1 : 0;
+
+        char buffer[128]{};
+        std::snprintf(
+            buffer,
+            sizeof(buffer),
+            "Path found: %zu nodes to (%d, %d)",
+            m_currentPath.size(),
+            targetTile.x,
+            targetTile.y);
+        pushEvent(buffer);
+    }
+
     void GameLayer::drawWorld(HDC dc, const RECT& clientRect)
     {
-        HBRUSH background = CreateSolidBrush(RGB(18, 18, 22));
+        HBRUSH background = CreateSolidBrush(RGB(16, 18, 24));
         FillRect(dc, &clientRect, background);
         DeleteObject(background);
 
-        drawGrid(dc, clientRect);
-        drawDestination(dc);
+        drawTiles(dc);
+        drawPath(dc);
+        drawHoveredTile(dc);
         drawPlayer(dc);
         drawOverlay(dc);
     }
 
-    void GameLayer::drawGrid(HDC dc, const RECT&)
+    void GameLayer::drawTiles(HDC dc)
     {
-        HPEN gridPen = CreatePen(PS_SOLID, 1, RGB(45, 45, 55));
-        HPEN originPen = CreatePen(PS_SOLID, 1, RGB(90, 90, 120));
-        HPEN oldPen = static_cast<HPEN>(SelectObject(dc, gridPen));
-
-        for (int i = -kGridExtent; i <= kGridExtent; ++i)
+        for (int y = 0; y < m_world.getHeight(); ++y)
         {
-            const float worldX = static_cast<float>(i * kGridSize);
-            const Vec2 top = m_camera.worldToScreen({ worldX, static_cast<float>(-kGridExtent * kGridSize) });
-            const Vec2 bottom = m_camera.worldToScreen({ worldX, static_cast<float>(kGridExtent * kGridSize) });
+            for (int x = 0; x < m_world.getWidth(); ++x)
+            {
+                const TileCoord tile{ x, y };
+                const RECT rect = tileToScreenRect(tile);
+                const bool blocked = m_world.isBlocked(tile);
 
-            MoveToEx(dc, static_cast<int>(top.x), static_cast<int>(top.y), nullptr);
-            LineTo(dc, static_cast<int>(bottom.x), static_cast<int>(bottom.y));
+                HBRUSH brush = CreateSolidBrush(
+                    blocked ? RGB(220, 60, 60) : RGB(34, 38, 46));
+                FillRect(dc, &rect, brush);
+                DeleteObject(brush);
+
+                HPEN pen = CreatePen(
+                    PS_SOLID,
+                    1,
+                    blocked ? RGB(255, 180, 180) : RGB(45, 50, 60));
+                HPEN oldPen = static_cast<HPEN>(SelectObject(dc, pen));
+                HBRUSH oldBrush = static_cast<HBRUSH>(SelectObject(dc, GetStockObject(HOLLOW_BRUSH)));
+
+                Rectangle(dc, rect.left, rect.top, rect.right, rect.bottom);
+
+                SelectObject(dc, oldBrush);
+                SelectObject(dc, oldPen);
+                DeleteObject(pen);
+            }
+        }
+    }
+
+    void GameLayer::drawHoveredTile(HDC dc)
+    {
+        if (!m_hasHoveredTile || !m_world.isInBounds(m_hoveredTile))
+        {
+            return;
         }
 
-        for (int i = -kGridExtent; i <= kGridExtent; ++i)
-        {
-            const float worldY = static_cast<float>(i * kGridSize);
-            const Vec2 left = m_camera.worldToScreen({ static_cast<float>(-kGridExtent * kGridSize), worldY });
-            const Vec2 right = m_camera.worldToScreen({ static_cast<float>(kGridExtent * kGridSize), worldY });
+        const RECT rect = tileToScreenRect(m_hoveredTile);
+        HPEN pen = CreatePen(
+            PS_SOLID,
+            2,
+            m_world.isBlocked(m_hoveredTile) ? RGB(220, 100, 100) : RGB(230, 220, 110));
+        HPEN oldPen = static_cast<HPEN>(SelectObject(dc, pen));
+        HBRUSH oldBrush = static_cast<HBRUSH>(SelectObject(dc, GetStockObject(HOLLOW_BRUSH)));
 
-            MoveToEx(dc, static_cast<int>(left.x), static_cast<int>(left.y), nullptr);
-            LineTo(dc, static_cast<int>(right.x), static_cast<int>(right.y));
-        }
+        Rectangle(dc, rect.left, rect.top, rect.right, rect.bottom);
 
-        SelectObject(dc, originPen);
-        const Vec2 h1 = m_camera.worldToScreen({ -2048.0f, 0.0f });
-        const Vec2 h2 = m_camera.worldToScreen({ 2048.0f, 0.0f });
-        MoveToEx(dc, static_cast<int>(h1.x), static_cast<int>(h1.y), nullptr);
-        LineTo(dc, static_cast<int>(h2.x), static_cast<int>(h2.y));
-
-        const Vec2 v1 = m_camera.worldToScreen({ 0.0f, -2048.0f });
-        const Vec2 v2 = m_camera.worldToScreen({ 0.0f, 2048.0f });
-        MoveToEx(dc, static_cast<int>(v1.x), static_cast<int>(v1.y), nullptr);
-        LineTo(dc, static_cast<int>(v2.x), static_cast<int>(v2.y));
-
+        SelectObject(dc, oldBrush);
         SelectObject(dc, oldPen);
-        DeleteObject(gridPen);
-        DeleteObject(originPen);
+        DeleteObject(pen);
+    }
+
+    void GameLayer::drawPath(HDC dc)
+    {
+        if (m_currentPath.empty())
+        {
+            return;
+        }
+
+        HBRUSH brush = CreateSolidBrush(RGB(255, 180, 90));
+        HBRUSH oldBrush = static_cast<HBRUSH>(SelectObject(dc, brush));
+        HPEN pen = CreatePen(PS_SOLID, 1, RGB(255, 210, 130));
+        HPEN oldPen = static_cast<HPEN>(SelectObject(dc, pen));
+
+        for (size_t i = m_pathIndex; i < m_currentPath.size(); ++i)
+        {
+            const Vec2 screen = m_camera.worldToScreen(m_world.tileToWorldCenter(m_currentPath[i]));
+            const int radius = static_cast<int>(5.0f * m_camera.getZoom());
+            Ellipse(dc,
+                static_cast<int>(screen.x) - radius,
+                static_cast<int>(screen.y) - radius,
+                static_cast<int>(screen.x) + radius,
+                static_cast<int>(screen.y) + radius);
+
+            if (i > m_pathIndex)
+            {
+                const Vec2 prev = m_camera.worldToScreen(m_world.tileToWorldCenter(m_currentPath[i - 1]));
+                MoveToEx(dc, static_cast<int>(prev.x), static_cast<int>(prev.y), nullptr);
+                LineTo(dc, static_cast<int>(screen.x), static_cast<int>(screen.y));
+            }
+        }
+
+        SelectObject(dc, oldBrush);
+        SelectObject(dc, oldPen);
+        DeleteObject(brush);
+        DeleteObject(pen);
     }
 
     void GameLayer::drawPlayer(HDC dc)
@@ -189,7 +307,7 @@ namespace war
         const Vec2 screen = m_camera.worldToScreen(m_playerPosition);
         const int radius = static_cast<int>(12.0f * m_camera.getZoom());
 
-        HBRUSH brush = CreateSolidBrush(RGB(170, 210, 255));
+        HBRUSH brush = CreateSolidBrush(RGB(160, 210, 255));
         HBRUSH oldBrush = static_cast<HBRUSH>(SelectObject(dc, brush));
         HPEN pen = CreatePen(PS_SOLID, 1, RGB(220, 240, 255));
         HPEN oldPen = static_cast<HPEN>(SelectObject(dc, pen));
@@ -206,54 +324,55 @@ namespace war
         DeleteObject(pen);
     }
 
-    void GameLayer::drawDestination(HDC dc)
-    {
-        const Vec2 screen = m_camera.worldToScreen(m_lastClickWorld);
-        const int size = static_cast<int>(8.0f * m_camera.getZoom());
-
-        HPEN pen = CreatePen(PS_SOLID, 1, RGB(255, 180, 110));
-        HPEN oldPen = static_cast<HPEN>(SelectObject(dc, pen));
-
-        MoveToEx(dc, static_cast<int>(screen.x) - size, static_cast<int>(screen.y), nullptr);
-        LineTo(dc, static_cast<int>(screen.x) + size, static_cast<int>(screen.y));
-        MoveToEx(dc, static_cast<int>(screen.x), static_cast<int>(screen.y) - size, nullptr);
-        LineTo(dc, static_cast<int>(screen.x), static_cast<int>(screen.y) + size);
-
-        SelectObject(dc, oldPen);
-        DeleteObject(pen);
-    }
-
     void GameLayer::drawOverlay(HDC dc)
     {
         SetBkMode(dc, TRANSPARENT);
-        SetTextColor(dc, RGB(220, 220, 220));
+        SetTextColor(dc, RGB(225, 225, 225));
 
         const POINT mouse = m_window->getMousePosition();
         const Vec2 mouseWorld = m_camera.screenToWorld(mouse.x, mouse.y);
+        const TileCoord mouseTile = m_world.worldToTile(mouseWorld);
+        const TileCoord playerTile = m_world.worldToTile(m_playerPosition);
+        const bool hoveredBlocked =
+            m_world.isInBounds(mouseTile) && m_world.isBlocked(mouseTile);
 
         char buffer[512]{};
         std::snprintf(
             buffer,
             sizeof(buffer),
-            "WAR Milestone 1\n"
+            "WAR Milestone 2.1\n"
             "LMB: move    MMB drag: pan    Wheel: zoom\n"
-            "Player: (%.1f, %.1f)\n"
-            "Target: (%.1f, %.1f)\n"
-            "Mouse world: (%.1f, %.1f)\n"
+            "Player world: (%.1f, %.1f)\n"
+            "Player tile: (%d, %d)\n"
+            "Mouse tile: (%d, %d)\n"
+            "Hovered blocked: %s\n"
             "Camera: (%.1f, %.1f)  Zoom: %.2f\n"
+            "Path nodes remaining: %zu\n"
             "Frame dt: %.4f",
             m_playerPosition.x,
             m_playerPosition.y,
-            m_moveTarget.x,
-            m_moveTarget.y,
-            mouseWorld.x,
-            mouseWorld.y,
+            playerTile.x,
+            playerTile.y,
+            mouseTile.x,
+            mouseTile.y,
+            hoveredBlocked ? "yes" : "no",
             m_camera.getPosition().x,
             m_camera.getPosition().y,
             m_camera.getZoom(),
+            m_pathIndex < m_currentPath.size() ? m_currentPath.size() - m_pathIndex : 0,
             m_lastDeltaTime);
 
         TextOutA(dc, 16, 16, buffer, static_cast<int>(std::strlen(buffer)));
+
+        int y = 175;
+        TextOutA(dc, 16, y, "Event Log:", 10);
+        y += 22;
+
+        for (const std::string& entry : m_eventLog)
+        {
+            TextOutA(dc, 16, y, entry.c_str(), static_cast<int>(entry.size()));
+            y += 18;
+        }
     }
 
     RECT GameLayer::getClientRect() const
@@ -261,5 +380,30 @@ namespace war
         RECT rect{};
         GetClientRect(m_window->getHandle(), &rect);
         return rect;
+    }
+
+    RECT GameLayer::tileToScreenRect(TileCoord tile) const
+    {
+        const int tileSize = m_world.getTileSize();
+
+        const Vec2 center = m_world.tileToWorldCenter(tile);
+        const Vec2 topLeftWorld{
+            center.x - static_cast<float>(tileSize) * 0.5f,
+            center.y - static_cast<float>(tileSize) * 0.5f
+        };
+        const Vec2 bottomRightWorld{
+            center.x + static_cast<float>(tileSize) * 0.5f,
+            center.y + static_cast<float>(tileSize) * 0.5f
+        };
+
+        const Vec2 topLeft = m_camera.worldToScreen(topLeftWorld);
+        const Vec2 bottomRight = m_camera.worldToScreen(bottomRightWorld);
+
+        return RECT{
+            static_cast<LONG>(topLeft.x),
+            static_cast<LONG>(topLeft.y),
+            static_cast<LONG>(bottomRight.x),
+            static_cast<LONG>(bottomRight.y)
+        };
     }
 }

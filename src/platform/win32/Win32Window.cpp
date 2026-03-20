@@ -1,4 +1,5 @@
 #include "platform/win32/Win32Window.h"
+
 #include <windowsx.h>
 
 namespace war
@@ -19,6 +20,7 @@ namespace war
         wc.lpszClassName = kWindowClassName;
         wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
         wc.hbrBackground = nullptr;
+
         RegisterClassW(&wc);
 
         RECT rect{ 0, 0, width, height };
@@ -182,8 +184,6 @@ namespace war
         case WM_MOUSEWHEEL:
             m_mouseWheelDelta += GET_WHEEL_DELTA_WPARAM(wParam);
             return 0;
-
-
 
         default:
             return DefWindowProcW(m_hwnd, msg, wParam, lParam);

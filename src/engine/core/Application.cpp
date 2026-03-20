@@ -1,7 +1,5 @@
 #include "engine/core/Application.h"
 
-#include <windows.h>
-
 #include "engine/core/Timer.h"
 #include "game/GameLayer.h"
 #include "platform/win32/Win32Window.h"
@@ -11,7 +9,7 @@ namespace war
     int Application::run()
     {
         Win32Window window;
-        if (!window.create(1600, 900, L"WAR - Milestone 1"))
+        if (!window.create(1600, 900, L"WAR - Milestone 2.1"))
         {
             return -1;
         }
