@@ -19,6 +19,14 @@ namespace war
         Hazard
     };
 
+    enum class TerrainHazardType
+    {
+        None,
+        RadiationLeak,
+        ToxicResidue,
+        VacuumBreach
+    };
+
     struct WorldAuthoringHotspot
     {
         int id = 0;
@@ -28,6 +36,16 @@ namespace war
         std::string label;
         std::string summary;
         bool encounterReady = false;
+    };
+
+    struct TerrainHazardTile
+    {
+        int id = 0;
+        TileCoord tile{};
+        TerrainHazardType type = TerrainHazardType::None;
+        std::string label;
+        int severity = 0;
+        bool active = true;
     };
 
     class WorldState
@@ -62,6 +80,12 @@ namespace war
         void setAuthoringHotspotsVisible(bool visible);
         [[nodiscard]] bool authoringHotspotsVisible() const;
 
+        void clearTerrainHazards();
+        void addTerrainHazard(const TerrainHazardTile& hazard);
+        [[nodiscard]] const std::vector<TerrainHazardTile>& terrainHazards() const;
+        [[nodiscard]] const TerrainHazardTile* terrainHazardAt(TileCoord tile) const;
+        [[nodiscard]] bool tileHasActiveTerrainHazard(TileCoord tile) const;
+
     private:
         void fillRegionRect(int minX, int minY, int maxX, int maxY, WorldRegionTagId tag);
         [[nodiscard]] size_t index(TileCoord tile) const;
@@ -73,5 +97,6 @@ namespace war
         BgfxThemePaletteMode m_paletteMode = BgfxThemePaletteMode::Default;
         std::vector<WorldAuthoringHotspot> m_authoringHotspots;
         bool m_authoringHotspotsVisible = true;
+        std::vector<TerrainHazardTile> m_terrainHazards;
     };
 }

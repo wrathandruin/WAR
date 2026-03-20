@@ -11,7 +11,7 @@ namespace war
         (void)commandLine;
 
         Win32Window window;
-        if (!window.create(1600, 900, L"WAR - Milestone 38"))
+        if (!window.create(1600, 900, L"WAR - Milestone 39"))
         {
             return -1;
         }

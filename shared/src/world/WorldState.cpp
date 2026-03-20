@@ -19,6 +19,7 @@ namespace war
         m_paletteMode = BgfxThemePaletteMode::Default;
         m_authoringHotspotsVisible = true;
         clearAuthoringHotspots();
+        clearTerrainHazards();
 
         for (int y = 0; y < m_world.getHeight(); ++y)
         {
@@ -40,43 +41,20 @@ namespace war
         WorldSemanticDressing::populateAuthoredTestWorld(*this);
     }
 
-    WorldGrid& WorldState::world()
-    {
-        return m_world;
-    }
-
-    const WorldGrid& WorldState::world() const
-    {
-        return m_world;
-    }
-
-    EntityManager& WorldState::entities()
-    {
-        return m_entities;
-    }
-
-    const EntityManager& WorldState::entities() const
-    {
-        return m_entities;
-    }
+    WorldGrid& WorldState::world() { return m_world; }
+    const WorldGrid& WorldState::world() const { return m_world; }
+    EntityManager& WorldState::entities() { return m_entities; }
+    const EntityManager& WorldState::entities() const { return m_entities; }
 
     void WorldState::setRegionTag(TileCoord tile, WorldRegionTagId tag)
     {
-        if (!m_world.isInBounds(tile))
-        {
-            return;
-        }
-
+        if (!m_world.isInBounds(tile)) { return; }
         m_regionTags[index(tile)] = tag;
     }
 
     WorldRegionTagId WorldState::regionTag(TileCoord tile) const
     {
-        if (!m_world.isInBounds(tile))
-        {
-            return WorldRegionTagId::CargoBay;
-        }
-
+        if (!m_world.isInBounds(tile)) { return WorldRegionTagId::CargoBay; }
         return m_regionTags[index(tile)];
     }
 
@@ -85,71 +63,46 @@ namespace war
         return WorldRegionTags::themeFor(regionTag(tile));
     }
 
-    void WorldState::setRegionOverlayEnabled(bool enabled)
-    {
-        m_regionOverlayEnabled = enabled;
-    }
-
-    bool WorldState::regionOverlayEnabled() const
-    {
-        return m_regionOverlayEnabled;
-    }
-
-    void WorldState::setPaletteMode(BgfxThemePaletteMode paletteMode)
-    {
-        m_paletteMode = paletteMode;
-    }
-
-    BgfxThemePaletteMode WorldState::paletteMode() const
-    {
-        return m_paletteMode;
-    }
-
-    void WorldState::clearAuthoringHotspots()
-    {
-        m_authoringHotspots.clear();
-    }
-
-    void WorldState::addAuthoringHotspot(const WorldAuthoringHotspot& hotspot)
-    {
-        m_authoringHotspots.push_back(hotspot);
-    }
-
-    const std::vector<WorldAuthoringHotspot>& WorldState::authoringHotspots() const
-    {
-        return m_authoringHotspots;
-    }
+    void WorldState::setRegionOverlayEnabled(bool enabled) { m_regionOverlayEnabled = enabled; }
+    bool WorldState::regionOverlayEnabled() const { return m_regionOverlayEnabled; }
+    void WorldState::setPaletteMode(BgfxThemePaletteMode paletteMode) { m_paletteMode = paletteMode; }
+    BgfxThemePaletteMode WorldState::paletteMode() const { return m_paletteMode; }
+    void WorldState::clearAuthoringHotspots() { m_authoringHotspots.clear(); }
+    void WorldState::addAuthoringHotspot(const WorldAuthoringHotspot& hotspot) { m_authoringHotspots.push_back(hotspot); }
+    const std::vector<WorldAuthoringHotspot>& WorldState::authoringHotspots() const { return m_authoringHotspots; }
 
     const WorldAuthoringHotspot* WorldState::authoringHotspotAt(TileCoord tile) const
     {
         for (const WorldAuthoringHotspot& hotspot : m_authoringHotspots)
         {
-            if (hotspot.tile == tile)
-            {
-                return &hotspot;
-            }
+            if (hotspot.tile == tile) { return &hotspot; }
         }
-
         return nullptr;
     }
 
-    void WorldState::setAuthoringHotspotsVisible(bool visible)
+    void WorldState::setAuthoringHotspotsVisible(bool visible) { m_authoringHotspotsVisible = visible; }
+    bool WorldState::authoringHotspotsVisible() const { return m_authoringHotspotsVisible; }
+    void WorldState::clearTerrainHazards() { m_terrainHazards.clear(); }
+    void WorldState::addTerrainHazard(const TerrainHazardTile& hazard) { m_terrainHazards.push_back(hazard); }
+    const std::vector<TerrainHazardTile>& WorldState::terrainHazards() const { return m_terrainHazards; }
+
+    const TerrainHazardTile* WorldState::terrainHazardAt(TileCoord tile) const
     {
-        m_authoringHotspotsVisible = visible;
+        for (const TerrainHazardTile& hazard : m_terrainHazards)
+        {
+            if (hazard.active && hazard.tile == tile) { return &hazard; }
+        }
+        return nullptr;
     }
 
-    bool WorldState::authoringHotspotsVisible() const
+    bool WorldState::tileHasActiveTerrainHazard(TileCoord tile) const
     {
-        return m_authoringHotspotsVisible;
+        return terrainHazardAt(tile) != nullptr;
     }
 
     void WorldState::fillRegionRect(int minX, int minY, int maxX, int maxY, WorldRegionTagId tag)
     {
-        if (minX > maxX || minY > maxY)
-        {
-            return;
-        }
-
+        if (minX > maxX || minY > maxY) { return; }
         for (int y = minY; y <= maxY; ++y)
         {
             for (int x = minX; x <= maxX; ++x)
