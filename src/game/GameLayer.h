@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -9,6 +10,7 @@
 #include "engine/math/Vec2.h"
 #include "engine/render/Camera2D.h"
 #include "engine/render/DebugOverlayRenderer.h"
+#include "engine/render/IRenderDevice.h"
 #include "engine/render/WorldRenderer.h"
 #include "engine/world/WorldGrid.h"
 #include "engine/world/WorldState.h"
@@ -38,6 +40,7 @@ namespace war
         ActionQueue m_actions{};
         WorldRenderer m_worldRenderer{};
         DebugOverlayRenderer m_debugOverlayRenderer{};
+        std::unique_ptr<IRenderDevice> m_renderDevice{};
 
         Vec2 m_playerPosition{ 0.0f, 0.0f };
         float m_playerSpeed = 210.0f;

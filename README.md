@@ -1,116 +1,52 @@
-# WAR — Milestone 8 (Stateful World Objects)
+# WAR — Milestone 9 (Render Backend Abstraction)
 
-> Current development milestone: M8 — Stateful World Objects
+> Current development milestone: M9 — Render Backend Abstraction
 
-Milestone 8 for **Wrath and Ruin (WAR)**.
+Milestone 9 for **Wrath and Ruin (WAR)**.
 
 ## Focus of this milestone
-This milestone makes world objects stateful so interactions have consequences.
+This milestone introduces a render backend abstraction so the project can move from GDI toward bgfx without touching gameplay systems.
 
-- crates can be opened once
-- terminals toggle power state
-- lockers have lock/open state
-- inspect reflects current object state
-- entity visuals now reflect their current state
+- `GameLayer` no longer owns frame buffer setup
+- rendering now goes through an `IRenderDevice`
+- current backend is `GdiRenderDevice`
+- a compile-safe `BgfxRenderDevice` stub is included as the next integration target
 
-## Core Systems
+## Why this milestone exists
+A true bgfx integration requires adding bgfx itself to the repo and build configuration. This milestone prepares the architecture safely so that swap can happen cleanly.
 
-### WorldState
-Owns simulation data:
-- `WorldGrid`
-- `EntityManager`
+## Current Backends
 
-### EntityManager
-Handles:
-- entity storage
-- tile-based lookup
-- entity queries
+### GdiRenderDevice
+- active backend
+- preserves current rendering behavior
 
-### ActionSystem
-Resolves:
-- Move
-- Inspect
-- Interact
-- object state changes
-
-### WorldRenderer
-Handles:
-- tile drawing
-- hovered tile highlight
-- path rendering
-- entity rendering
-- player rendering
-- state-based entity visuals
-
-### DebugOverlayRenderer
-Handles:
-- debug text
-- hovered information
-- event log
-
-### GameLayer
-Responsible for:
-- input collection
-- system coordination
-- presentation orchestration
-
----
-
-## Scope
-
-- Win32 window
-- Real-time main loop
-- Backbuffered GDI rendering
-- Camera pan + zoom
-- Tile-based world (`WorldGrid`)
-- A* pathfinding
-- Action queue system
-- Entity system
-- Contextual interaction
-- Centralized world state
-- Stateful world objects
-
----
+### BgfxRenderDevice
+- compile-safe stub
+- placeholder for real bgfx hookup in the next milestone
 
 ## Controls
-
 - **Left click**: Move
 - **Right click**: Interact
 - **Shift + Right click**: Inspect
 - **Middle mouse drag**: Pan camera
 - **Mouse wheel**: Zoom
 
----
-
-## What changed from M7
-
-- entities now carry state:
-  - `isOpen`
-  - `isLocked`
-  - `isPowered`
-- crates open once
-- terminals toggle on/off
-- lockers can be locked/opened
-- inspect now reports current object state
-- entity visuals reflect current state
-
----
+## What changed from M8
+- introduced render backend interface
+- moved frame setup / presentation out of `GameLayer`
+- added active GDI backend implementation
+- added bgfx-ready backend stub
 
 ## Current Status
-
-WAR now has a stateful interaction loop:
-- movement
-- inspect
-- interact
-- persistent object state during runtime
-- separated simulation and presentation layers
-
----
+WAR now has:
+- separated gameplay systems
+- separated renderers
+- separated render backend lifecycle
 
 ## Next Milestone
 
-### M9 — bgfx Rendering Backend
-
-- replace GDI renderer implementation with bgfx
-- preserve renderer interfaces
-- keep gameplay systems unchanged
+### M10 — bgfx Integration
+- wire real bgfx init into Win32
+- replace GDI frame device with bgfx device
+- keep gameplay and renderer orchestration unchanged

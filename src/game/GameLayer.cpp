@@ -4,6 +4,7 @@
 
 #include "engine/gameplay/Action.h"
 #include "engine/gameplay/ActionSystem.h"
+#include "engine/render/GdiRenderDevice.h"
 #include "platform/win32/Win32Window.h"
 
 namespace war
@@ -19,10 +20,16 @@ namespace war
         const TileCoord spawnTile{ 2, 2 };
         m_playerPosition = m_worldState.world().tileToWorldCenter(spawnTile);
 
-        pushEvent("Milestone 7 initialized");
-        pushEvent("WorldRenderer ready");
-        pushEvent("DebugOverlayRenderer ready");
-        pushEvent("Render separated from GameLayer");
+        m_renderDevice = std::make_unique<GdiRenderDevice>();
+        const bool backendReady = m_renderDevice->initialize(m_window->getHandle());
+
+        pushEvent("Milestone 9 initialized");
+        pushEvent("Render backend abstraction ready");
+        pushEvent(std::string("Active backend: ") + m_renderDevice->name());
+        if (!backendReady)
+        {
+            pushEvent("Warning: active backend failed to initialize");
+        }
     }
 
     void GameLayer::update(float dt)
@@ -43,29 +50,26 @@ namespace war
 
     void GameLayer::render()
     {
-        HWND hwnd = m_window->getHandle();
-        HDC windowDc = GetDC(hwnd);
-        if (windowDc == nullptr)
+        if (!m_renderDevice)
         {
             return;
         }
 
-        RECT clientRect = getClientRect();
-        const int width = clientRect.right - clientRect.left;
-        const int height = clientRect.bottom - clientRect.top;
-
-        if (width <= 0 || height <= 0)
+        const RECT clientRect = getClientRect();
+        if (!m_renderDevice->beginFrame(m_window->getHandle(), clientRect))
         {
-            ReleaseDC(hwnd, windowDc);
             return;
         }
 
-        HDC memoryDc = CreateCompatibleDC(windowDc);
-        HBITMAP backBuffer = CreateCompatibleBitmap(windowDc, width, height);
-        HGDIOBJ oldBitmap = SelectObject(memoryDc, backBuffer);
+        HDC dc = m_renderDevice->getDrawContext();
+        if (dc == nullptr)
+        {
+            m_renderDevice->endFrame(m_window->getHandle());
+            return;
+        }
 
         m_worldRenderer.render(
-            memoryDc,
+            dc,
             clientRect,
             m_worldState,
             m_camera,
@@ -76,7 +80,7 @@ namespace war
             m_hoveredTile);
 
         m_debugOverlayRenderer.render(
-            memoryDc,
+            dc,
             m_worldState,
             m_camera,
             m_playerPosition,
@@ -88,16 +92,15 @@ namespace war
             m_lastDeltaTime,
             m_window->getMousePosition());
 
-        BitBlt(windowDc, 0, 0, width, height, memoryDc, 0, 0, SRCCOPY);
-
-        SelectObject(memoryDc, oldBitmap);
-        DeleteObject(backBuffer);
-        DeleteDC(memoryDc);
-        ReleaseDC(hwnd, windowDc);
+        m_renderDevice->endFrame(m_window->getHandle());
     }
 
     void GameLayer::shutdown()
     {
+        if (m_renderDevice)
+        {
+            m_renderDevice->shutdown();
+        }
     }
 
     void GameLayer::updateInput()
