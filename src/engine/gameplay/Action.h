@@ -7,7 +7,8 @@ namespace war
     enum class ActionType
     {
         Move,
-        Inspect
+        Inspect,
+        Interact
     };
 
     struct Action

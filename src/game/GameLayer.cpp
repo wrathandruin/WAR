@@ -5,12 +5,32 @@
 #include <cstring>
 #include <string>
 
+#include <windows.h>
+
 #include "engine/gameplay/Action.h"
 #include "engine/world/Pathfinding.h"
 #include "platform/win32/Win32Window.h"
 
 namespace war
 {
+    namespace
+    {
+        const char* entityTypeToText(EntityType type)
+        {
+            switch (type)
+            {
+            case EntityType::Crate:
+                return "crate";
+            case EntityType::Terminal:
+                return "terminal";
+            case EntityType::Locker:
+                return "locker";
+            default:
+                return "unknown";
+            }
+        }
+    }
+
     void GameLayer::initialize(Win32Window& window)
     {
         m_window = &window;
@@ -22,13 +42,14 @@ namespace war
         const TileCoord spawnTile{ 2, 2 };
         m_playerPosition = m_world.tileToWorldCenter(spawnTile);
 
-        m_entities.push_back({ 1, "Cargo Crate", { 10, 10 } });
-        m_entities.push_back({ 2, "Power Junction", { 18, 8 } });
-        m_entities.push_back({ 3, "Maintenance Locker", { 30, 24 } });
+        m_entities.push_back({ 1, "Cargo Crate", EntityType::Crate, { 10, 10 } });
+        m_entities.push_back({ 2, "Operations Terminal", EntityType::Terminal, { 18, 8 } });
+        m_entities.push_back({ 3, "Maintenance Locker", EntityType::Locker, { 30, 24 } });
 
-        pushEvent("Milestone 4 initialized");
-        pushEvent("Action system ready");
-        pushEvent("Left click to move, right click to inspect");
+        pushEvent("Milestone 5 initialized");
+        pushEvent("Left click to move");
+        pushEvent("Right click to interact");
+        pushEvent("Shift + right click to inspect");
     }
 
     void GameLayer::update(float dt)
@@ -100,7 +121,16 @@ namespace war
         {
             const Vec2 world = m_camera.screenToWorld(rightClick.x, rightClick.y);
             const TileCoord targetTile = m_world.worldToTile(world);
-            m_actions.push({ ActionType::Inspect, targetTile });
+
+            const bool shiftDown = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+            if (shiftDown)
+            {
+                m_actions.push({ ActionType::Inspect, targetTile });
+            }
+            else
+            {
+                m_actions.push({ ActionType::Interact, targetTile });
+            }
         }
 
         const int wheel = m_window->consumeMouseWheelDelta();
@@ -153,7 +183,7 @@ namespace war
                     continue;
                 }
 
-                char buffer[160]{};
+                char buffer[192]{};
                 const Entity* entity = getEntityAt(action.target);
 
                 if (entity != nullptr)
@@ -161,11 +191,12 @@ namespace war
                     std::snprintf(
                         buffer,
                         sizeof(buffer),
-                        "Inspect (%d, %d): blocked=%s, entity=%s",
+                        "Inspect (%d, %d): blocked=%s, entity=%s [%s]",
                         action.target.x,
                         action.target.y,
                         m_world.isBlocked(action.target) ? "yes" : "no",
-                        entity->name.c_str());
+                        entity->name.c_str(),
+                        entityTypeToText(entity->type));
                 }
                 else
                 {
@@ -179,6 +210,40 @@ namespace war
                 }
 
                 pushEvent(buffer);
+            }
+            else if (action.type == ActionType::Interact)
+            {
+                if (!m_world.isInBounds(action.target))
+                {
+                    pushEvent("Nothing to interact with.");
+                    continue;
+                }
+
+                Entity* entity = getEntityAt(action.target);
+                if (entity == nullptr)
+                {
+                    pushEvent("Nothing to interact with.");
+                    continue;
+                }
+
+                switch (entity->type)
+                {
+                case EntityType::Crate:
+                    pushEvent("You open the cargo crate.");
+                    break;
+
+                case EntityType::Terminal:
+                    pushEvent("Accessing operations terminal...");
+                    break;
+
+                case EntityType::Locker:
+                    pushEvent("The maintenance locker is sealed.");
+                    break;
+
+                default:
+                    pushEvent("You are not sure how to interact with that.");
+                    break;
+                }
             }
         }
     }
@@ -427,17 +492,18 @@ namespace war
         const Entity* hoveredEntity =
             m_world.isInBounds(mouseTile) ? getEntityAt(mouseTile) : nullptr;
 
-        char buffer[768]{};
+        char buffer[896]{};
         std::snprintf(
             buffer,
             sizeof(buffer),
-            "WAR Milestone 4\n"
-            "LMB: move    RMB: inspect    MMB drag: pan    Wheel: zoom\n"
+            "WAR Milestone 5\n"
+            "LMB: move    RMB: interact    Shift+RMB: inspect    MMB drag: pan    Wheel: zoom\n"
             "Player world: (%.1f, %.1f)\n"
             "Player tile: (%d, %d)\n"
             "Mouse tile: (%d, %d)\n"
             "Hovered blocked: %s\n"
             "Hovered entity: %s\n"
+            "Hovered entity type: %s\n"
             "Camera: (%.1f, %.1f)  Zoom: %.2f\n"
             "Path nodes remaining: %zu\n"
             "Queued actions: %s\n"
@@ -451,6 +517,7 @@ namespace war
             mouseTile.y,
             hoveredBlocked ? "yes" : "no",
             hoveredEntity ? hoveredEntity->name.c_str() : "none",
+            hoveredEntity ? entityTypeToText(hoveredEntity->type) : "none",
             m_camera.getPosition().x,
             m_camera.getPosition().y,
             m_camera.getZoom(),
@@ -461,7 +528,7 @@ namespace war
 
         TextOutA(dc, 16, 16, buffer, static_cast<int>(std::strlen(buffer)));
 
-        int y = 208;
+        int y = 224;
         TextOutA(dc, 16, y, "Event Log:", 10);
         y += 22;
 
