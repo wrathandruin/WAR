@@ -1,57 +1,46 @@
-# WAR — Milestones 14 + 15 + 16 (First bgfx Geometry Pass)
+# WAR — Milestone 17 (bgfx Batching & Render Data)
 
-> Current development milestone: M16 — bgfx Shader Pipeline & Geometry Pass  
-> This package combines **M14**, **M15**, and **M16** so the bgfx path makes a meaningful jump.
+> Current development milestone: M17 — bgfx batching and render data cleanup
 
-## Focus of these milestones
+## Focus
+Make the bgfx renderer less ad hoc by separating render data generation from GPU submission.
 
-### M14 — First bgfx Tile Renderer
-- render the tile grid through bgfx
-- use colored quad submission instead of GDI rectangles
-- keep the GDI path as a safe fallback
+## What this milestone does
+- introduces `BgfxRenderDataBuilder`
+- groups world render data into explicit layers
+- keeps batching by layer instead of mixing generation and submission
+- preserves the current gameplay path and bgfx world rendering behavior
 
-### M15 — bgfx Entities, Player, and Path
-- render entities through bgfx
-- render a player placeholder through bgfx
-- render path nodes and hovered-tile highlight through bgfx
+## Renderer architecture
+The bgfx world path is now split into two steps:
 
-### M16 — Shader Pipeline & Runtime Fallback
-- add shader source files to the repo
-- load compiled shader binaries at runtime
-- show bgfx debug text when shaders are missing instead of leaving you blind
+1. **Build render data**
+   - tiles
+   - path nodes
+   - hovered tile
+   - entities
+   - player
 
-## Important note
-This package does **not** bundle precompiled shader binaries.
+2. **Submit render data**
+   - one submission path per layer
+   - cleaner CPU-side renderer flow
 
-To see the full bgfx world rendering, you must compile the included shader source into:
+## Why this matters
+This makes the next renderer milestones safer:
+- camera/projection cleanup
+- texture pipeline
+- material/shader expansion
+- better batching and draw ordering
+
+## Requirements
+The bgfx geometry path still expects compiled shader binaries at:
 
 ```text
 assets/shaders/dx11/vs_color.bin
 assets/shaders/dx11/fs_color.bin
 ```
 
-Until those binaries exist:
-- bgfx can still be the active backend
-- you will see bgfx debug text
-- the world geometry path will report that shaders are missing
-
-## What this package changes
-- introduces `BgfxWorldRenderer`
-- upgrades `BgfxDebugFrameRenderer`
-- updates `GameLayer` to route bgfx rendering through real world renderers
-- updates the Visual Studio project files
-- adds shader source files to the repo
-
-## Controls
-- **Left click**: Move
-- **Right click**: Interact
-- **Shift + Right click**: Inspect
-- **Middle mouse drag**: Pan camera
-- **Mouse wheel**: Zoom
-
 ## Next Milestone
-
-### M17 — bgfx Batching & Render Data
-- reduce draw-call count
-- move render data generation out of renderer code
-- prepare the renderer for texture/material work
+### M18 — bgfx Camera / Projection Cleanup
+- move away from CPU-heavy screen-space assumptions
+- prepare the renderer for a cleaner world-space pipeline

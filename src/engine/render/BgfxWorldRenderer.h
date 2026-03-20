@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "engine/math/Vec2.h"
+#include "engine/render/BgfxRenderData.h"
 #include "engine/render/Camera2D.h"
 #include "engine/world/WorldGrid.h"
 #include "engine/world/WorldState.h"
@@ -22,6 +23,7 @@ namespace war
             bool hasHoveredTile,
             TileCoord hoveredTile) const;
 
-        [[nodiscard]] const char* statusMessage() const;
+    private:
+        [[nodiscard]] bool submitLayer(const BgfxRenderLayer& layer, int viewWidth, int viewHeight) const;
     };
 }

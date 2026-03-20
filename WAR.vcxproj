@@ -65,7 +65,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party\bgfx\include;$(ProjectDir)third_party\bx\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party\bgfx\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -74,9 +74,7 @@
       <AdditionalLibraryDirectories>$(ProjectDir)third_party\bgfx\lib\win64\debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>if not exist "$(OutDir)assets\shaders\dx11" mkdir "$(OutDir)assets\shaders\dx11"
-copy /Y "$(ProjectDir)assets\shaders\dx11\vs_color.bin" "$(OutDir)assets\shaders\dx11\vs_color.bin"
-copy /Y "$(ProjectDir)assets\shaders\dx11\fs_color.bin" "$(OutDir)assets\shaders\dx11\fs_color.bin"</Command>
+      <Command>if exist "$(ProjectDir)assets\shaders\dx11\vs_color.bin" xcopy /Y /I "$(ProjectDir)assets\shaders\dx11\*.bin" "$(OutDir)assets\shaders\dx11\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
 
@@ -90,7 +88,7 @@ copy /Y "$(ProjectDir)assets\shaders\dx11\fs_color.bin" "$(OutDir)assets\shaders
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party\bgfx\include;$(ProjectDir)third_party\bx\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party\bgfx\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -101,9 +99,7 @@ copy /Y "$(ProjectDir)assets\shaders\dx11\fs_color.bin" "$(OutDir)assets\shaders
       <AdditionalLibraryDirectories>$(ProjectDir)third_party\bgfx\lib\win64\release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>if not exist "$(OutDir)assets\shaders\dx11" mkdir "$(OutDir)assets\shaders\dx11"
-copy /Y "$(ProjectDir)assets\shaders\dx11\vs_color.bin" "$(OutDir)assets\shaders\dx11\vs_color.bin"
-copy /Y "$(ProjectDir)assets\shaders\dx11\fs_color.bin" "$(OutDir)assets\shaders\dx11\fs_color.bin"</Command>
+      <Command>if exist "$(ProjectDir)assets\shaders\dx11\vs_color.bin" xcopy /Y /I "$(ProjectDir)assets\shaders\dx11\*.bin" "$(OutDir)assets\shaders\dx11\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
 
@@ -115,10 +111,11 @@ copy /Y "$(ProjectDir)assets\shaders\dx11\fs_color.bin" "$(OutDir)assets\shaders
     <ClCompile Include="src\engine\math\Vec2.cpp" />
     <ClCompile Include="src\engine\render\Camera2D.cpp" />
     <ClCompile Include="src\engine\render\WorldRenderer.cpp" />
+    <ClCompile Include="src\engine\render\BgfxWorldRenderer.cpp" />
+    <ClCompile Include="src\engine\render\BgfxRenderData.cpp" />
     <ClCompile Include="src\engine\render\DebugOverlayRenderer.cpp" />
     <ClCompile Include="src\engine\render\GdiRenderDevice.cpp" />
     <ClCompile Include="src\engine\render\BgfxRenderDevice.cpp" />
-    <ClCompile Include="src\engine\render\BgfxWorldRenderer.cpp" />
     <ClCompile Include="src\engine\render\BgfxDebugFrameRenderer.cpp" />
     <ClCompile Include="src\engine\world\WorldGrid.cpp" />
     <ClCompile Include="src\engine\world\Pathfinding.cpp" />
@@ -137,6 +134,7 @@ copy /Y "$(ProjectDir)assets\shaders\dx11\fs_color.bin" "$(OutDir)assets\shaders
     <ClInclude Include="src\engine\render\Camera2D.h" />
     <ClInclude Include="src\engine\render\WorldRenderer.h" />
     <ClInclude Include="src\engine\render\BgfxWorldRenderer.h" />
+    <ClInclude Include="src\engine\render\BgfxRenderData.h" />
     <ClInclude Include="src\engine\render\DebugOverlayRenderer.h" />
     <ClInclude Include="src\engine\render\RenderBackendType.h" />
     <ClInclude Include="src\engine\render\IRenderDevice.h" />
