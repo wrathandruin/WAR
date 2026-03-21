@@ -99,6 +99,20 @@ namespace war
                 ? std::string("hosted-bootstrap")
                 : std::string("localhost-fallback");
         }
+
+        std::string joinKeys(const std::vector<std::string>& values)
+        {
+            std::string result;
+            for (size_t index = 0; index < values.size(); ++index)
+            {
+                if (index > 0)
+                {
+                    result += ", ";
+                }
+                result += values[index];
+            }
+            return result.empty() ? std::string("none") : result;
+        }
     }
 
     LocalDemoDiagnosticsReport LocalDemoDiagnostics::buildReport(const RuntimeBoundaryReport& runtimeBoundaryReport)
@@ -114,6 +128,14 @@ namespace war
         }
 
         report.runtimeRootOverrideActive = runtimeBoundaryReport.runtimeRootOverrideActive;
+        report.environmentRootResolved = runtimeBoundaryReport.environmentRootResolved;
+        report.environmentProfileResolved = runtimeBoundaryReport.environmentProfileResolved;
+        report.environmentName = runtimeBoundaryReport.environmentName;
+        report.environmentProfileName = runtimeBoundaryReport.environmentProfileName;
+        report.deployableEnvironmentRoot = runtimeBoundaryReport.environmentRoot;
+        report.deployableEnvironmentProfileDirectory = runtimeBoundaryReport.environmentProfileDirectory;
+        report.deployableEnvironmentProfileFile = runtimeBoundaryReport.environmentProfileFile;
+
         report.connectTargetName = environmentText(L"WAR_CONNECT_TARGET_NAME");
         if (report.connectTargetName.empty())
         {
@@ -186,14 +208,18 @@ namespace war
             && report.packageRuntimeReady
             && report.launchScriptPresent
             && report.smokeScriptPresent
-            && report.m45ValidationScriptPresent;
+            && report.m45ValidationScriptPresent
+            && report.environmentRootResolved
+            && report.environmentProfileResolved;
 
         return report;
     }
 
     void LocalDemoDiagnostics::writeStartupReport(
         const RuntimeBoundaryReport& runtimeBoundaryReport,
-        LocalDemoDiagnosticsReport& localDemoDiagnosticsReport)
+        LocalDemoDiagnosticsReport& localDemoDiagnosticsReport,
+        const EnvironmentConfigReport* environmentConfigReport,
+        const RuntimeOwnershipReport* runtimeOwnershipReport)
     {
         std::error_code error;
         std::filesystem::create_directories(localDemoDiagnosticsReport.startupReportPath.parent_path(), error);
@@ -209,12 +235,21 @@ namespace war
         }
 
         output
-            << "WAR Internal Alpha Startup Report\n"
-            << "Milestone: M45 - Internal Alpha Package / Hosted Deploy / Telemetry Baseline\n"
+            << "WAR Startup Report\n"
+            << "Milestone: M46 - Trust Boundary / Environment Config / Secrets Baseline\n"
             << "Build configuration: " << localDemoDiagnosticsReport.buildConfiguration << "\n"
             << "Build timestamp: " << localDemoDiagnosticsReport.buildTimestamp << "\n"
             << "Build identity: " << localDemoDiagnosticsReport.buildIdentity << "\n"
             << "Build channel: " << localDemoDiagnosticsReport.buildChannel << "\n"
+            << "Environment: " << localDemoDiagnosticsReport.environmentName << "\n"
+            << "Environment profile: " << localDemoDiagnosticsReport.environmentProfileName << "\n"
+            << "Deployable environment root: " << RuntimePaths::displayPath(localDemoDiagnosticsReport.deployableEnvironmentRoot) << "\n"
+            << "Deployable environment profile directory: " << RuntimePaths::displayPath(localDemoDiagnosticsReport.deployableEnvironmentProfileDirectory) << "\n"
+            << "Deployable environment profile file: " << RuntimePaths::displayPath(localDemoDiagnosticsReport.deployableEnvironmentProfileFile) << "\n"
+            << "Mutable runtime config directory: " << RuntimePaths::displayPath(runtimeBoundaryReport.configDirectory) << "\n"
+            << "Mutable runtime logs directory: " << RuntimePaths::displayPath(runtimeBoundaryReport.logsDirectory) << "\n"
+            << "Mutable runtime saves directory: " << RuntimePaths::displayPath(runtimeBoundaryReport.savesDirectory) << "\n"
+            << "Mutable runtime host directory: " << RuntimePaths::displayPath(runtimeBoundaryReport.hostDirectory) << "\n"
             << "Connect target: " << localDemoDiagnosticsReport.connectTargetName << "\n"
             << "Connect transport: " << localDemoDiagnosticsReport.connectTransport << "\n"
             << "Connect lane mode: " << localDemoDiagnosticsReport.connectLaneMode << "\n"
@@ -225,7 +260,42 @@ namespace war
             << "Repo root: " << RuntimePaths::displayPath(runtimeBoundaryReport.repoRoot) << "\n"
             << "Asset root: " << RuntimePaths::displayPath(runtimeBoundaryReport.assetRoot) << "\n"
             << "Runtime root: " << RuntimePaths::displayPath(runtimeBoundaryReport.runtimeRoot) << "\n"
+            << "Environment root resolved: " << (localDemoDiagnosticsReport.environmentRootResolved ? "yes" : "no") << "\n"
+            << "Environment profile resolved: " << (localDemoDiagnosticsReport.environmentProfileResolved ? "yes" : "no") << "\n"
             << "Packaged lane ready: " << (localDemoDiagnosticsReport.packagedLaneReady ? "yes" : "no") << "\n";
+
+        if (environmentConfigReport != nullptr)
+        {
+            output
+                << "Config identity: " << environmentConfigReport->configIdentity << "\n"
+                << "Config description: " << environmentConfigReport->description << "\n"
+                << "Config connect target policy: " << environmentConfigReport->connectTargetPolicy << "\n"
+                << "Config transport policy: " << environmentConfigReport->transportPolicy << "\n"
+                << "Config runtime root policy: " << environmentConfigReport->runtimeRootPolicy << "\n"
+                << "Secrets required: " << (environmentConfigReport->secretsRequired ? "yes" : "no") << "\n"
+                << "Secrets source kind: " << environmentConfigReport->secretsSourceKind << "\n"
+                << "Secrets file path: " << RuntimePaths::displayPath(environmentConfigReport->secretsFilePath) << "\n"
+                << "Required secret count: " << environmentConfigReport->requiredSecretCount << "\n"
+                << "Loaded secret count: " << environmentConfigReport->loadedSecretCount << "\n"
+                << "Missing required secret count: " << environmentConfigReport->missingRequiredSecretCount << "\n"
+                << "Missing required secret keys: " << joinKeys(environmentConfigReport->missingRequiredSecretKeys) << "\n"
+                << "Configuration valid: " << (environmentConfigReport->configurationValid ? "yes" : "no") << "\n";
+        }
+
+        if (runtimeOwnershipReport != nullptr)
+        {
+            output
+                << "Requested save slot: " << runtimeOwnershipReport->requestedSaveSlotName << "\n"
+                << "Sanitized primary save slot: " << runtimeOwnershipReport->primarySaveSlotName << "\n"
+                << "Primary save path: " << RuntimePaths::displayPath(runtimeOwnershipReport->primarySavePath) << "\n"
+                << "Runtime owned directories sane: " << (runtimeOwnershipReport->runtimeOwnedDirectoriesSane ? "yes" : "no") << "\n"
+                << "Deployable environment separated: " << (runtimeOwnershipReport->deployableEnvironmentSeparated ? "yes" : "no") << "\n"
+                << "Primary save path owned: " << (runtimeOwnershipReport->primarySavePathOwned ? "yes" : "no") << "\n"
+                << "Runtime ownership valid: " << (runtimeOwnershipReport->ownershipValid ? "yes" : "no") << "\n";
+        }
+
+        output
+            << "Trust boundary summary: Environment/ is deployable config; Runtime/Config is mutable runtime config; Runtime/Saves, Runtime/Logs, Runtime/Host are runtime-owned.\n";
 
         output.flush();
         localDemoDiagnosticsReport.startupReportWritten = output.good();

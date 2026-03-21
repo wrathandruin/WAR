@@ -1,19 +1,24 @@
-# WAR — M45 Closeout Batch 03
+# WAR — M46 Batch 04
 
-> Current milestone: M45 — Internal Alpha Package / Hosted Deploy / Telemetry Baseline
+> Current milestone: M46 — Trust Boundary / Environment Config / Secrets Baseline
 
-This batch continues the M45 correction lane by closing the client-facing telemetry and presentation surfaces that still needed to line up with the hosted-bootstrap truth work.
+This batch closes the fourth M46 backbone piece:
 
-This batch focuses on:
-- client identity and connect-state telemetry
-- visible connect success / failure / disconnect state
-- room-entry description runtime
-- prompt / vitals presentation
-- typed command-bar shell
-- validation checks that assert those surfaces in localhost fallback and hosted-bootstrap runs
+- real M46 validation scripts
+- explicit validation for environment identity
+- explicit validation for missing required secrets
+- explicit validation for secret redaction
+- explicit validation for runtime-root and save-path hygiene
+- compatibility preservation for the M45 localhost fallback and hosted bootstrap lanes
+- updated milestone truth surfaces
 
-Hosted truth remains honest:
-- `file-backed-localhost-fallback`
-- `file-backed-hosted-bootstrap`
+Validation coverage introduced in this batch:
 
-The hosted lane in M45 is still an interim file-backed hosted bootstrap.
+- `validate_m46_environment_identity_win64.bat`
+- `validate_m46_missing_required_secrets_win64.bat`
+- `validate_m46_runtime_save_hygiene_win64.bat`
+- `validate_m46_internal_alpha_package_win64.bat`
+
+Compatibility preservation updated in this batch:
+
+- `validate_m45_hosted_bootstrap_win64.bat` now provisions the hosted-internal-alpha secrets baseline required by M46 before asserting the M45 hosted bootstrap lane.

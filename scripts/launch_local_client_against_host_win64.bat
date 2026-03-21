@@ -30,16 +30,30 @@ if "%LANE_MODE%"=="" (
     )
 )
 
+set "ENVIRONMENT_NAME=%~4"
+if "%ENVIRONMENT_NAME%"=="" (
+    if /I "%LANE_MODE%"=="hosted-bootstrap" (
+        set "ENVIRONMENT_NAME=hosted_internal_alpha"
+    ) else (
+        set "ENVIRONMENT_NAME=local"
+    )
+)
+set "CONFIG_PROFILE=%~5"
+if "%CONFIG_PROFILE%"=="" set "CONFIG_PROFILE=%ENVIRONMENT_NAME%"
+set "SECRETS_FILE=%~6"
+set "PERSISTENCE_SLOT=%~7"
+if "%PERSISTENCE_SLOT%"=="" set "PERSISTENCE_SLOT=primary"
+
 set "TRANSPORT_KIND=file-backed-localhost-fallback"
 if /I "%LANE_MODE%"=="hosted-bootstrap" set "TRANSPORT_KIND=file-backed-hosted-bootstrap"
 
 if not exist "%CLIENT_EXE_PATH%" (
-    echo [M45] ERROR: WAR.exe not found next to the client/host launch script.
+    echo [M46] ERROR: WAR.exe not found next to the client/host launch script.
     exit /b 1
 )
 
 if not exist "%HOST_EXE_PATH%" (
-    echo [M45] ERROR: host executable not found next to the client/host launch script.
+    echo [M46] ERROR: host executable not found next to the client/host launch script.
     exit /b 1
 )
 
@@ -48,12 +62,16 @@ set "WAR_CONNECT_TARGET_NAME=%TARGET_NAME%"
 set "WAR_CONNECT_TRANSPORT=%TRANSPORT_KIND%"
 set "WAR_CONNECT_LANE_MODE=%LANE_MODE%"
 set "WAR_BUILD_CHANNEL=internal-alpha"
+set "WAR_ENVIRONMENT=%ENVIRONMENT_NAME%"
+set "WAR_CONFIG_PROFILE=%CONFIG_PROFILE%"
+set "WAR_PERSISTENCE_SLOT=%PERSISTENCE_SLOT%"
+if not "%SECRETS_FILE%"=="" set "WAR_SECRETS_FILE=%SECRETS_FILE%"
 
 if /I "%LANE_MODE%"=="localhost-fallback" (
     start "WAR Headless Host" /min "%HOST_EXE_PATH%" %HOST_ARGS%
     ping 127.0.0.1 -n 2 >nul
 ) else (
-    echo [M45] Client connecting to hosted bootstrap target "%TARGET_NAME%" via runtime root "%TARGET_RUNTIME_ROOT%".
+    echo [M46] Client connecting to hosted bootstrap target "%TARGET_NAME%" via runtime root "%TARGET_RUNTIME_ROOT%" in environment "%ENVIRONMENT_NAME%" with config profile "%CONFIG_PROFILE%" and persistence slot "%PERSISTENCE_SLOT%".
 )
 
 start "WAR Client" "%CLIENT_EXE_PATH%"

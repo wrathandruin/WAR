@@ -871,18 +871,17 @@ M45 marks the shift from development milestone to real internal product evaluati
 
 ## What should be coming up in the next milestone
 
-M46 - Alpha Hardening / Crash Capture / Admin Tooling
+M46 - Trust Boundary / Environment Config / Secrets Baseline
 
 ## Title
 
-M46 - Alpha Hardening / Crash Capture / Admin Tooling
+M46 - Trust Boundary / Environment Config / Secrets Baseline
 
 ## Description
 
-M46 should harden the internal alpha by improving crash capture, diagnostics depth, admin tooling, and operational recovery confidence.
+M46 should define how the hosted product is configured and trusted.
 
-This milestone should draw heavily from the legacy project's operations discipline.
-It should also harden the first text/social MVP surfaces enough that playtests can start judging the product honestly.
+This milestone should establish the first real environment model for local, staging, and hosted alpha, including how secrets, runtime config, and trust boundaries are owned.
 
 ## Download
 
@@ -892,43 +891,42 @@ Planned package name:
 
 The milestone document should live at:
 
-`Milestones/M46_Alpha_Hardening_Crash_Capture_Admin_Tooling.md`
+`Milestones/M46_Trust_Boundary_Environment_Config_Secrets_Baseline.md`
 
 ## Included
 
 Planned focus areas:
 
-- crash capture and logging improvements
-- admin and debug controls
-- recovery and restart confidence
-- acceptance and healthcheck expansion
-- support for the first shared-presence playtest lane
-- text/social instrumentation around room-entry descriptions, command usage, and session readability
+- trust-boundary document
+- environment configuration model
+- secrets handling policy
+- protocol and runtime config separation
+- save-path and runtime-root hygiene in hosted environments
 
 ## What should be seen visually
 
-- failures should be easier to diagnose
-- operators should have clearer visibility into runtime health
-- the internal alpha should require less engineering babysitting
+- local, staging, and hosted environments should be clearly distinguishable in diagnostics
+- config failures should be explicit instead of ambiguous
+- operators should be able to see the runtime ownership model without exposing secrets
 
 ## Why this is important
 
-M46 turns a hosted build into a supportable hosted build, which is a very different standard.
+Security and environment mistakes are much cheaper to prevent here than after onboarding real testers.
 
 ## What should be coming up in the next milestone
 
-M47 - External Beta Onboarding / Launcher-Update Direction / Support Flow
+M47 - Account Session Ticket Handoff / Authenticated Entry
 
 ## Title
 
-M47 - External Beta Onboarding / Launcher-Update Direction / Support Flow
+M47 - Account Session Ticket Handoff / Authenticated Entry
 
 ## Description
 
-M47 should begin preparing the product for users outside the immediate development circle.
+M47 should establish how a real player session enters the hosted runtime.
 
-The milestone should define how external testers get in, how builds are distributed, how updates are handled, and how support issues are surfaced.
-By this point, the product should no longer be relying on debug-only text to carry the MUD soul.
+The client and host should stop behaving like they can be coupled casually.
+This milestone should define the first trustworthy session-entry model and reconnect identity direction.
 
 ## Download
 
@@ -938,42 +936,41 @@ Planned package name:
 
 The milestone document should live at:
 
-`Milestones/M47_External_Beta_Onboarding_Launcher_Update_Direction_Support_Flow.md`
+`Milestones/M47_Account_Session_Ticket_Handoff_Authenticated_Entry.md`
 
 ## Included
 
 Planned focus areas:
 
-- external onboarding direction
-- launcher or updater direction
-- account or session-entry flow refinement
-- support intake and triage foundation
-- clearer room-description, text-log, command-bar, and social-surface presentation for outside testers
+- account/session ownership direction
+- trusted ticket or session handoff model
+- authenticated session entry
+- reconnect token or resume identity approach
+- session failure states and expiry handling
 
 ## What should be seen visually
 
-- the product should look more ready for outside testers
-- session entry should feel more intentional
-- build distribution and update direction should no longer be vague
+- session entry should feel intentional rather than ad hoc
+- a hosted player session should be validated and denied coherently
+- reconnect identity should have a believable product-facing seam
 
 ## Why this is important
 
-M47 lays the first true beta runway and prevents late-stage chaos around onboarding and build distribution.
+The game cannot become a real hosted product if entry into the world is still undefined.
 
 ## What should be coming up in the next milestone
 
-M48 - Market Foundation / Release Ops / Analytics / Readiness Gate
+M48 - Structured Telemetry / Crash Capture / Runtime Event Pipeline
 
 ## Title
 
-M48 - Market Foundation / Release Ops / Analytics / Readiness Gate
+M48 - Structured Telemetry / Crash Capture / Runtime Event Pipeline
 
 ## Description
 
-M48 should establish the first serious market-facing foundation without pretending the product is fully launch-ready.
+M48 should establish the first serious observability baseline for hosted play.
 
-The focus is on release-ops discipline, analytics direction, readiness criteria, and the business-facing base that turns a strong internal project into a credible commercial candidate later.
-The go/no-go review at this stage must judge both product operations and product identity.
+This milestone should make session, runtime, and crash behavior visible enough that engineering and support are no longer guessing.
 
 ## Download
 

@@ -8,18 +8,25 @@ if not exist "%PACKAGE_ROOT%\WAR.exe" (
 )
 
 set "HOSTED_RUNTIME_ROOT=%PACKAGE_ROOT%\HostedBootstrapRuntime"
+set "CONFIG_DIR=%HOSTED_RUNTIME_ROOT%\Config"
 set "LOG_DIR=%HOSTED_RUNTIME_ROOT%\Logs"
 set "HOST_STATUS_FILE=%HOSTED_RUNTIME_ROOT%\Host\headless_host_status.txt"
 set "CLIENT_STATUS_FILE=%HOSTED_RUNTIME_ROOT%\Logs\client_replication_status.txt"
+set "SECRETS_FILE=%CONFIG_DIR%\hosted_internal_alpha.secrets.cfg"
 set "REPORT_PATH=%LOG_DIR%\m45_hosted_bootstrap_validation.txt"
 set "DETAILS_PATH=%LOG_DIR%\m45_hosted_bootstrap_validation_details.txt"
 
 if exist "%HOSTED_RUNTIME_ROOT%" rmdir /s /q "%HOSTED_RUNTIME_ROOT%"
-mkdir "%HOSTED_RUNTIME_ROOT%\Config" >nul 2>nul
-mkdir "%HOSTED_RUNTIME_ROOT%\Logs" >nul 2>nul
+mkdir "%CONFIG_DIR%" >nul 2>nul
+mkdir "%LOG_DIR%" >nul 2>nul
 mkdir "%HOSTED_RUNTIME_ROOT%\Saves" >nul 2>nul
 mkdir "%HOSTED_RUNTIME_ROOT%\CrashDumps" >nul 2>nul
 mkdir "%HOSTED_RUNTIME_ROOT%\Host" >nul 2>nul
+
+(
+    echo bootstrap_shared_key=M45_HOSTED_BOOTSTRAP_PLACEHOLDER
+    echo telemetry_hmac_salt=M45_HOSTED_TELEMETRY_PLACEHOLDER
+) > "%SECRETS_FILE%"
 
 if exist "%DETAILS_PATH%" del /q "%DETAILS_PATH%" >nul 2>nul
 if exist "%REPORT_PATH%" del /q "%REPORT_PATH%" >nul 2>nul
@@ -29,7 +36,7 @@ taskkill /IM WARServer.exe /F >nul 2>nul
 
 set "FAILED=0"
 
-call "%SCRIPT_DIR%launch_headless_host_win64.bat" "%HOSTED_RUNTIME_ROOT%" "internal-alpha-lan" "hosted-bootstrap"
+call "%SCRIPT_DIR%launch_headless_host_win64.bat" "%HOSTED_RUNTIME_ROOT%" "internal-alpha-lan" "hosted-bootstrap" "hosted_internal_alpha" "hosted_internal_alpha" "" "primary"
 if errorlevel 1 (
     echo [FAIL] Hosted bootstrap host launch failed>> "%DETAILS_PATH%"
     set "FAILED=1"
@@ -39,7 +46,7 @@ if errorlevel 1 (
 call :wait_for_file "%HOST_STATUS_FILE%" "Hosted bootstrap host status"
 if "%FAILED%"=="1" goto :cleanup
 
-call "%SCRIPT_DIR%launch_local_client_against_host_win64.bat" "%HOSTED_RUNTIME_ROOT%" "internal-alpha-lan" "hosted-bootstrap"
+call "%SCRIPT_DIR%launch_local_client_against_host_win64.bat" "%HOSTED_RUNTIME_ROOT%" "internal-alpha-lan" "hosted-bootstrap" "hosted_internal_alpha" "hosted_internal_alpha" "" "primary"
 if errorlevel 1 (
     echo [FAIL] Hosted bootstrap client launch failed>> "%DETAILS_PATH%"
     set "FAILED=1"
@@ -52,6 +59,8 @@ if "%FAILED%"=="1" goto :cleanup
 call :require_line "%HOST_STATUS_FILE%" "transport_kind=file-backed-hosted-bootstrap" "Hosted transport visible on host"
 call :require_line "%HOST_STATUS_FILE%" "connect_target_name=internal-alpha-lan" "Hosted target visible on host"
 call :require_line "%HOST_STATUS_FILE%" "connect_lane_mode=hosted-bootstrap" "Hosted lane visible on host"
+call :require_line "%HOST_STATUS_FILE%" "environment_name=hosted_internal_alpha" "Hosted environment visible on host"
+call :require_line "%HOST_STATUS_FILE%" "environment_profile_name=hosted_internal_alpha" "Hosted environment profile visible on host"
 call :require_prefix "%HOST_STATUS_FILE%" "host_instance_id=host-" "Host instance identity visible"
 call :require_prefix "%HOST_STATUS_FILE%" "session_id=session-" "Session identity visible"
 

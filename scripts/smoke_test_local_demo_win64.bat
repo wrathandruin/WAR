@@ -15,11 +15,13 @@ set "CLIENT_STATUS_FILE=%LOG_DIR%\client_replication_status.txt"
 set "HOST_STATUS_FILE=%HOST_ROOT%\headless_host_status.txt"
 set "REPORT_PATH=%LOG_DIR%\m45_local_demo_smoke_test.txt"
 set "DETAILS_PATH=%LOG_DIR%\m45_local_demo_smoke_test_details.txt"
+set "CHECKLIST_PATH=%RUNTIME_ROOT%\Config\m45_local_demo_smoke_checks.txt"
 
 if not exist "%LOG_DIR%" mkdir "%LOG_DIR%" >nul 2>nul
 if not exist "%HOST_ROOT%" mkdir "%HOST_ROOT%" >nul 2>nul
-if exist "%DETAILS_PATH%" del /q "%DETAILS_PATH%" >nul 2>nul
-if exist "%REPORT_PATH%" del /q "%REPORT_PATH%" >nul 2>nul
+copy /y nul "%DETAILS_PATH%" >nul
+copy /y nul "%REPORT_PATH%" >nul
+if exist "%CHECKLIST_PATH%" del /q "%CHECKLIST_PATH%" >nul 2>nul
 if exist "%CLIENT_STATUS_FILE%" del /q "%CLIENT_STATUS_FILE%" >nul 2>nul
 if exist "%HOST_STATUS_FILE%" del /q "%HOST_STATUS_FILE%" >nul 2>nul
 
@@ -39,24 +41,38 @@ call :wait_for_file "%CLIENT_STATUS_FILE%" "Client status file"
 call :wait_for_file "%HOST_STATUS_FILE%" "Host status file"
 if "%FAILED%"=="1" goto :cleanup
 
-call :require_line "%CLIENT_STATUS_FILE%" "connect_state=connected-headless-host" "Client connect success visible"
-call :require_line "%CLIENT_STATUS_FILE%" "connect_transport=file-backed-localhost-fallback" "Client transport visible"
-call :require_line "%CLIENT_STATUS_FILE%" "connect_lane_mode=localhost-fallback" "Client lane mode visible"
-call :require_line "%CLIENT_STATUS_FILE%" "expected_protocol_version=2" "Client protocol version visible"
-call :require_prefix "%CLIENT_STATUS_FILE%" "client_instance_id=client-" "Client instance identity visible"
-call :require_prefix "%CLIENT_STATUS_FILE%" "client_session_id=client-session-" "Client session identity visible"
-call :require_prefix "%CLIENT_STATUS_FILE%" "host_instance_id=host-" "Host instance mirrored to client status"
-call :require_prefix "%CLIENT_STATUS_FILE%" "host_session_id=session-" "Host session mirrored to client status"
-call :require_prefix "%CLIENT_STATUS_FILE%" "room_title=" "Room title visible"
-call :require_prefix "%CLIENT_STATUS_FILE%" "room_description=" "Room description visible"
-call :require_prefix "%CLIENT_STATUS_FILE%" "prompt_line=" "Prompt visible"
-call :require_prefix "%CLIENT_STATUS_FILE%" "command_bar=> " "Command shell visible"
-call :require_prefix "%CLIENT_STATUS_FILE%" "command_echo=" "Command reply surface visible"
-call :require_line "%HOST_STATUS_FILE%" "transport_kind=file-backed-localhost-fallback" "Host localhost transport visible"
+(
+    echo %CLIENT_STATUS_FILE%^|connect_state=connected-headless-host^|Client connect success visible
+    echo %CLIENT_STATUS_FILE%^|connect_transport=file-backed-localhost-fallback^|Client transport visible
+    echo %CLIENT_STATUS_FILE%^|connect_lane_mode=localhost-fallback^|Client lane mode visible
+    echo %CLIENT_STATUS_FILE%^|expected_protocol_version=2^|Client protocol version visible
+    echo %CLIENT_STATUS_FILE%^|client_instance_id=client-^|Client instance identity visible
+    echo %CLIENT_STATUS_FILE%^|client_session_id=client-session-^|Client session identity visible
+    echo %CLIENT_STATUS_FILE%^|host_instance_id=host-^|Host instance mirrored to client status
+    echo %CLIENT_STATUS_FILE%^|host_session_id=session-^|Host session mirrored to client status
+    echo %CLIENT_STATUS_FILE%^|room_title=^|Room title visible
+    echo %CLIENT_STATUS_FILE%^|room_description=^|Room description visible
+    echo %CLIENT_STATUS_FILE%^|prompt_line=^|Prompt visible
+    echo %CLIENT_STATUS_FILE%^|command_bar=^> ^|Command shell visible
+    echo %CLIENT_STATUS_FILE%^|command_echo=^|Command reply surface visible
+    echo %HOST_STATUS_FILE%^|transport_kind=file-backed-localhost-fallback^|Host localhost transport visible
+) > "%CHECKLIST_PATH%"
+
+for /f "usebackq tokens=1,2,* delims=|" %%A in ("%CHECKLIST_PATH%") do (
+    powershell.exe -NoProfile -Command "if (Select-String -Path '%%~A' -SimpleMatch -Pattern '%%~B' -Quiet) { exit 0 } else { exit 1 }" >nul 2>nul
+    if errorlevel 1 (
+        echo [FAIL] %%C>> "%DETAILS_PATH%"
+        set "FAILED=1"
+    ) else (
+        echo [PASS] %%C>> "%DETAILS_PATH%"
+    )
+)
 
 :cleanup
 taskkill /IM WAR.exe /F >nul 2>nul
 taskkill /IM WARServer.exe /F >nul 2>nul
+if exist "%CHECKLIST_PATH%" del /q "%CHECKLIST_PATH%" >nul 2>nul
+if exist "%DETAILS_PATH%" powershell.exe -NoProfile -Command "$p = '%DETAILS_PATH%'; $seen = [System.Collections.Generic.HashSet[string]]::new(); $out = foreach ($line in Get-Content -Path $p) { if ($seen.Add($line)) { $line } }; Set-Content -Path $p -Value $out" >nul 2>nul
 
 (
     echo WAR M45 Local Demo Smoke Test
@@ -81,23 +97,3 @@ if %WAIT_ATTEMPT% GEQ 30 (
 )
 ping 127.0.0.1 -n 2 >nul
 goto :wait_loop
-
-:require_line
-findstr /b /c:"%~2" "%~1" >nul
-if errorlevel 1 (
-    echo [FAIL] %~3>> "%DETAILS_PATH%"
-    set "FAILED=1"
-) else (
-    echo [PASS] %~3>> "%DETAILS_PATH%"
-)
-exit /b 0
-
-:require_prefix
-findstr /b /c:"%~2" "%~1" >nul
-if errorlevel 1 (
-    echo [FAIL] %~3>> "%DETAILS_PATH%"
-    set "FAILED=1"
-) else (
-    echo [PASS] %~3>> "%DETAILS_PATH%"
-)
-exit /b 0

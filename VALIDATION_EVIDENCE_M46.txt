@@ -1,0 +1,40 @@
+M46 Validation Evidence
+
+Submission classification:
+- sign-off candidate
+
+Backbone piece closed in this batch:
+- M46 trust boundary / environment config / secrets baseline closeout
+
+What is fully complete in this package:
+- Windows-safe environment and secrets reads
+- runtime path UTF-8 conversion hardening
+- deterministic M46 internal-alpha package rebuild lane
+- M46 environment identity and secret redaction validation
+- M46 missing required secrets fail-fast validation
+- M46 runtime-root and save-path hygiene validation
+- preserved M45 localhost fallback validation
+- preserved M45 hosted bootstrap validation
+- M46 aggregate internal-alpha validation pass
+- milestone/package documentation aligned with the real validation lane
+
+What is intentionally not complete:
+- final remote transport delivery
+- M47 account/session/auth scope
+- M48 crash and live-ops hardening scope
+
+Exact validation run and result:
+- `scripts/build_internal_alpha_package_win64.bat Release`: PASS
+- `scripts/validate_m46_internal_alpha_package_win64.bat Release`: PASS
+- `out\\internal_alpha\\WAR_M46_Release\\smoke_test_headless_host_win64.bat`: PASS
+- `out\\internal_alpha\\WAR_M46_Release\\smoke_test_local_demo_win64.bat`: PASS
+- `out\\internal_alpha\\WAR_M46_Release\\validate_m45_hosted_bootstrap_win64.bat`: PASS
+- `out\\internal_alpha\\WAR_M46_Release\\validate_m46_environment_identity_win64.bat`: PASS
+- `out\\internal_alpha\\WAR_M46_Release\\validate_m46_missing_required_secrets_win64.bat`: PASS
+- `out\\internal_alpha\\WAR_M46_Release\\validate_m46_runtime_save_hygiene_win64.bat`: PASS
+
+Exact remaining blockers:
+- none inside M46 sign-off scope
+
+Final statement:
+- M46 sign-off ready

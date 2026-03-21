@@ -13,6 +13,11 @@ namespace war
         bool assetRootResolved = false;
         bool runtimeDirectoriesReady = false;
         bool runtimeRootOverrideActive = false;
+        bool environmentRootResolved = false;
+        bool environmentProfileResolved = false;
+
+        std::string environmentName = "local";
+        std::string environmentProfileName = "local";
 
         std::filesystem::path executablePath;
         std::filesystem::path executableDirectory;
@@ -24,6 +29,10 @@ namespace war
         std::filesystem::path savesDirectory;
         std::filesystem::path crashDirectory;
         std::filesystem::path hostDirectory;
+        std::filesystem::path environmentRoot;
+        std::filesystem::path environmentProfilesDirectory;
+        std::filesystem::path environmentProfileDirectory;
+        std::filesystem::path environmentProfileFile;
 
         std::vector<std::string> issues;
     };

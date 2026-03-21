@@ -1,5 +1,7 @@
 #include "engine/core/RuntimePaths.h"
 
+#include <algorithm>
+#include <cctype>
 #include <system_error>
 #include <vector>
 
@@ -75,6 +77,89 @@ namespace war
             return buffer;
         }
 
+        std::string narrowText(const std::wstring& value)
+        {
+            if (value.empty())
+            {
+                return {};
+            }
+
+            const int requiredBytes = WideCharToMultiByte(
+                CP_UTF8,
+                0,
+                value.c_str(),
+                static_cast<int>(value.size()),
+                nullptr,
+                0,
+                nullptr,
+                nullptr);
+            if (requiredBytes <= 0)
+            {
+                return {};
+            }
+
+            std::string result(static_cast<size_t>(requiredBytes), '\0');
+            const int writtenBytes = WideCharToMultiByte(
+                CP_UTF8,
+                0,
+                value.c_str(),
+                static_cast<int>(value.size()),
+                result.data(),
+                requiredBytes,
+                nullptr,
+                nullptr);
+            if (writtenBytes <= 0)
+            {
+                return {};
+            }
+
+            result.resize(static_cast<size_t>(writtenBytes));
+            return result;
+        }
+
+        std::string environmentText(const wchar_t* variableName)
+        {
+            return narrowText(readEnvironmentWide(variableName));
+        }
+
+        std::string normalizeProfileName(std::string value)
+        {
+            if (value.empty())
+            {
+                return "local";
+            }
+
+            std::transform(value.begin(), value.end(), value.begin(), [](unsigned char ch)
+            {
+                return static_cast<char>(std::tolower(ch));
+            });
+
+            for (char& ch : value)
+            {
+                if (ch == '-' || ch == ' ')
+                {
+                    ch = '_';
+                }
+            }
+
+            std::string normalized;
+            normalized.reserve(value.size());
+            for (const char ch : value)
+            {
+                if ((ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || ch == '_')
+                {
+                    normalized.push_back(ch);
+                }
+            }
+
+            if (normalized.empty())
+            {
+                normalized = "local";
+            }
+
+            return normalized;
+        }
+
         std::filesystem::path resolveRuntimeRootOverride(const std::filesystem::path& executableDirectory)
         {
             const std::wstring overrideText = readEnvironmentWide(L"WAR_RUNTIME_ROOT");
@@ -110,18 +195,23 @@ namespace war
                 : (directoryExists(packagedRuntimeRootUpper) ? packagedRuntimeRootUpper : std::filesystem::path{});
         const std::filesystem::path runtimeRootOverride = resolveRuntimeRootOverride(report.executableDirectory);
         report.runtimeRootOverrideActive = !runtimeRootOverride.empty();
+
         const bool packagedMarkersPresent =
             fileExists(report.executableDirectory / "demo_manifest.txt")
             || fileExists(report.executableDirectory / "internal_alpha_manifest.txt")
             || fileExists(report.executableDirectory / "launch_local_demo_win64.bat")
             || fileExists(report.executableDirectory / "launch_headless_host_win64.bat");
+
         report.repoRoot = findRepoRoot(report.executableDirectory);
         report.repoRootResolved = !report.repoRoot.empty();
+
         const bool packagedLayoutDetected =
             directoryExists(packagedAssetRoot)
             && (!packagedRuntimeRoot.empty() || report.runtimeRootOverrideActive)
             && (packagedMarkersPresent || !report.repoRootResolved);
+
         report.runningFromSourceTree = report.repoRootResolved && !packagedLayoutDetected;
+
         const std::filesystem::path sourceAssetRoot = report.repoRootResolved
             ? report.repoRoot / "assets"
             : std::filesystem::path{};
@@ -157,6 +247,51 @@ namespace war
         report.savesDirectory = report.runtimeRoot / "Saves";
         report.crashDirectory = report.runtimeRoot / "CrashDumps";
         report.hostDirectory = report.runtimeRoot / "Host";
+
+        const std::filesystem::path packagedEnvironmentRoot = report.executableDirectory / "Environment";
+        const std::filesystem::path sourceEnvironmentRoot = report.repoRootResolved
+            ? report.repoRoot / "Environment"
+            : std::filesystem::path{};
+
+        if (directoryExists(packagedEnvironmentRoot))
+        {
+            report.environmentRoot = packagedEnvironmentRoot;
+            report.environmentRootResolved = true;
+        }
+        else if (report.repoRootResolved && directoryExists(sourceEnvironmentRoot))
+        {
+            report.environmentRoot = sourceEnvironmentRoot;
+            report.environmentRootResolved = true;
+        }
+
+        const std::string explicitEnvironmentName = normalizeProfileName(environmentText(L"WAR_ENVIRONMENT"));
+        const std::string explicitProfileName = normalizeProfileName(environmentText(L"WAR_CONFIG_PROFILE"));
+
+        report.environmentName = explicitEnvironmentName.empty() ? "local" : explicitEnvironmentName;
+        report.environmentProfileName = explicitProfileName.empty() ? report.environmentName : explicitProfileName;
+
+        if (report.environmentRootResolved)
+        {
+            report.environmentProfilesDirectory = report.environmentRoot / "Profiles";
+            report.environmentProfileDirectory = report.environmentProfilesDirectory / report.environmentProfileName;
+            report.environmentProfileFile = report.environmentProfileDirectory / "environment.cfg";
+            report.environmentProfileResolved = fileExists(report.environmentProfileFile);
+        }
+
+        if (!report.environmentRootResolved)
+        {
+            report.issues.push_back("Environment root could not be resolved from packaged or source-tree layout.");
+        }
+        else if (!directoryExists(report.environmentProfilesDirectory))
+        {
+            report.issues.push_back("Environment profiles directory missing.");
+        }
+        else if (!report.environmentProfileResolved)
+        {
+            report.issues.push_back(
+                std::string("Environment profile file missing: ")
+                + RuntimePaths::displayPath(report.environmentProfileFile));
+        }
 
         if (report.assetRootResolved)
         {

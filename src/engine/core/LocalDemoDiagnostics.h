@@ -5,6 +5,8 @@
 #include <string_view>
 #include <vector>
 
+#include "engine/core/EnvironmentConfig.h"
+#include "engine/core/RuntimeOwnership.h"
 #include "engine/core/RuntimePaths.h"
 
 namespace war
@@ -19,6 +21,8 @@ namespace war
         std::string connectTransport = "file-backed-localhost-fallback";
         std::string connectLaneMode = "localhost-fallback";
         std::string runtimeRootDisplay = "unresolved";
+        std::string environmentName = "local";
+        std::string environmentProfileName = "local";
 
         bool repoPackagingScriptsReady = false;
         bool packageAssetsReady = false;
@@ -29,9 +33,14 @@ namespace war
         bool packagedLaneReady = false;
         bool startupReportWritten = false;
         bool runtimeRootOverrideActive = false;
+        bool environmentRootResolved = false;
+        bool environmentProfileResolved = false;
 
         std::filesystem::path startupReportPath;
         std::filesystem::path suggestedPackageRoot;
+        std::filesystem::path deployableEnvironmentRoot;
+        std::filesystem::path deployableEnvironmentProfileDirectory;
+        std::filesystem::path deployableEnvironmentProfileFile;
 
         std::vector<std::string> issues;
     };
@@ -42,7 +51,9 @@ namespace war
         [[nodiscard]] static LocalDemoDiagnosticsReport buildReport(const RuntimeBoundaryReport& runtimeBoundaryReport);
         static void writeStartupReport(
             const RuntimeBoundaryReport& runtimeBoundaryReport,
-            LocalDemoDiagnosticsReport& localDemoDiagnosticsReport);
+            LocalDemoDiagnosticsReport& localDemoDiagnosticsReport,
+            const EnvironmentConfigReport* environmentConfigReport = nullptr,
+            const RuntimeOwnershipReport* runtimeOwnershipReport = nullptr);
         static void appendTraceLine(
             const RuntimeBoundaryReport& runtimeBoundaryReport,
             const std::string& filename,

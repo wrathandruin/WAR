@@ -10,6 +10,8 @@
 
 #include <windows.h>
 
+#include "engine/core/RuntimeOwnership.h"
+
 namespace war
 {
     namespace
@@ -331,6 +333,8 @@ namespace war
         malformed |= !tryParseString(values, "session_id", report.sessionId);
         malformed |= !tryParseString(values, "runtime_root_path", report.runtimeRootPath);
         malformed |= !tryParseString(values, "restore_state", report.restoreState);
+        malformed |= !tryParseString(values, "environment_name", report.environmentName);
+        malformed |= !tryParseString(values, "environment_profile_name", report.environmentProfileName);
         malformed |= !tryParseString(values, "mode", report.hostMode);
         malformed |= !tryParseString(values, "state", report.hostState);
         malformed |= !tryParseString(values, "pid", report.hostPid);
@@ -341,6 +345,10 @@ namespace war
         report.heartbeatFieldValid = tryParseUnsigned(values, "heartbeat_epoch_ms", heartbeatEpochMilliseconds);
         malformed |= !report.heartbeatFieldValid;
         malformed |= !tryParseYesNo(values, "latency_harness_enabled", latencyHarnessEnabled);
+        malformed |= !tryParseYesNo(values, "runtime_ownership_valid", report.runtimeOwnershipValid);
+        malformed |= !tryParseYesNo(values, "runtime_owned_directories_sane", report.runtimeOwnedDirectoriesSane);
+        malformed |= !tryParseYesNo(values, "deployable_environment_separated", report.deployableEnvironmentSeparated);
+        malformed |= !tryParseYesNo(values, "primary_save_path_owned", report.primarySavePathOwned);
         intentLatencyValid = tryParseUnsigned(values, "intent_latency_ms", intentLatency);
         ackLatencyValid = tryParseUnsigned(values, "ack_latency_ms", ackLatency);
         snapshotLatencyValid = tryParseUnsigned(values, "snapshot_latency_ms", snapshotLatency);
@@ -377,51 +385,51 @@ namespace war
         bool persistenceActive = false;
         bool persistenceParseValid = true;
 
-        if (values.contains("persistence_active"))
+        if (values.find("persistence_active") != values.end())
         {
             persistenceParseValid &= tryParseYesNo(values, "persistence_active", persistenceActive);
         }
-        if (values.contains("persistence_schema_version"))
+        if (values.find("persistence_schema_version") != values.end())
         {
             persistenceParseValid &= tryParseUnsigned(values, "persistence_schema_version", persistenceSchemaVersion);
         }
-        if (values.contains("persistence_loaded_schema_version"))
+        if (values.find("persistence_loaded_schema_version") != values.end())
         {
             persistenceParseValid &= tryParseUnsigned(values, "persistence_loaded_schema_version", persistenceLoadedSchemaVersion);
         }
-        if (values.contains("persistence_migrated_from_version"))
+        if (values.find("persistence_migrated_from_version") != values.end())
         {
             persistenceParseValid &= tryParseUnsigned(values, "persistence_migrated_from_version", persistenceMigratedFromSchemaVersion);
         }
-        if (values.contains("persistence_save_count"))
+        if (values.find("persistence_save_count") != values.end())
         {
             persistenceParseValid &= tryParseUnsigned(values, "persistence_save_count", persistenceSaveCount);
         }
-        if (values.contains("persistence_load_count"))
+        if (values.find("persistence_load_count") != values.end())
         {
             persistenceParseValid &= tryParseUnsigned(values, "persistence_load_count", persistenceLoadCount);
         }
-        if (values.contains("persistence_last_save_epoch_ms"))
+        if (values.find("persistence_last_save_epoch_ms") != values.end())
         {
             persistenceParseValid &= tryParseUnsigned(values, "persistence_last_save_epoch_ms", lastPersistenceSaveEpochMilliseconds);
         }
-        if (values.contains("persistence_last_load_epoch_ms"))
+        if (values.find("persistence_last_load_epoch_ms") != values.end())
         {
             persistenceParseValid &= tryParseUnsigned(values, "persistence_last_load_epoch_ms", lastPersistenceLoadEpochMilliseconds);
         }
-        if (values.contains("persistence_last_save_succeeded"))
+        if (values.find("persistence_last_save_succeeded") != values.end())
         {
             persistenceParseValid &= tryParseYesNo(values, "persistence_last_save_succeeded", persistenceLastSaveSucceeded);
         }
-        if (values.contains("persistence_last_load_succeeded"))
+        if (values.find("persistence_last_load_succeeded") != values.end())
         {
             persistenceParseValid &= tryParseYesNo(values, "persistence_last_load_succeeded", persistenceLastLoadSucceeded);
         }
-        if (values.contains("persistence_migration_applied"))
+        if (values.find("persistence_migration_applied") != values.end())
         {
             persistenceParseValid &= tryParseYesNo(values, "persistence_migration_applied", persistenceMigrationApplied);
         }
-        if (values.contains("persistence_slot"))
+        if (values.find("persistence_slot") != values.end())
         {
             persistenceParseValid &= tryParseString(values, "persistence_slot", report.persistenceSlotName);
         }
@@ -440,7 +448,7 @@ namespace war
 
         report.statusParseValid = !malformed
             && persistenceParseValid
-            && statusVersion >= 5
+            && statusVersion >= 6
             && report.hostTickMilliseconds > 0
             && report.protocolVersion == kCurrentProtocolVersion;
 
@@ -460,7 +468,12 @@ namespace war
             && report.heartbeatFresh
             && report.hostState == "running"
             && report.authorityHostAdvertised;
-        report.localBootstrapLaneReady = report.statusParseValid && report.authorityHostAdvertised && persistenceActive;
+        report.localBootstrapLaneReady =
+            report.statusParseValid
+            && report.authorityHostAdvertised
+            && persistenceActive
+            && report.runtimeOwnershipValid
+            && report.primarySavePathOwned;
 
         return report;
     }
@@ -483,9 +496,11 @@ namespace war
             return;
         }
 
+        const RuntimeOwnershipReport runtimeOwnershipReport = RuntimeOwnership::analyze(runtimeBoundaryReport);
+
         const std::filesystem::path finalPath = runtimeBoundaryReport.hostDirectory / "headless_host_status.txt";
         const std::filesystem::path tempPath = runtimeBoundaryReport.hostDirectory / "headless_host_status.tmp";
-        const std::filesystem::path persistentSavePath = runtimeBoundaryReport.savesDirectory / "authoritative_world_primary.txt";
+        const std::filesystem::path persistentSavePath = runtimeOwnershipReport.primarySavePath;
         const bool persistenceSavePresent = fileExists(persistentSavePath);
 
         const std::string buildConfiguration = buildConfigurationText();
@@ -503,6 +518,12 @@ namespace war
         const std::string connectLaneMode = environmentText(L"WAR_CONNECT_LANE_MODE").empty()
             ? std::string("localhost-fallback")
             : environmentText(L"WAR_CONNECT_LANE_MODE");
+        const std::string environmentName = environmentText(L"WAR_ENVIRONMENT").empty()
+            ? std::string("local")
+            : environmentText(L"WAR_ENVIRONMENT");
+        const std::string environmentProfileName = environmentText(L"WAR_CONFIG_PROFILE").empty()
+            ? environmentName
+            : environmentText(L"WAR_CONFIG_PROFILE");
         const std::string hostInstanceId = stableHostInstanceId(processId);
         const std::string sessionId = stableSessionId(processId);
         const std::string restoreState = simulationDiagnostics.lastPersistenceLoadSucceeded
@@ -516,11 +537,13 @@ namespace war
         }
 
         output
-            << "status_version=5\n"
+            << "status_version=6\n"
             << "protocol_version=" << kCurrentProtocolVersion << "\n"
             << "transport_kind=" << transportKind << "\n"
             << "connect_target_name=" << connectTargetName << "\n"
             << "connect_lane_mode=" << connectLaneMode << "\n"
+            << "environment_name=" << environmentName << "\n"
+            << "environment_profile_name=" << environmentProfileName << "\n"
             << "build_configuration=" << buildConfiguration << "\n"
             << "build_timestamp=" << buildTimestamp << "\n"
             << "build_identity=" << buildIdentity << "\n"
@@ -547,8 +570,13 @@ namespace war
             << "pending_inbound_intents=" << pendingInboundIntentCount << "\n"
             << "pending_outbound_acks=" << pendingOutboundAcknowledgementCount << "\n"
             << "pending_snapshots=" << pendingSnapshotCount << "\n"
+            << "runtime_ownership_valid=" << (runtimeOwnershipReport.ownershipValid ? "yes" : "no") << "\n"
+            << "runtime_owned_directories_sane=" << (runtimeOwnershipReport.runtimeOwnedDirectoriesSane ? "yes" : "no") << "\n"
+            << "deployable_environment_separated=" << (runtimeOwnershipReport.deployableEnvironmentSeparated ? "yes" : "no") << "\n"
+            << "primary_save_path_owned=" << (runtimeOwnershipReport.primarySavePathOwned ? "yes" : "no") << "\n"
             << "persistence_active=" << (simulationDiagnostics.persistenceActive ? "yes" : "no") << "\n"
-            << "persistence_slot=" << simulationDiagnostics.persistenceSlotName << "\n"
+            << "persistence_slot=" << runtimeOwnershipReport.primarySaveSlotName << "\n"
+            << "persistence_save_path=" << runtimeOwnershipReport.primarySavePath.generic_string() << "\n"
             << "persistence_save_present=" << (persistenceSavePresent ? "yes" : "no") << "\n"
             << "persistence_schema_version=" << simulationDiagnostics.persistenceSchemaVersion << "\n"
             << "persistence_loaded_schema_version=" << simulationDiagnostics.persistenceLoadedSchemaVersion << "\n"

@@ -5,7 +5,9 @@
 
 #include <windows.h>
 
+#include "engine/core/EnvironmentConfig.h"
 #include "engine/core/LocalDemoDiagnostics.h"
+#include "engine/core/RuntimeOwnership.h"
 #include "engine/core/RuntimePaths.h"
 #include "engine/core/Timer.h"
 #include "game/GameLayer.h"
@@ -39,10 +41,10 @@ namespace war
             const std::wstring connectTargetName = readEnvironmentWide(L"WAR_CONNECT_TARGET_NAME");
             if (connectTargetName.empty())
             {
-                return L"WAR - Milestone 45";
+                return L"WAR - Milestone 46";
             }
 
-            return std::wstring(L"WAR - Milestone 45 [") + connectTargetName + L"]";
+            return std::wstring(L"WAR - Milestone 46 [") + connectTargetName + L"]";
         }
     }
 
@@ -55,6 +57,35 @@ namespace war
             RuntimeBoundaryReport runtimeBoundaryReport = RuntimePaths::buildReport();
             RuntimePaths::ensureRuntimeDirectories(runtimeBoundaryReport);
             LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "client_runtime_trace.txt", "Application::run entered");
+
+            LocalDemoDiagnosticsReport localDemoDiagnosticsReport = LocalDemoDiagnostics::buildReport(runtimeBoundaryReport);
+            const EnvironmentConfigReport environmentConfigReport = EnvironmentConfig::load(runtimeBoundaryReport);
+            const RuntimeOwnershipReport runtimeOwnershipReport = RuntimeOwnership::analyze(runtimeBoundaryReport);
+            LocalDemoDiagnostics::writeStartupReport(
+                runtimeBoundaryReport,
+                localDemoDiagnosticsReport,
+                &environmentConfigReport,
+                &runtimeOwnershipReport);
+
+            if (!environmentConfigReport.configurationValid)
+            {
+                LocalDemoDiagnostics::appendTraceLine(
+                    runtimeBoundaryReport,
+                    "client_runtime_trace.txt",
+                    std::string("Application::run fail-fast config: ")
+                        + EnvironmentConfig::diagnosticsSummary(environmentConfigReport));
+                return -4;
+            }
+
+            if (!runtimeOwnershipReport.ownershipValid)
+            {
+                LocalDemoDiagnostics::appendTraceLine(
+                    runtimeBoundaryReport,
+                    "client_runtime_trace.txt",
+                    std::string("Application::run fail-fast ownership: ")
+                        + RuntimeOwnership::diagnosticsSummary(runtimeOwnershipReport));
+                return -5;
+            }
 
             Win32Window window;
             if (!window.create(1600, 900, windowTitleText().c_str()))

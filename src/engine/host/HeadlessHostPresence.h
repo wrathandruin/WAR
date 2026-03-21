@@ -26,6 +26,10 @@ namespace war
         bool persistenceLastLoadSucceeded = false;
         bool persistenceMigrationApplied = false;
         bool persistenceRestoreVisible = false;
+        bool runtimeOwnershipValid = false;
+        bool runtimeOwnedDirectoriesSane = false;
+        bool deployableEnvironmentSeparated = false;
+        bool primarySavePathOwned = false;
 
         uint64_t heartbeatAgeMilliseconds = 0;
         uint64_t advertisedSimulationTicks = 0;
@@ -57,6 +61,8 @@ namespace war
         std::string sessionId = "none";
         std::string runtimeRootPath = "unresolved";
         std::string restoreState = "unseen";
+        std::string environmentName = "unresolved";
+        std::string environmentProfileName = "unresolved";
         std::filesystem::path statusFilePath;
         std::filesystem::path persistentSavePath;
         ReplicationHarnessConfig harnessConfig{};

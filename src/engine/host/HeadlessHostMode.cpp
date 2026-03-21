@@ -12,6 +12,7 @@
 #include <windows.h>
 
 #include "engine/core/LocalDemoDiagnostics.h"
+#include "engine/core/RuntimeOwnership.h"
 #include "engine/host/AuthoritativeHostProtocol.h"
 #include "engine/host/HeadlessHostPresence.h"
 #include "engine/host/ReplicationHarness.h"
@@ -100,13 +101,25 @@ namespace war
         try
         {
             LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "headless_host_trace.txt", "HeadlessHostMode::run entered");
+
+            const RuntimeOwnershipReport runtimeOwnershipReport = RuntimeOwnership::analyze(runtimeBoundaryReport);
+            if (!runtimeOwnershipReport.ownershipValid)
+            {
+                LocalDemoDiagnostics::appendTraceLine(
+                    runtimeBoundaryReport,
+                    "headless_host_trace.txt",
+                    std::string("HeadlessHostMode fail-fast ownership: ")
+                        + RuntimeOwnership::diagnosticsSummary(runtimeOwnershipReport));
+                return 5;
+            }
+
             SimulationRuntime simulationRuntime{};
             simulationRuntime.initializeForLocalAuthority();
             LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "headless_host_trace.txt", "HeadlessHostMode initialized simulation");
             simulationRuntime.setAuthorityMode(false, true, false);
-            simulationRuntime.setPersistenceState(true, "primary");
+            simulationRuntime.setPersistenceState(true, runtimeOwnershipReport.primarySaveSlotName);
 
-            const std::filesystem::path savePath = runtimeBoundaryReport.savesDirectory / "authoritative_world_primary.txt";
+            const std::filesystem::path savePath = runtimeOwnershipReport.primarySavePath;
             std::string persistenceError;
             const AuthoritativeWorldSnapshot persistedSnapshot =
                 AuthoritativeHostProtocol::readAuthoritativeSnapshotFromPath(savePath, persistenceError);
@@ -141,10 +154,15 @@ namespace war
             appendLogLine(logPath, "WARServer Headless Authoritative Host");
             appendLogLine(logPath, std::string("Build identity: ") + localDemoDiagnosticsReport.buildIdentity);
             appendLogLine(logPath, std::string("Build channel: ") + localDemoDiagnosticsReport.buildChannel);
+            appendLogLine(logPath, std::string("Environment: ") + localDemoDiagnosticsReport.environmentName);
+            appendLogLine(logPath, std::string("Environment profile: ") + localDemoDiagnosticsReport.environmentProfileName);
             appendLogLine(logPath, std::string("Connect target: ") + localDemoDiagnosticsReport.connectTargetName);
             appendLogLine(logPath, std::string("Transport: ") + localDemoDiagnosticsReport.connectTransport);
             appendLogLine(logPath, std::string("Lane mode: ") + localDemoDiagnosticsReport.connectLaneMode);
             appendLogLine(logPath, std::string("Runtime root: ") + RuntimePaths::displayPath(runtimeBoundaryReport.runtimeRoot));
+            appendLogLine(logPath, std::string("Save slot: ") + runtimeOwnershipReport.primarySaveSlotName);
+            appendLogLine(logPath, std::string("Save path: ") + RuntimePaths::displayPath(savePath));
+            appendLogLine(logPath, std::string("Runtime ownership: ") + RuntimeOwnership::diagnosticsSummary(runtimeOwnershipReport));
             LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "headless_host_trace.txt", "HeadlessHostMode initial log lines written");
 
             std::deque<PendingIntentArrival> pendingIntentArrivals{};

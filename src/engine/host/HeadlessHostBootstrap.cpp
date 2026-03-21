@@ -3,7 +3,9 @@
 #include <exception>
 #include <string>
 
+#include "engine/core/EnvironmentConfig.h"
 #include "engine/core/LocalDemoDiagnostics.h"
+#include "engine/core/RuntimeOwnership.h"
 #include "engine/core/RuntimePaths.h"
 #include "engine/host/HeadlessHostMode.h"
 
@@ -18,9 +20,35 @@ namespace war
             LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "headless_host_trace.txt", "HeadlessHostBootstrap entered");
 
             LocalDemoDiagnosticsReport localDemoDiagnosticsReport = LocalDemoDiagnostics::buildReport(runtimeBoundaryReport);
+            const EnvironmentConfigReport environmentConfigReport = EnvironmentConfig::load(runtimeBoundaryReport);
+            const RuntimeOwnershipReport runtimeOwnershipReport = RuntimeOwnership::analyze(runtimeBoundaryReport);
             LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "headless_host_trace.txt", "HeadlessHostBootstrap diagnostics report built");
-            LocalDemoDiagnostics::writeStartupReport(runtimeBoundaryReport, localDemoDiagnosticsReport);
+            LocalDemoDiagnostics::writeStartupReport(
+                runtimeBoundaryReport,
+                localDemoDiagnosticsReport,
+                &environmentConfigReport,
+                &runtimeOwnershipReport);
             LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "headless_host_trace.txt", "HeadlessHostBootstrap startup report written");
+
+            if (!environmentConfigReport.configurationValid)
+            {
+                LocalDemoDiagnostics::appendTraceLine(
+                    runtimeBoundaryReport,
+                    "headless_host_trace.txt",
+                    std::string("HeadlessHostBootstrap fail-fast config: ")
+                        + EnvironmentConfig::diagnosticsSummary(environmentConfigReport));
+                return 4;
+            }
+
+            if (!runtimeOwnershipReport.ownershipValid)
+            {
+                LocalDemoDiagnostics::appendTraceLine(
+                    runtimeBoundaryReport,
+                    "headless_host_trace.txt",
+                    std::string("HeadlessHostBootstrap fail-fast ownership: ")
+                        + RuntimeOwnership::diagnosticsSummary(runtimeOwnershipReport));
+                return 5;
+            }
 
             const HeadlessHostOptions options = HeadlessHostMode::parseOptions(commandLine);
             LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "headless_host_trace.txt", "HeadlessHostBootstrap options parsed");

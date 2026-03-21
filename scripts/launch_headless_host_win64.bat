@@ -29,13 +29,27 @@ if "%LANE_MODE%"=="" (
     )
 )
 
+set "ENVIRONMENT_NAME=%~4"
+if "%ENVIRONMENT_NAME%"=="" (
+    if /I "%LANE_MODE%"=="hosted-bootstrap" (
+        set "ENVIRONMENT_NAME=hosted_internal_alpha"
+    ) else (
+        set "ENVIRONMENT_NAME=local"
+    )
+)
+set "CONFIG_PROFILE=%~5"
+if "%CONFIG_PROFILE%"=="" set "CONFIG_PROFILE=%ENVIRONMENT_NAME%"
+set "SECRETS_FILE=%~6"
+set "PERSISTENCE_SLOT=%~7"
+if "%PERSISTENCE_SLOT%"=="" set "PERSISTENCE_SLOT=primary"
+
 set "TRANSPORT_KIND=file-backed-localhost-fallback"
 if /I "%LANE_MODE%"=="hosted-bootstrap" set "TRANSPORT_KIND=file-backed-hosted-bootstrap"
 
 set "LOG_DIR=%TARGET_RUNTIME_ROOT%\Logs"
 
 if not exist "%HOST_EXE_PATH%" (
-    echo [M45] ERROR: no host executable found next to the host launch script.
+    echo [M46] ERROR: no host executable found next to the host launch script.
     exit /b 1
 )
 
@@ -50,7 +64,12 @@ set "WAR_CONNECT_TARGET_NAME=%TARGET_NAME%"
 set "WAR_CONNECT_TRANSPORT=%TRANSPORT_KIND%"
 set "WAR_CONNECT_LANE_MODE=%LANE_MODE%"
 set "WAR_BUILD_CHANNEL=internal-alpha"
+set "WAR_ENVIRONMENT=%ENVIRONMENT_NAME%"
+set "WAR_CONFIG_PROFILE=%CONFIG_PROFILE%"
+set "WAR_PERSISTENCE_SLOT=%PERSISTENCE_SLOT%"
+if not "%SECRETS_FILE%"=="" set "WAR_SECRETS_FILE=%SECRETS_FILE%"
 
-echo [%DATE% %TIME%] launching headless host %HOST_EXE_PATH% %HOST_ARGS% target=%TARGET_NAME% lane=%LANE_MODE% transport=%TRANSPORT_KIND% runtime_root=%TARGET_RUNTIME_ROOT% >> "%LOG_DIR%\headless_host_launch.txt"
+echo [%DATE% %TIME%] launching headless host %HOST_EXE_PATH% %HOST_ARGS% target=%TARGET_NAME% lane=%LANE_MODE% environment=%ENVIRONMENT_NAME% config_profile=%CONFIG_PROFILE% persistence_slot=%PERSISTENCE_SLOT% transport=%TRANSPORT_KIND% runtime_root=%TARGET_RUNTIME_ROOT% >> "%LOG_DIR%\headless_host_launch.txt"
+if not "%SECRETS_FILE%"=="" echo [%DATE% %TIME%] secrets file override path set (secret value redacted). >> "%LOG_DIR%\headless_host_launch.txt"
 start "WAR Headless Host" /min "%HOST_EXE_PATH%" %HOST_ARGS%
 exit /b 0
