@@ -16,12 +16,12 @@ if not exist "%HOST_EXE_PATH%" (
 )
 
 if not exist "%CLIENT_EXE_PATH%" (
-    echo [M38] ERROR: WAR.exe not found next to the client/host launch script.
+    echo [M40] ERROR: WAR.exe not found next to the client/host launch script.
     exit /b 1
 )
 
 if not exist "%HOST_EXE_PATH%" (
-    echo [M38] ERROR: host executable not found next to the client/host launch script.
+    echo [M40] ERROR: host executable not found next to the client/host launch script.
     exit /b 1
 )
 

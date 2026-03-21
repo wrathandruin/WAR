@@ -19,14 +19,6 @@ namespace war
         Hazard
     };
 
-    enum class TerrainHazardType
-    {
-        None,
-        RadiationLeak,
-        ToxicResidue,
-        VacuumBreach
-    };
-
     struct WorldAuthoringHotspot
     {
         int id = 0;
@@ -38,10 +30,20 @@ namespace war
         bool encounterReady = false;
     };
 
+    enum class TerrainHazardType
+    {
+        None,
+        VacuumLeak,
+        RadiationLeak,
+        ToxicSpill,
+        ElectricalArc
+    };
+
     struct TerrainHazardTile
     {
         int id = 0;
         TileCoord tile{};
+        WorldRegionTagId region = WorldRegionTagId::CargoBay;
         TerrainHazardType type = TerrainHazardType::None;
         std::string label;
         int severity = 0;
@@ -73,9 +75,9 @@ namespace war
 
         void clearAuthoringHotspots();
         void addAuthoringHotspot(const WorldAuthoringHotspot& hotspot);
-
         [[nodiscard]] const std::vector<WorldAuthoringHotspot>& authoringHotspots() const;
         [[nodiscard]] const WorldAuthoringHotspot* authoringHotspotAt(TileCoord tile) const;
+        [[nodiscard]] WorldAuthoringHotspot* authoringHotspotAtMutable(TileCoord tile);
 
         void setAuthoringHotspotsVisible(bool visible);
         [[nodiscard]] bool authoringHotspotsVisible() const;
@@ -84,7 +86,6 @@ namespace war
         void addTerrainHazard(const TerrainHazardTile& hazard);
         [[nodiscard]] const std::vector<TerrainHazardTile>& terrainHazards() const;
         [[nodiscard]] const TerrainHazardTile* terrainHazardAt(TileCoord tile) const;
-        [[nodiscard]] bool tileHasActiveTerrainHazard(TileCoord tile) const;
 
     private:
         void fillRegionRect(int minX, int minY, int maxX, int maxY, WorldRegionTagId tag);

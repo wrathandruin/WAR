@@ -1,5 +1,9 @@
 #include "engine/render/RenderAssetPaths.h"
 
+#include <filesystem>
+
+#include "engine/core/RuntimePaths.h"
+
 #if defined(__has_include)
 #  if __has_include(<bgfx/bgfx.h>)
 #    define WAR_HAS_BGFX 1
@@ -16,6 +20,20 @@
 
 namespace war::RenderAssetPaths
 {
+    namespace
+    {
+        std::string assetPathString(const std::filesystem::path& relativePath)
+        {
+            const RuntimeBoundaryReport runtimeBoundaryReport = RuntimePaths::buildReport();
+            if (runtimeBoundaryReport.assetRootResolved)
+            {
+                return (runtimeBoundaryReport.assetRoot / relativePath).generic_string();
+            }
+
+            return (std::filesystem::path("assets") / relativePath).generic_string();
+        }
+    }
+
     std::string shaderBackendFolder()
     {
 #if WAR_HAS_BGFX
@@ -47,7 +65,7 @@ namespace war::RenderAssetPaths
             return "";
         }
 
-        return "assets/shaders/" + folder + "/vs_color.bin";
+        return assetPathString(std::filesystem::path("shaders") / folder / "vs_color.bin");
     }
 
     std::string colorFragmentShaderPath()
@@ -58,7 +76,7 @@ namespace war::RenderAssetPaths
             return "";
         }
 
-        return "assets/shaders/" + folder + "/fs_color.bin";
+        return assetPathString(std::filesystem::path("shaders") / folder / "fs_color.bin");
     }
 
     std::string textureVertexShaderPath()
@@ -69,7 +87,7 @@ namespace war::RenderAssetPaths
             return "";
         }
 
-        return "assets/shaders/" + folder + "/vs_texture.bin";
+        return assetPathString(std::filesystem::path("shaders") / folder / "vs_texture.bin");
     }
 
     std::string textureFragmentShaderPath()
@@ -80,12 +98,12 @@ namespace war::RenderAssetPaths
             return "";
         }
 
-        return "assets/shaders/" + folder + "/fs_texture.bin";
+        return assetPathString(std::filesystem::path("shaders") / folder / "fs_texture.bin");
     }
 
     std::string textureAssetPath(const std::string& fileName)
     {
-        return "assets/textures/" + fileName;
+        return assetPathString(std::filesystem::path("textures") / fileName);
     }
 
     std::string spriteAtlasTexturePath()

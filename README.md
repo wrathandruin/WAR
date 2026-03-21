@@ -1,57 +1,47 @@
-# WAR — Milestone 39 (Survival Hazards / Terrain Consequence / World State)
+# WAR — Milestone 40 (Six-Second Combat / Encounter Resolution)
 
-> Current development milestone: M39 — Survival Hazards / Terrain Consequence / World State
+> Current development milestone: M40 — Six-Second Combat / Encounter Resolution
 
 ## Focus
+Prove one authoritative six-second combat encounter on top of the signed-off authority, persistence, actor-runtime, and survival groundwork.
 
-Introduce environmental pressure to the slice without breaking the split desktop/shared/server baseline.
-
-M37 established versioned persistence.
-M38 introduced actor runtime, inventory, equipment, and loot.
-M39 makes the planetary slice dangerous by adding terrain hazards, survival pressure, and stateful world consequence that the authoritative runtime can persist.
+This milestone is intentionally narrow:
+- one readable encounter lane
+- one authoritative combat loop
+- one persistence-aware encounter outcome
+- no broad combat-system sprawl
 
 ## What this milestone does
+- adds a first authoritative combat encounter runtime
+- introduces round-based six-second combat resolution
+- persists player actor state, inventory/equipment state, and encounter state through authoritative snapshots
+- restores persisted encounter/runtime state on host boot
+- surfaces combat state in overlay, client replication status, and bgfx status text
+- stages an M40 local demo package and M40 acceptance wrapper
 
-- adds a terrain-hazard model to `WorldState`
-- populates authored radiation, toxic, and vacuum-breach lanes in the test world
-- applies survival pressure inside `SimulationRuntime` through hazard ticks, oxygen drain, suit integrity loss, radiation dose, toxic exposure, and health damage
-- persists survival state through authoritative snapshots
-- surfaces hazard and survival state in overlay, bgfx status text, and machine-readable client replication status
-- upgrades staged local demo packaging to M39 naming and adds an M39 hazard acceptance script while preserving the signed-off M36 regression lane
-
-## Local validation procedure
-
-1. Build or stage with `scripts/build_local_demo_package_win64.bat Release`
+## Manual validation procedure
+1. Build/stage with `scripts/build_local_demo_package_win64.bat Release`
 2. Launch the headless host with `scripts/launch_headless_host_win64.bat`
-3. Launch the client against the host with `scripts/launch_local_client_against_host_win64.bat`
-4. Move through Hazard Containment and Transit Spine review spaces
-5. Confirm overlay/bgfx diagnostics show survival state, current hazard, oxygen pressure, and consequence counters
-6. Restart the host and verify authoritative snapshot state still carries survival fields
-7. Run `scripts/acceptance_m39_survival_hazards_win64.bat`
-8. Re-run `scripts/acceptance_m36_localhost_authority_win64.bat` as the regression lane
+3. Launch the client with `scripts/launch_local_client_against_host_win64.bat`
+4. Move into `Bridge Access Chokepoint` or `Quarantine Access Gate`
+5. Let at least one six-second round resolve
+6. Confirm:
+   - normal movement feels stable before the encounter starts
+   - `client_replication_status.txt` is not showing corrections climbing rapidly with the latency harness disabled
+   - combat becomes active
+   - hostile health changes
+   - player health/armor/suit state changes coherently
+   - the event log explains what resolved
+7. Close and restart the host, then confirm the save under `runtime/Saves/authoritative_world_primary.txt` restores actor/combat state correctly
 
 ## Known limits
+- localhost authority lane only
+- file-backed transport only
+- one narrow encounter profile, not a full combat sandbox
+- no ranged cover system yet
+- no broad NPC runtime yet
+- this is the first encounter proof, not final combat breadth
 
-- the current hazard model is authored and tile-based, not yet a generalized simulation field system
-- no med treatment loop or hazard-remediation gameplay exists yet
-- no terrain modification toolchain exists yet
-- survival pressure is intentionally narrow and tuned for readability before combat integration
-- the file-backed localhost authority lane remains the same signed-off M36 baseline
-
-## Demo controls
-
-- `LMB`: move / set movement target
-- `RMB`: interact
-- `Shift + RMB`: inspect
-- `MMB drag`: pan camera
-- `Mouse wheel`: zoom
-- `O`: toggle region boundary overlay
-- `H`: toggle authored hotspot overlay
-- `7 / 8 / 9`: Default / Muted / Vivid palette modes
-- `J`: toggle replication latency harness
-- `K`: cycle latency preset
-- `L`: cycle jitter preset
-
-## Next Milestone
-
-### M40 — Six-Second Combat / Encounter Resolution
+## Why this matters
+M40 is one of the first true alpha proof points.
+It turns the slice from movement/inventory/survival scaffolding into a product lane that can now resolve an actual hostile encounter with persistence and authority.

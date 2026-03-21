@@ -18,7 +18,7 @@ if not exist "%RUNTIME_ROOT%" set "RUNTIME_ROOT=%DEMO_ROOT%\Runtime"
 set "LOG_DIR=%RUNTIME_ROOT%\Logs"
 
 if not exist "%HOST_EXE_PATH%" (
-    echo [M38] ERROR: no host executable found next to the host launch script.
+    echo [M40] ERROR: no host executable found next to the host launch script.
     exit /b 1
 )
 

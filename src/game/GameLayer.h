@@ -68,6 +68,9 @@ namespace war
 
         float m_lastDeltaTime = 0.016f;
         uint64_t m_lastSnapshotAgeMilliseconds = 0;
+        uint64_t m_lastAppliedSnapshotPublishedEpochMilliseconds = 0;
+        uint64_t m_lastAppliedSnapshotSimulationTicks = 0;
+        uint64_t m_lastAppliedSnapshotSequence = 0;
         bool m_useHeadlessHostAuthority = false;
         std::string m_lastSnapshotReadError{};
 

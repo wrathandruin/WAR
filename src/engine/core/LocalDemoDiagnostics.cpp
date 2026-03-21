@@ -1,6 +1,7 @@
 #include "engine/core/LocalDemoDiagnostics.h"
 
 #include <fstream>
+#include <string_view>
 #include <system_error>
 
 namespace war
@@ -122,7 +123,7 @@ namespace war
 
         output
             << "WAR Local Demo Startup Report\n"
-            << "Milestone: M36 - Replication / Latency Harness / Divergence Diagnostics\n"
+            << "Milestone: M40 - Six-Second Combat / Encounter Resolution\n"
             << "Build configuration: " << localDemoDiagnosticsReport.buildConfiguration << "\n"
             << "Build timestamp: " << localDemoDiagnosticsReport.buildTimestamp << "\n"
             << "Runtime mode: " << (runtimeBoundaryReport.runningFromSourceTree ? "source-tree" : "packaged") << "\n"
@@ -183,6 +184,33 @@ namespace war
                 std::string("Startup report flush failed: ")
                 + RuntimePaths::displayPath(localDemoDiagnosticsReport.startupReportPath));
         }
+    }
+
+    void LocalDemoDiagnostics::appendTraceLine(
+        const RuntimeBoundaryReport& runtimeBoundaryReport,
+        const std::string& filename,
+        std::string_view line)
+    {
+        if (filename.empty())
+        {
+            return;
+        }
+
+        const std::filesystem::path tracePath = runtimeBoundaryReport.logsDirectory / filename;
+        std::error_code error;
+        std::filesystem::create_directories(tracePath.parent_path(), error);
+        if (error)
+        {
+            return;
+        }
+
+        std::ofstream output(tracePath, std::ios::out | std::ios::app);
+        if (!output.is_open())
+        {
+            return;
+        }
+
+        output << line << "\n";
     }
 
     std::string LocalDemoDiagnostics::buildConfigurationText()

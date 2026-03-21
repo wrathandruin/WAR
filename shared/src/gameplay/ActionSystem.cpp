@@ -54,24 +54,18 @@ namespace war
         {
             switch (type)
             {
-            case WorldAuthoringHotspotType::Encounter:
-                return "encounter";
-            case WorldAuthoringHotspotType::Control:
-                return "control";
-            case WorldAuthoringHotspotType::Transit:
-                return "transit";
-            case WorldAuthoringHotspotType::Loot:
-                return "loot";
-            case WorldAuthoringHotspotType::Hazard:
-                return "hazard";
-            default:
-                return "unknown";
+            case WorldAuthoringHotspotType::Encounter: return "encounter";
+            case WorldAuthoringHotspotType::Control: return "control";
+            case WorldAuthoringHotspotType::Transit: return "transit";
+            case WorldAuthoringHotspotType::Loot: return "loot";
+            case WorldAuthoringHotspotType::Hazard: return "hazard";
+            default: return "unknown";
             }
         }
 
         const char* hotspotStateToText(const WorldAuthoringHotspot& hotspot)
         {
-            return hotspot.encounterReady ? "encounter-ready" : "staged";
+            return hotspot.encounterReady ? "encounter-ready" : "secured";
         }
 
         InventoryItemStack* findInventoryStack(PlayerActorRuntimeState& playerActorState, InventoryItemId id)
@@ -154,7 +148,7 @@ namespace war
             }
             if (lootProfileId == "medical_supplies")
             {
-                return { { InventoryItemId::MedInjector, 2 }, { InventoryItemId::SealantKit, 1 } };
+                return { { InventoryItemId::MedInjector, 2 }, { InventoryItemId::PatchKit, 1 } };
             }
             if (lootProfileId == "command_secure")
             {
@@ -231,21 +225,17 @@ namespace war
     {
         switch (type)
         {
-        case EntityType::Crate:
-            return "crate";
-        case EntityType::Terminal:
-            return "terminal";
-        case EntityType::Locker:
-            return "locker";
-        default:
-            return "unknown";
+        case EntityType::Crate: return "crate";
+        case EntityType::Terminal: return "terminal";
+        case EntityType::Locker: return "locker";
+        default: return "unknown";
         }
     }
 
     void ActionSystem::pushEvent(std::vector<std::string>& eventLog, const std::string& message)
     {
         eventLog.push_back(message);
-        constexpr size_t kMaxEvents = 10;
+        constexpr size_t kMaxEvents = 14;
         if (eventLog.size() > kMaxEvents)
         {
             eventLog.erase(
@@ -325,6 +315,7 @@ namespace war
 
                 const Entity* entity = worldState.entities().getAt(action.target);
                 const WorldAuthoringHotspot* hotspot = worldState.authoringHotspotAt(action.target);
+                const TerrainHazardTile* hazard = worldState.terrainHazardAt(action.target);
 
                 std::string message = "Inspect [";
                 message += std::to_string(action.target.x);
@@ -369,6 +360,16 @@ namespace war
                 else
                 {
                     message += ", hotspot=none";
+                }
+
+                if (hazard != nullptr)
+                {
+                    message += ", hazard=";
+                    message += hazard->label;
+                }
+                else
+                {
+                    message += ", hazard=none";
                 }
 
                 pushEvent(eventLog, message);
@@ -441,19 +442,19 @@ namespace war
                 switch (hotspot->type)
                 {
                 case WorldAuthoringHotspotType::Encounter:
-                    message += ". This is a future combat-resolution anchor.";
+                    message += ". Hostile contact could resolve here in the six-second combat lane.";
                     break;
                 case WorldAuthoringHotspotType::Control:
                     message += ". This is a future mission, gate, or authority control point.";
                     break;
                 case WorldAuthoringHotspotType::Transit:
-                    message += ". This is a future routing and traversal anchor.";
+                    message += ". This is a routing and traversal anchor.";
                     break;
                 case WorldAuthoringHotspotType::Loot:
-                    message += ". This lane now pairs with nearby container loot and future inventory beats.";
+                    message += ". Nearby containers feed the actor inventory loop.";
                     break;
                 case WorldAuthoringHotspotType::Hazard:
-                    message += ". This is a future environmental hazard and consequence anchor.";
+                    message += ". This is an environmental consequence anchor.";
                     break;
                 default:
                     message += ".";

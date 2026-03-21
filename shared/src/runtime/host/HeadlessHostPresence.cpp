@@ -2,9 +2,13 @@
 
 #include <chrono>
 #include <fstream>
+#include <sstream>
 #include <string>
 #include <system_error>
 #include <unordered_map>
+#include <vector>
+
+#include <windows.h>
 
 namespace war
 {
@@ -12,18 +16,70 @@ namespace war
     {
         using StringMap = std::unordered_map<std::string, std::string>;
 
-        StringMap parseKeyValueFile(const std::filesystem::path& path)
+        bool readTextFileForAtomicReplace(const std::filesystem::path& path, std::string& outContents)
         {
-            StringMap values{};
+            outContents.clear();
+#if defined(_WIN32)
+            HANDLE handle = CreateFileW(
+                path.c_str(),
+                GENERIC_READ,
+                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                nullptr,
+                OPEN_EXISTING,
+                FILE_ATTRIBUTE_NORMAL,
+                nullptr);
+            if (handle == INVALID_HANDLE_VALUE)
+            {
+                return false;
+            }
+
+            LARGE_INTEGER fileSize{};
+            if (!GetFileSizeEx(handle, &fileSize) || fileSize.QuadPart < 0)
+            {
+                CloseHandle(handle);
+                return false;
+            }
+
+            const DWORD requestedBytes = static_cast<DWORD>(fileSize.QuadPart);
+            std::vector<char> buffer(static_cast<size_t>(requestedBytes), '\0');
+            DWORD bytesRead = 0;
+            const BOOL readOk = requestedBytes == 0
+                ? TRUE
+                : ReadFile(handle, buffer.data(), requestedBytes, &bytesRead, nullptr);
+            CloseHandle(handle);
+            if (!readOk)
+            {
+                return false;
+            }
+
+            outContents.assign(buffer.data(), buffer.data() + bytesRead);
+            return true;
+#else
             std::ifstream input(path, std::ios::in);
             if (!input.is_open())
             {
-                return values;
+                return false;
             }
 
+            std::ostringstream stream;
+            stream << input.rdbuf();
+            outContents = stream.str();
+            return static_cast<bool>(input) || input.eof();
+#endif
+        }
+
+        StringMap parseKeyValueText(const std::string& contents)
+        {
+            StringMap values{};
+            std::istringstream input(contents);
             std::string line;
             while (std::getline(input, line))
             {
+                if (!line.empty() && line.back() == '\r')
+                {
+                    line.pop_back();
+                }
+
                 const size_t split = line.find('=');
                 if (split == std::string::npos)
                 {
@@ -34,6 +90,17 @@ namespace war
             }
 
             return values;
+        }
+
+        StringMap parseKeyValueFile(const std::filesystem::path& path)
+        {
+            std::string contents;
+            if (!readTextFileForAtomicReplace(path, contents))
+            {
+                return {};
+            }
+
+            return parseKeyValueText(contents);
         }
 
         bool fileExists(const std::filesystem::path& path)

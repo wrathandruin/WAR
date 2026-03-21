@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <string_view>
 #include <string>
 #include <vector>
 
@@ -34,6 +35,10 @@ namespace war
         static void writeStartupReport(
             const RuntimeBoundaryReport& runtimeBoundaryReport,
             LocalDemoDiagnosticsReport& localDemoDiagnosticsReport);
+        static void appendTraceLine(
+            const RuntimeBoundaryReport& runtimeBoundaryReport,
+            const std::string& filename,
+            std::string_view line);
 
     private:
         [[nodiscard]] static std::string buildConfigurationText();

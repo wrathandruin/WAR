@@ -13,7 +13,7 @@ if not exist "%RUNTIME_ROOT%" set "RUNTIME_ROOT=%DEMO_ROOT%\Runtime"
 set "LOG_DIR=%RUNTIME_ROOT%\Logs"
 
 if not exist "%EXE_PATH%" (
-    echo [M38] ERROR: WAR.exe not found next to the launch script.
+    echo [M40] ERROR: WAR.exe not found next to the launch script.
     exit /b 1
 )
 

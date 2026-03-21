@@ -1,7 +1,20 @@
 #include "engine/gameplay/EntityManager.h"
 
+#include "engine/core/LocalDemoDiagnostics.h"
+#include "engine/core/RuntimePaths.h"
+
 namespace war
 {
+    namespace
+    {
+        void appendEntityTrace(std::string_view line)
+        {
+            RuntimeBoundaryReport runtimeBoundaryReport = RuntimePaths::buildReport();
+            RuntimePaths::ensureRuntimeDirectories(runtimeBoundaryReport);
+            LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "simulation_init_trace.txt", line);
+        }
+    }
+
     void EntityManager::clear()
     {
         m_entities.clear();
@@ -9,7 +22,14 @@ namespace war
 
     void EntityManager::add(const Entity& entity)
     {
+        appendEntityTrace("EntityManager::add begin");
+        if (m_entities.capacity() < 16)
+        {
+            m_entities.reserve(16);
+        }
+        appendEntityTrace("EntityManager::add capacity prepared");
         m_entities.push_back(entity);
+        appendEntityTrace("EntityManager::add committed");
     }
 
     Entity* EntityManager::getAt(TileCoord tile)

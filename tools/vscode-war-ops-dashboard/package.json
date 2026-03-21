@@ -1,0 +1,69 @@
+{
+  "name": "war-ops-dashboard",
+  "displayName": "WAR Ops: Dashboard",
+  "description": "Operations dashboard for the WAR local demo build, host, client, and milestone validation lanes.",
+  "version": "0.0.1",
+  "publisher": "imperator-local",
+  "engines": {
+    "vscode": "^1.111.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onView:warOps.panel",
+    "onCommand:warOps.openDashboard",
+    "onCommand:warOps.focusPanel",
+    "onCommand:warOps.refresh",
+    "onCommand:warOps.openOutput"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "warOps.openDashboard",
+        "title": "WAR Ops: Dashboard: Open Dashboard"
+      },
+      {
+        "command": "warOps.focusPanel",
+        "title": "WAR Ops: Dashboard: Focus Panel"
+      },
+      {
+        "command": "warOps.refresh",
+        "title": "WAR Ops: Dashboard: Refresh Status"
+      },
+      {
+        "command": "warOps.openOutput",
+        "title": "WAR Ops: Dashboard: Open Output"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "warOps",
+          "title": "WAR Ops",
+          "icon": "media/activity-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "warOps": [
+        {
+          "id": "warOps.panel",
+          "name": "Dashboard",
+          "type": "webview"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "warOps.refresh",
+          "when": "view == warOps.panel",
+          "group": "navigation"
+        }
+      ]
+    }
+  }
+}
