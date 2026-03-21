@@ -190,6 +190,9 @@ namespace war
         addEntity(worldState, nextEntityId, WorldRegionTagId::CargoBay, { 6, 24 }, EntityType::Crate, "Cargo Pallet Crate", "cargo_supplies", false, false, false);
         addEntity(worldState, nextEntityId, WorldRegionTagId::CargoBay, { 10, 26 }, EntityType::Crate, "Freight Container", "cargo_supplies", false, false, false);
         addEntity(worldState, nextEntityId, WorldRegionTagId::CargoBay, { 4, 28 }, EntityType::Locker, "Dockside Locker", "dockside_personal", false, false, false);
+        addEntity(worldState, nextEntityId, WorldRegionTagId::CargoBay, { 6, 20 }, EntityType::Ship, "Responder Shuttle Khepri", "", false, false, false);
+        addEntity(worldState, nextEntityId, WorldRegionTagId::CargoBay, { 8, 20 }, EntityType::Terminal, "Shuttle Helm Terminal", "", false, false, false);
+        addEntity(worldState, nextEntityId, WorldRegionTagId::CargoBay, { 9, 20 }, EntityType::Terminal, "Orbital Navigation Console", "", false, true, false);
         appendSemanticTrace("WorldSemanticDressing cargo bay entities placed");
 
         addHotspot(
@@ -198,7 +201,13 @@ namespace war
             "Cargo Staging Pocket",
             "A serviceable loot pocket that feeds the early inventory loop.",
             true);
-        appendSemanticTrace("WorldSemanticDressing cargo bay hotspot placed");
+        addHotspot(
+            worldState, nextHotspotId, WorldRegionTagId::CargoBay, { 7, 21 },
+            WorldAuthoringHotspotType::Transit,
+            "Docked Boarding Collar",
+            "A pressurized shuttle collar that becomes the first ship-runtime boarding lane.",
+            false);
+        appendSemanticTrace("WorldSemanticDressing cargo bay hotspots placed");
 
         addEntity(worldState, nextEntityId, WorldRegionTagId::TransitSpine, { 21, 16 }, EntityType::Terminal, "Transit Service Terminal", "", true, false, true);
         addEntity(worldState, nextEntityId, WorldRegionTagId::TransitSpine, { 20, 14 }, EntityType::Locker, "Route Maintenance Locker", "maintenance_cache", false, false, false);
@@ -256,6 +265,15 @@ namespace war
             "A close-range hostile contact point for the first authoritative encounter loop.",
             true);
         appendSemanticTrace("WorldSemanticDressing quarantine gate hotspot placed");
+
+        addEntity(worldState, nextEntityId, WorldRegionTagId::CargoBay, { 44, 4 }, EntityType::Terminal, "Frontier Relay Beacon", "", false, true, false);
+        addHotspot(
+            worldState, nextHotspotId, WorldRegionTagId::CargoBay, { 43, 4 },
+            WorldAuthoringHotspotType::Transit,
+            "Dust Frontier Landing Pad",
+            "An isolated frontier pad that becomes the second-destination landing and return-loop proof for M44.",
+            false);
+        appendSemanticTrace("WorldSemanticDressing frontier destination anchors placed");
 
         addHazard(worldState, nextHazardId, WorldRegionTagId::HazardContainment, { 30, 26 }, TerrainHazardType::ToxicSpill, "Corrosive spill", 2);
         addHazard(worldState, nextHazardId, WorldRegionTagId::HazardContainment, { 32, 26 }, TerrainHazardType::RadiationLeak, "Containment radiation plume", 2);

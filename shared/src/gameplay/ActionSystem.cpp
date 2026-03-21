@@ -45,6 +45,8 @@ namespace war
                     return entity.isOpen ? "open, looted" : "looted";
                 }
                 return entity.isOpen ? "open" : "closed";
+            case EntityType::Ship:
+                return entity.isPowered ? "powered" : "cold";
             default:
                 return "unknown";
             }
@@ -65,7 +67,21 @@ namespace war
 
         const char* hotspotStateToText(const WorldAuthoringHotspot& hotspot)
         {
-            return hotspot.encounterReady ? "encounter-ready" : "secured";
+            switch (hotspot.type)
+            {
+            case WorldAuthoringHotspotType::Encounter:
+                return hotspot.encounterReady ? "encounter-ready" : "inactive";
+            case WorldAuthoringHotspotType::Control:
+                return hotspot.encounterReady ? "ready" : "gated";
+            case WorldAuthoringHotspotType::Transit:
+                return hotspot.encounterReady ? "open" : "gated";
+            case WorldAuthoringHotspotType::Loot:
+                return hotspot.encounterReady ? "available" : "cleared";
+            case WorldAuthoringHotspotType::Hazard:
+                return hotspot.encounterReady ? "active" : "stabilized";
+            default:
+                return "unknown";
+            }
         }
 
         InventoryItemStack* findInventoryStack(PlayerActorRuntimeState& playerActorState, InventoryItemId id)
@@ -228,6 +244,7 @@ namespace war
         case EntityType::Crate: return "crate";
         case EntityType::Terminal: return "terminal";
         case EntityType::Locker: return "locker";
+        case EntityType::Ship: return "ship";
         default: return "unknown";
         }
     }
@@ -405,14 +422,14 @@ namespace war
                         break;
 
                     case EntityType::Terminal:
-                        entity->isPowered = !entity->isPowered;
-                        if (entity->isPowered)
+                        if (!entity->isPowered)
                         {
+                            entity->isPowered = true;
                             pushEvent(eventLog, std::string("You power on ") + entity->name + ".");
                         }
                         else
                         {
-                            pushEvent(eventLog, std::string("You power down ") + entity->name + ".");
+                            pushEvent(eventLog, std::string("You access ") + entity->name + ".");
                         }
                         break;
 
@@ -442,10 +459,10 @@ namespace war
                 switch (hotspot->type)
                 {
                 case WorldAuthoringHotspotType::Encounter:
-                    message += ". Hostile contact could resolve here in the six-second combat lane.";
+                    message += ". This lane can escalate into the authoritative six-second combat flow.";
                     break;
                 case WorldAuthoringHotspotType::Control:
-                    message += ". This is a future mission, gate, or authority control point.";
+                    message += ". This is a mission and progression control point.";
                     break;
                 case WorldAuthoringHotspotType::Transit:
                     message += ". This is a routing and traversal anchor.";

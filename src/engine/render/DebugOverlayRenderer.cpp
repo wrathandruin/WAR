@@ -21,6 +21,8 @@ namespace war
                     return "locked";
                 }
                 return entity.isOpen ? "open" : "closed";
+            case EntityType::Ship:
+                return entity.isPowered ? "powered, docked" : "cold-docked";
             default:
                 return "unknown";
             }
@@ -28,7 +30,21 @@ namespace war
 
         const char* hotspotStateText(const WorldAuthoringHotspot& hotspot)
         {
-            return hotspot.encounterReady ? "encounter-ready" : "secured";
+            switch (hotspot.type)
+            {
+            case WorldAuthoringHotspotType::Encounter:
+                return hotspot.encounterReady ? "encounter-ready" : "inactive";
+            case WorldAuthoringHotspotType::Control:
+                return hotspot.encounterReady ? "ready" : "gated";
+            case WorldAuthoringHotspotType::Transit:
+                return hotspot.encounterReady ? "open" : "gated";
+            case WorldAuthoringHotspotType::Loot:
+                return hotspot.encounterReady ? "available" : "cleared";
+            case WorldAuthoringHotspotType::Hazard:
+                return hotspot.encounterReady ? "active" : "stabilized";
+            default:
+                return "unknown";
+            }
         }
 
         std::string tileText(bool hasTile, TileCoord tile)
@@ -109,6 +125,7 @@ namespace war
         case EntityType::Crate: return "crate";
         case EntityType::Terminal: return "terminal";
         case EntityType::Locker: return "locker";
+        case EntityType::Ship: return "ship";
         default: return "unknown";
         }
     }
@@ -174,9 +191,28 @@ namespace war
 
         std::ostringstream info;
         info
-            << "WAR Milestone 40\n"
+            << "WAR Milestone 44\n"
             << "LMB: move    RMB: interact    Shift+RMB: inspect    MMB drag: pan    Wheel: zoom\n"
             << "Authoritative lane: " << (simulationDiagnostics.hostAuthorityActive ? "headless host" : "local") << "\n"
+            << "Objective: " << simulationDiagnostics.missionObjectiveText << "\n"
+            << "Mission phase: " << simulationDiagnostics.missionPhaseText << "\n"
+            << "Mission beat: " << simulationDiagnostics.missionLastBeat << "\n"
+            << "Mission complete: " << (simulationDiagnostics.missionComplete ? "yes" : "no") << "\n"
+            << "Gate locked: " << (simulationDiagnostics.missionGateLocked ? "yes" : "no") << "\n"
+            << "Ship runtime prep: " << (simulationDiagnostics.shipRuntimePrepReady ? "yes" : "no") << "\n"
+            << "Active ship: " << simulationDiagnostics.shipName << " [" << simulationDiagnostics.activeShipId << "]\n"
+            << "Ship ownership / occupancy: " << simulationDiagnostics.shipOwnershipText << " / " << simulationDiagnostics.shipOccupancyText << "\n"
+            << "Ship docked / boarded: " << (simulationDiagnostics.shipDocked ? "yes" : "no") << " / " << (simulationDiagnostics.shipBoarded ? "yes" : "no") << "\n"
+            << "Ship power / airlock / command: " << (simulationDiagnostics.shipPowerOnline ? "yes" : "no") << " / " << (simulationDiagnostics.shipAirlockPressurized ? "yes" : "no") << " / " << (simulationDiagnostics.shipCommandClaimed ? "yes" : "no") << "\n"
+            << "Ship launch prep: " << (simulationDiagnostics.shipLaunchPrepReady ? "yes" : "no") << "\n"
+            << "Ship beat: " << simulationDiagnostics.shipLastBeat << "\n"
+            << "Orbital active / departure auth: " << (simulationDiagnostics.orbitalLayerActive ? "yes" : "no") << " / " << (simulationDiagnostics.orbitalDepartureAuthorized ? "yes" : "no") << "\n"
+            << "Orbital phase: " << simulationDiagnostics.orbitalPhaseText << "\n"
+            << "Orbital node / target: " << simulationDiagnostics.orbitalCurrentNodeText << " / " << simulationDiagnostics.orbitalTargetNodeText << "\n"
+            << "Orbital travel / ticks: " << (simulationDiagnostics.orbitalTravelInProgress ? "yes" : "no") << " / " << simulationDiagnostics.orbitalTravelTicksRemaining << "\n"
+            << "Orbital rule: " << simulationDiagnostics.orbitalRuleText << "\n"
+            << "Orbital beat: " << simulationDiagnostics.orbitalLastBeat << "\n"
+            << "Runtime context: " << simulationDiagnostics.playerRuntimeContextText << "\n"
             << "Player world: (" << playerPosition.x << ", " << playerPosition.y << ")\n"
             << "Player tile: (" << playerTile.x << ", " << playerTile.y << ")\n"
             << "Mouse tile: (" << mouseTile.x << ", " << mouseTile.y << ")\n"

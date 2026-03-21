@@ -376,7 +376,7 @@ namespace war
         }
 
         output
-            << "status_version=3\n"
+            << "status_version=4\n"
             << "mode=headless-authoritative-host\n"
             << "state=" << hostState << "\n"
             << "pid=" << processId << "\n"
@@ -407,7 +407,45 @@ namespace war
             << "persistence_save_count=" << simulationDiagnostics.persistenceSaveCount << "\n"
             << "persistence_load_count=" << simulationDiagnostics.persistenceLoadCount << "\n"
             << "persistence_last_save_epoch_ms=" << simulationDiagnostics.lastPersistenceSaveEpochMilliseconds << "\n"
-            << "persistence_last_load_epoch_ms=" << simulationDiagnostics.lastPersistenceLoadEpochMilliseconds << "\n";
+            << "persistence_last_load_epoch_ms=" << simulationDiagnostics.lastPersistenceLoadEpochMilliseconds << "\n"
+            << "mission_active=" << (simulationDiagnostics.missionActive ? "yes" : "no") << "\n"
+            << "mission_phase=" << simulationDiagnostics.missionPhaseText << "\n"
+            << "mission_objective=" << simulationDiagnostics.missionObjectiveText << "\n"
+            << "mission_complete=" << (simulationDiagnostics.missionComplete ? "yes" : "no") << "\n"
+            << "mission_gate_locked=" << (simulationDiagnostics.missionGateLocked ? "yes" : "no") << "\n"
+            << "mission_advancement_count=" << simulationDiagnostics.missionAdvancementCount << "\n"
+            << "ship_runtime_prep_ready=" << (simulationDiagnostics.shipRuntimePrepReady ? "yes" : "no") << "\n"
+            << "ship_active=" << (simulationDiagnostics.shipActive ? "yes" : "no") << "\n"
+            << "active_ship_id=" << simulationDiagnostics.activeShipId << "\n"
+            << "ship_name=" << simulationDiagnostics.shipName << "\n"
+            << "ship_boarded=" << (simulationDiagnostics.shipBoarded ? "yes" : "no") << "\n"
+            << "ship_docked=" << (simulationDiagnostics.shipDocked ? "yes" : "no") << "\n"
+            << "ship_power_online=" << (simulationDiagnostics.shipPowerOnline ? "yes" : "no") << "\n"
+            << "ship_airlock_pressurized=" << (simulationDiagnostics.shipAirlockPressurized ? "yes" : "no") << "\n"
+            << "ship_command_claimed=" << (simulationDiagnostics.shipCommandClaimed ? "yes" : "no") << "\n"
+            << "ship_launch_prep_ready=" << (simulationDiagnostics.shipLaunchPrepReady ? "yes" : "no") << "\n"
+            << "ship_ownership=" << simulationDiagnostics.shipOwnershipText << "\n"
+            << "ship_occupancy=" << simulationDiagnostics.shipOccupancyText << "\n"
+            << "ship_location=" << simulationDiagnostics.shipLocationText << "\n"
+            << "ship_boarding_count=" << simulationDiagnostics.shipBoardingCount << "\n"
+            << "orbital_layer_active=" << (simulationDiagnostics.orbitalLayerActive ? "yes" : "no") << "\n"
+            << "orbital_departure_authorized=" << (simulationDiagnostics.orbitalDepartureAuthorized ? "yes" : "no") << "\n"
+            << "orbital_travel_in_progress=" << (simulationDiagnostics.orbitalTravelInProgress ? "yes" : "no") << "\n"
+            << "orbital_survey_orbit_reached=" << (simulationDiagnostics.orbitalSurveyOrbitReached ? "yes" : "no") << "\n"
+            << "orbital_relay_track_reached=" << (simulationDiagnostics.orbitalRelayTrackReached ? "yes" : "no") << "\n"
+            << "orbital_relay_platform_docked=" << (simulationDiagnostics.orbitalRelayPlatformDocked ? "yes" : "no") << "\n"
+            << "orbital_return_route_authorized=" << (simulationDiagnostics.orbitalReturnRouteAuthorized ? "yes" : "no") << "\n"
+            << "orbital_home_dock_reached=" << (simulationDiagnostics.orbitalHomeDockReached ? "yes" : "no") << "\n"
+            << "orbital_phase=" << simulationDiagnostics.orbitalPhaseText << "\n"
+            << "orbital_current_node=" << simulationDiagnostics.orbitalCurrentNodeText << "\n"
+            << "orbital_target_node=" << simulationDiagnostics.orbitalTargetNodeText << "\n"
+            << "orbital_rule=" << simulationDiagnostics.orbitalRuleText << "\n"
+            << "orbital_transfer_count=" << simulationDiagnostics.orbitalTransferCount << "\n"
+            << "orbital_travel_ticks_remaining=" << simulationDiagnostics.orbitalTravelTicksRemaining << "\n"
+            << "frontier_surface_active=" << (simulationDiagnostics.frontierSurfaceActive ? "yes" : "no") << "\n"
+            << "frontier_site=" << simulationDiagnostics.frontierSiteText << "\n"
+            << "player_runtime_context=" << simulationDiagnostics.playerRuntimeContextText << "\n";
+
         output.close();
         if (!output)
         {

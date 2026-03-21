@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "engine/math/Vec2.h"
+#include "engine/simulation/SimulationIntent.h"
 #include "engine/world/WorldState.h"
 
 namespace war
@@ -16,6 +17,7 @@ namespace war
             const Vec2& playerPosition,
             const std::vector<std::string>& eventLog,
             float lastDeltaTime,
-            const std::string& statusMessage) const;
+            const std::string& statusMessage,
+            const SharedSimulationDiagnostics& simulationDiagnostics) const;
     };
 }

@@ -34,6 +34,7 @@ namespace war
         [[nodiscard]] bool isInBounds(TileCoord tile) const;
         [[nodiscard]] bool isBlocked(TileCoord tile) const;
         [[nodiscard]] bool isWalkable(TileCoord tile) const;
+        void setBlocked(TileCoord tile, bool blocked);
 
         [[nodiscard]] TileCoord worldToTile(const Vec2& world) const;
         [[nodiscard]] Vec2 tileToWorldCenter(TileCoord tile) const;

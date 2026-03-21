@@ -74,6 +74,18 @@ namespace war
                 setBlocked(x, y);
             }
         }
+
+        for (int x = 41; x <= 47; ++x)
+        {
+            setBlocked(x, 1);
+            setBlocked(x, 6);
+        }
+
+        for (int y = 1; y <= 6; ++y)
+        {
+            setBlocked(41, y);
+            setBlocked(47, y);
+        }
     }
 
     int WorldGrid::getWidth() const
@@ -109,6 +121,16 @@ namespace war
     bool WorldGrid::isWalkable(TileCoord tile) const
     {
         return isInBounds(tile) && !m_tiles[index(tile)].blocked;
+    }
+
+    void WorldGrid::setBlocked(TileCoord tile, bool blocked)
+    {
+        if (!isInBounds(tile))
+        {
+            return;
+        }
+
+        m_tiles[index(tile)].blocked = blocked;
     }
 
     TileCoord WorldGrid::worldToTile(const Vec2& world) const

@@ -21,7 +21,7 @@ namespace war
 {
     namespace
     {
-        constexpr uint32_t kCurrentPersistenceSchemaVersion = 3u;
+        constexpr uint32_t kCurrentPersistenceSchemaVersion = 7u;
 
         struct PendingIntentArrival
         {
@@ -145,8 +145,8 @@ namespace war
                 simulationRuntime.appendEvent("No authoritative save restored on host boot.");
             }
 
-            simulationRuntime.appendEvent("Headless host authoritative combat lane active");
-            simulationRuntime.appendEvent("Six-second combat and encounter resolution active for M40");
+            simulationRuntime.appendEvent("Headless host authoritative mission lane active");
+            simulationRuntime.appendEvent("Docking / landing / cross-layer transition persistence / return loop active for M44");
 
             AuthoritativeHostProtocolReport protocolReport = AuthoritativeHostProtocol::buildReport(runtimeBoundaryReport);
             AuthoritativeHostProtocol::ensureDirectories(protocolReport);
@@ -345,7 +345,8 @@ namespace war
             }
 
             appendLogLine(logPath, std::string("Simulation ticks: ") + std::to_string(simulationRuntime.diagnostics().simulationTicks));
-            appendLogLine(logPath, std::string("Encounter wins: ") + std::to_string(simulationRuntime.diagnostics().encounterWins));
+            appendLogLine(logPath, std::string("Mission phase: ") + simulationRuntime.diagnostics().missionPhaseText);
+            appendLogLine(logPath, std::string("Mission complete: ") + (simulationRuntime.diagnostics().missionComplete ? "yes" : "no"));
             appendLogLine(logPath, std::string("Combat rounds resolved: ") + std::to_string(simulationRuntime.diagnostics().combatRoundsResolved));
             appendLogLine(logPath, std::string("Persistence saves: ") + std::to_string(simulationRuntime.diagnostics().persistenceSaveCount));
             appendLogLine(logPath, std::string("Persistence loads: ") + std::to_string(simulationRuntime.diagnostics().persistenceLoadCount));

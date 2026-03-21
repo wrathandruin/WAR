@@ -10,7 +10,8 @@ namespace war
     {
         Crate,
         Terminal,
-        Locker
+        Locker,
+        Ship
     };
 
     struct Entity

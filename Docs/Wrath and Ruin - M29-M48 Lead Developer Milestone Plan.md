@@ -4,6 +4,11 @@
 
 This document is the active milestone runway for the next lead developer after M28.
 
+It remains the correct detailed historical runway for M29 through M48.
+However, the post-M44 continuation has now been expanded and refined in:
+
+- `Docs/Wrath and Ruin - M45-M70 Alpha Playtest Runway.md`
+
 It is intentionally designed to break the project out of renderer-only momentum and move it into a production-shaped vertical-slice program.
 
 The schedule uses weekly sprint language as a management shorthand.
@@ -29,6 +34,10 @@ The legacy Wrath-and-Ruin project should be treated as the production reference 
 - account and session flow
 - smoke and acceptance discipline
 - packaging and updater thinking
+
+Phase 5 should also inherit one additional rule from the legacy product:
+
+- playtesting "fun" is only meaningful if the slice is being evaluated as a graphical MUD session, not only as a better top-down RPG
 
 ## Phase Overview
 
@@ -91,6 +100,21 @@ Milestones:
 
 Goal:
 Turn the slice into something the team can host, test, demonstrate, support, and grow toward beta and market readiness.
+
+Phase 5 amendment:
+This phase must explicitly close the gap between the current localhost mission slice and the actual product fantasy.
+
+That means:
+
+- hosted-session reality, not only package quality
+- account/session/updater direction, not only local launch flow
+- telemetry, crash, admin, support, and security foundations
+- a MUD-identity MVP with text-first context, commands, and social presence strong enough for meaningful playtests
+- room and interior descriptions early enough that entering authored spaces already feels text-rich
+
+Parallel production rule:
+From M45 onward, engineering and art must be run as explicit parallel workstreams.
+The lead developer should not assume missing art will be solved ad hoc, and the lead artist should not be handed unstructured requests without milestone context.
 
 ## Milestone Pass
 
@@ -808,6 +832,7 @@ M45 - Internal Alpha Package / Hosted Deploy / Telemetry Baseline
 M45 should package the working slice into an internally hostable alpha candidate with the minimum operational visibility required for disciplined testing.
 
 This is the first milestone that should feel like a product handoff to an internal test group rather than a pure dev build.
+It is also the first milestone where the slice must begin proving its graphical-MUD identity more explicitly through text presentation, not only through mission logic.
 
 ## Download
 
@@ -827,12 +852,18 @@ Planned focus areas:
 - hosted deploy lane
 - telemetry baseline
 - smoke-test and boot validation
+- room and interior description support for key authored spaces
+- first typed command-bar direction for the internal playtest MVP
+- prompt or vitals-strip direction so testers are not only reading debug output
+- engineering/art handoff discipline for the current asset set
 
 ## What should be seen visually
 
 - the slice should boot in a hosted environment
 - internal testers should be able to connect through a controlled flow
 - core session behavior should be visible in telemetry and diagnostics
+- entering important interiors or destination spaces should now produce authored descriptive text
+- the slice should start to feel like a graphical MUD session rather than only a top-down mission demo
 
 ## Why this is important
 
@@ -851,6 +882,7 @@ M46 - Alpha Hardening / Crash Capture / Admin Tooling
 M46 should harden the internal alpha by improving crash capture, diagnostics depth, admin tooling, and operational recovery confidence.
 
 This milestone should draw heavily from the legacy project's operations discipline.
+It should also harden the first text/social MVP surfaces enough that playtests can start judging the product honestly.
 
 ## Download
 
@@ -870,6 +902,8 @@ Planned focus areas:
 - admin and debug controls
 - recovery and restart confidence
 - acceptance and healthcheck expansion
+- support for the first shared-presence playtest lane
+- text/social instrumentation around room-entry descriptions, command usage, and session readability
 
 ## What should be seen visually
 
@@ -894,6 +928,7 @@ M47 - External Beta Onboarding / Launcher-Update Direction / Support Flow
 M47 should begin preparing the product for users outside the immediate development circle.
 
 The milestone should define how external testers get in, how builds are distributed, how updates are handled, and how support issues are surfaced.
+By this point, the product should no longer be relying on debug-only text to carry the MUD soul.
 
 ## Download
 
@@ -913,6 +948,7 @@ Planned focus areas:
 - launcher or updater direction
 - account or session-entry flow refinement
 - support intake and triage foundation
+- clearer room-description, text-log, command-bar, and social-surface presentation for outside testers
 
 ## What should be seen visually
 
@@ -937,6 +973,7 @@ M48 - Market Foundation / Release Ops / Analytics / Readiness Gate
 M48 should establish the first serious market-facing foundation without pretending the product is fully launch-ready.
 
 The focus is on release-ops discipline, analytics direction, readiness criteria, and the business-facing base that turns a strong internal project into a credible commercial candidate later.
+The go/no-go review at this stage must judge both product operations and product identity.
 
 ## Download
 
@@ -956,6 +993,7 @@ Planned focus areas:
 - analytics direction
 - support and incident-response baseline
 - market-readiness checklist foundation
+- leadership judgment on whether the current slice reads as a graphical MUD product and not only as a top-down RPG prototype
 
 ## What should be seen visually
 

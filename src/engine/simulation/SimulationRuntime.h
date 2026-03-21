@@ -67,11 +67,26 @@ namespace war
 
         [[nodiscard]] SimulationIntentAck validateIntent(const SimulationIntent& intent) const;
         void queueAcceptedIntent(const SimulationIntent& intent);
-        void processQueuedIntents();
+        void processQueuedIntents(std::vector<SimulationIntent>& processedIntents);
         void advanceAuthoritativePlayer(float stepSeconds);
         void refreshPresentedPlayerPosition();
         void trimEventLog();
         void refreshDiagnosticsFromState();
+
+        void initializeMissionState();
+        void initializeShipRuntimeState();
+        void initializeOrbitalRuntimeState();
+        void applyMissionWorldState();
+        void applyShipRuntimeWorldState();
+        void updateOrbitalTravel();
+        void beginOrbitalTransfer(OrbitalNodeId targetNode, OrbitalTravelPhase transferPhase, uint32_t transferTicks);
+        void completeOrbitalTransfer();
+        void setAuthoritativePlayerTile(TileCoord tile, bool clearMovementState = true);
+        [[nodiscard]] bool isShipboardInteractionTarget(TileCoord target) const;
+        void evaluateMissionProgressFromIntent(const SimulationIntent& intent);
+        void handleMissionInspect(TileCoord target);
+        void handleMissionInteraction(TileCoord target);
+        void handleMissionEncounterVictory(const std::string& encounterLabel);
 
         void processSurvivalState(float stepSeconds);
         void evaluateEncounterTriggers();
@@ -103,5 +118,8 @@ namespace war
 
         PlayerActorRuntimeState m_playerActorState{};
         CombatEncounterState m_combatEncounterState{};
+        MissionRuntimeState m_missionRuntimeState{};
+        ShipRuntimeState m_shipRuntimeState{};
+        OrbitalRuntimeState m_orbitalRuntimeState{};
     };
 }

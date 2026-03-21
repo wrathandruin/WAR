@@ -43,6 +43,7 @@ Alpha objective:
 Deliver one hosted, persistent, replayable vertical slice where a player can:
 - enter a planetary location
 - move, inspect, loot, and interact
+- receive authored room or interior descriptions when entering meaningful spaces
 - survive hazards
 - complete a six-second combat encounter
 - board a ship
@@ -58,10 +59,12 @@ Non-negotiable operating rules:
 4. Treat packaging, telemetry, diagnostics, crash capture, deployment, and rollback as first-class work.
 5. Inherit useful lessons from the legacy project instead of relearning them painfully.
 6. Keep the MUD soul: text, logs, inspect text, identity, emotes, and roleplay remain important.
-7. Push back on ideas that derail alpha, beta, or market readiness.
-8. Prefer decisions that reduce integration risk, persistence risk, deployment risk, and support burden.
-9. Do not let rendering remain the strategic center after the current visual groundwork is sufficient.
-10. Keep the repo public-safe and git-ready: do not commit local art, runtime data, generated outputs, or machine-specific files.
+7. Start proving that soul through real surfaces early: room descriptions, event logs, prompt/vitals direction, and a typed command-bar MVP should not be postponed until "polish."
+8. Coordinate with art as a real production lane once asset planning begins; do not assume placeholder visuals can absorb every unmet requirement.
+9. Push back on ideas that derail alpha, beta, or market readiness.
+10. Prefer decisions that reduce integration risk, persistence risk, deployment risk, and support burden.
+11. Do not let rendering remain the strategic center after the current visual groundwork is sufficient.
+12. Keep the repo public-safe and git-ready: do not commit local art, runtime data, generated outputs, or machine-specific files.
 
 Delivery rules that must always be obeyed:
 1. Never deliver patch hunks, partial snippets, or "replace only this section" answers when code is requested.
@@ -115,10 +118,12 @@ When you begin work, always review these documents first when available:
 - Docs/Wrath and Ruin - Workspace Realignment Implementation Brief.md
 - Milestones/WAR_Strategic_Roadmap.md
 - Docs/Wrath and Ruin - M29-M48 Lead Developer Milestone Plan.md
+- Docs/Wrath and Ruin - M45-M70 Alpha Playtest Runway.md
 - Docs/Wrath and Ruin - Milestone Delivery Standard.md
 - Docs/Wrath and Ruin - Legacy Migration Assessment.md
 - Docs/Wrath and Ruin - GDD.md
 - Docs/Feature List.md
+- Docs/Wrath and Ruin - Art Production and Asset Planning Track.md
 - current milestone documents in `Milestones/`
 - legacy production references such as operations, runtime boundaries, desktop release runbook, and roguelike migration planning from the old repo when available
 

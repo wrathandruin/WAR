@@ -14,19 +14,19 @@ set "CLIENT_EXE_PATH=%CLIENT_OUTPUT_DIR%\WAR.exe"
 set "CLIENT_PDB_PATH=%CLIENT_OUTPUT_DIR%\WAR.pdb"
 set "SERVER_EXE_PATH=%SERVER_OUTPUT_DIR%\WARServer.exe"
 set "SERVER_PDB_PATH=%SERVER_OUTPUT_DIR%\WARServer.pdb"
-set "STAGE_ROOT=%REPO_ROOT%\out\local_demo\WAR_M40_%CONFIG%"
+set "STAGE_ROOT=%REPO_ROOT%\out\local_demo\WAR_M44_%CONFIG%"
 set "RUNTIME_STAGE=%STAGE_ROOT%\runtime"
 set "HOST_STAGE=%RUNTIME_STAGE%\Host"
 set "MANIFEST_PATH=%STAGE_ROOT%\demo_manifest.txt"
 
 if not exist "%SOLUTION_FILE%" (
-    echo [M40] ERROR: WAR.sln not found at "%SOLUTION_FILE%".
+    echo [M44] ERROR: WAR.sln not found at "%SOLUTION_FILE%".
     exit /b 1
 )
 
 set "VSWHERE_EXE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
 if not exist "%VSWHERE_EXE%" (
-    echo [M40] ERROR: vswhere.exe not found at "%VSWHERE_EXE%".
+    echo [M44] ERROR: vswhere.exe not found at "%VSWHERE_EXE%".
     exit /b 1
 )
 
@@ -36,24 +36,24 @@ for /f "usebackq delims=" %%I in (`"%VSWHERE_EXE%" -latest -products * -requires
 )
 
 if not defined MSBUILD_EXE (
-    echo [M40] ERROR: MSBuild.exe could not be resolved via vswhere.exe.
+    echo [M44] ERROR: MSBuild.exe could not be resolved via vswhere.exe.
     exit /b 1
 )
 
-echo [M40] Building WAR %CONFIG%^|%PLATFORM%...
+echo [M44] Building WAR %CONFIG%^|%PLATFORM%...
 "%MSBUILD_EXE%" "%SOLUTION_FILE%" /m /nologo /t:WAR;WARServer /p:Configuration=%CONFIG%;Platform=%PLATFORM%
 if errorlevel 1 (
-    echo [M40] ERROR: build failed.
+    echo [M44] ERROR: build failed.
     exit /b 1
 )
 
 if not exist "%CLIENT_EXE_PATH%" (
-    echo [M40] ERROR: expected client executable missing at "%CLIENT_EXE_PATH%".
+    echo [M44] ERROR: expected client executable missing at "%CLIENT_EXE_PATH%".
     exit /b 1
 )
 
 if not exist "%SERVER_EXE_PATH%" (
-    echo [M40] ERROR: expected host executable missing at "%SERVER_EXE_PATH%".
+    echo [M44] ERROR: expected host executable missing at "%SERVER_EXE_PATH%".
     exit /b 1
 )
 
@@ -75,23 +75,26 @@ if exist "%REPO_ROOT%\assets" xcopy /y /i /e "%REPO_ROOT%\assets" "%STAGE_ROOT%\
 
 for %%F in (
     "README.md"
-    "Docs\Wrath and Ruin - M40 Combat Runtime and Encounter Resolution Brief.md"
-    "Docs\Wrath and Ruin - M40 Validation and Acceptance Checklist.md"
-    "Milestones\M40_Six_Second_Combat_Encounter_Resolution.md"
+    "Docs\Wrath and Ruin - M43 Validation and Acceptance Checklist.md"
+    "Docs\Wrath and Ruin - M44 Validation and Acceptance Checklist.md"
+    "Milestones\M43_Orbital_Space_Layer_Travel_State_Navigation_Rules.md"
+    "Milestones\M44_Docking_Landing_Cross_Layer_Transition_Persistence_Return_Loop.md"
     "scripts\launch_local_demo_win64.bat"
     "scripts\launch_headless_host_win64.bat"
     "scripts\launch_local_client_against_host_win64.bat"
     "scripts\smoke_test_headless_host_win64.bat"
     "scripts\smoke_test_local_demo_win64.bat"
-    "scripts\acceptance_m40_six_second_combat_win64.bat"
-    "scripts\acceptance_m40_six_second_combat_win64.ps1"
+    "scripts\acceptance_m43_orbital_space_layer_win64.bat"
+    "scripts\acceptance_m43_orbital_space_layer_win64.ps1"
+    "scripts\acceptance_m44_return_loop_win64.bat"
+    "scripts\acceptance_m44_return_loop_win64.ps1"
 ) do (
     if exist "%REPO_ROOT%\%%~F" copy /y "%REPO_ROOT%\%%~F" "%STAGE_ROOT%\%%~nxF" >nul
 )
 
 (
     echo WAR Local Demo Manifest
-    echo Milestone: M40 - Six-Second Combat / Encounter Resolution
+    echo Milestone: M44 - Docking / Landing / Cross-Layer Transition Persistence / Return Loop
     echo Configuration: %CONFIG%
     echo Platform: %PLATFORM%
     echo Stage root: %STAGE_ROOT%
@@ -99,8 +102,9 @@ for %%F in (
     echo Host executable: %STAGE_ROOT%\WARServer.exe
     echo Runtime root: %RUNTIME_STAGE%
     echo Save path: %RUNTIME_STAGE%\Saves\authoritative_world_primary.txt
-    echo M40 acceptance script: %STAGE_ROOT%\acceptance_m40_six_second_combat_win64.bat
+    echo M43 regression script: %STAGE_ROOT%\acceptance_m43_orbital_space_layer_win64.bat
+    echo M44 acceptance script: %STAGE_ROOT%\acceptance_m44_return_loop_win64.bat
 ) > "%MANIFEST_PATH%"
 
-echo [M40] Local demo package staged at "%STAGE_ROOT%".
+echo [M44] Local demo package staged at "%STAGE_ROOT%".
 exit /b 0

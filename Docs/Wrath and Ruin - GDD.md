@@ -186,6 +186,7 @@ The long-term world may become broad, but the early product must stay narrow:
 
 - mission chains provide structure to the sandbox
 - terminals, dialogue, and logs deliver context
+- room, interior, and destination descriptions should add immediate authored identity when the player enters meaningful spaces
 - authored content should coexist with systemic outcomes
 
 ---
@@ -197,6 +198,7 @@ Wrath and Ruin should preserve the strongest parts of its MUD heritage:
 - speech
 - emotes
 - inspect text
+- room and interior descriptions
 - event and combat logs
 - world flavor text
 - roleplay support

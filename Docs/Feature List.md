@@ -13,15 +13,20 @@ These are not optional. They are what make the rest of the roadmap shippable.
 - reproducible builds
 - runtime data boundaries
 - authoritative server architecture
+- remote transport and protocol-version ownership
 - shared simulation layer
 - dedicated server packaging
+- trust-boundary and environment-config model
 - local demo checklist
 - staging and deployment plan
 - telemetry and crash capture
+- backup, restore, and rollback discipline
 - admin and support tools
+- security and abuse-control baseline
 - content and asset source-of-truth rules
 - content validation pipeline
 - installer and update strategy planning
+- art-production intake and milestone handoff discipline
 
 ---
 
@@ -55,10 +60,16 @@ These define the first credible playable product slice.
 - playable UI shell
 - debug overlays and diagnostics
 - repeatable server deploy path
+- first room or interior description lane for authored spaces
+- reconnect and session continuity lane
+- same-space shared presence proof
 
 ### Identity
 
 - preserve the MUD soul through text, logs, speech, emotes, inspect text, and narrative output
+- typed command-bar direction for a small core vocabulary
+- prompt or vitals surface that feels session-like rather than purely diagnostic
+- mission and description authoring pipeline
 
 ---
 
@@ -72,6 +83,8 @@ These expand reliability, usability, and testability after alpha.
 - external tester support flow
 - moderation and admin workflow
 - content authoring acceleration
+- art-production scaling and review pipeline
+- cohort analytics and survey instrumentation
 - progression and economy-lite pass
 - more destinations and encounter variety
 - better reconnect and session continuity

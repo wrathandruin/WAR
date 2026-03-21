@@ -15,6 +15,7 @@ namespace war
     namespace
     {
         using StringMap = std::unordered_map<std::string, std::string>;
+        constexpr uint32_t kCurrentPersistenceSchemaVersion = 7u;
 
         std::string sanitizeSingleLine(const std::string& value)
         {
@@ -635,7 +636,7 @@ namespace war
     {
         const uint32_t schemaVersion = snapshot.persistenceSchemaVersion > 0
             ? snapshot.persistenceSchemaVersion
-            : 3u;
+            : kCurrentPersistenceSchemaVersion;
         const uint32_t migratedFromSchemaVersion = snapshot.persistenceMigratedFromSchemaVersion;
         const uint64_t nextIntentSequence = snapshot.nextIntentSequence > 0
             ? snapshot.nextIntentSequence
@@ -648,7 +649,7 @@ namespace war
 
         std::ostringstream output;
         output
-            << "version=5\n"
+            << "version=7\n"
             << "schema_version=" << schemaVersion << "\n"
             << "migrated_from_schema_version=" << migratedFromSchemaVersion << "\n"
             << "persistence_schema_version=" << schemaVersion << "\n"
@@ -720,6 +721,58 @@ namespace war
             << "combat_hostile_min_damage=" << snapshot.combatEncounterState.hostileMinDamage << "\n"
             << "combat_hostile_max_damage=" << snapshot.combatEncounterState.hostileMaxDamage << "\n"
             << "combat_last_outcome=" << sanitizeSingleLine(snapshot.combatEncounterState.lastOutcome) << "\n"
+            << "mission_id=" << static_cast<int>(snapshot.missionRuntimeState.activeMission) << "\n"
+            << "mission_phase=" << static_cast<int>(snapshot.missionRuntimeState.phase) << "\n"
+            << "mission_advancement_count=" << snapshot.missionRuntimeState.advancementCount << "\n"
+            << "mission_transit_data_recovered=" << (snapshot.missionRuntimeState.transitDataRecovered ? "yes" : "no") << "\n"
+            << "mission_medlab_diagnosis_complete=" << (snapshot.missionRuntimeState.medlabDiagnosisComplete ? "yes" : "no") << "\n"
+            << "mission_quarantine_gate_unlocked=" << (snapshot.missionRuntimeState.quarantineGateUnlocked ? "yes" : "no") << "\n"
+            << "mission_quarantine_encounter_resolved=" << (snapshot.missionRuntimeState.quarantineEncounterResolved ? "yes" : "no") << "\n"
+            << "mission_quarantine_control_restored=" << (snapshot.missionRuntimeState.quarantineControlRestored ? "yes" : "no") << "\n"
+            << "mission_ship_runtime_prep_ready=" << (snapshot.missionRuntimeState.shipRuntimePrepReady ? "yes" : "no") << "\n"
+            << "mission_orbital_departure_complete=" << (snapshot.missionRuntimeState.orbitalDepartureComplete ? "yes" : "no") << "\n"
+            << "mission_survey_orbit_reached=" << (snapshot.missionRuntimeState.surveyOrbitReached ? "yes" : "no") << "\n"
+            << "mission_relay_track_stabilized=" << (snapshot.missionRuntimeState.relayTrackStabilized ? "yes" : "no") << "\n"
+            << "mission_relay_platform_docked=" << (snapshot.missionRuntimeState.relayPlatformDocked ? "yes" : "no") << "\n"
+            << "mission_dust_frontier_landed=" << (snapshot.missionRuntimeState.dustFrontierLanded ? "yes" : "no") << "\n"
+            << "mission_frontier_relay_secured=" << (snapshot.missionRuntimeState.frontierRelaySecured ? "yes" : "no") << "\n"
+            << "mission_return_launch_complete=" << (snapshot.missionRuntimeState.returnLaunchComplete ? "yes" : "no") << "\n"
+            << "mission_home_dock_restored=" << (snapshot.missionRuntimeState.homeDockRestored ? "yes" : "no") << "\n"
+            << "mission_return_loop_complete=" << (snapshot.missionRuntimeState.returnLoopComplete ? "yes" : "no") << "\n"
+            << "mission_complete=" << (snapshot.missionRuntimeState.missionComplete ? "yes" : "no") << "\n"
+            << "mission_last_beat=" << sanitizeSingleLine(snapshot.missionRuntimeState.lastBeat) << "\n"
+            << "ship_id=" << static_cast<int>(snapshot.shipRuntimeState.activeShip) << "\n"
+            << "ship_name=" << sanitizeSingleLine(snapshot.shipRuntimeState.shipName) << "\n"
+            << "ship_location=" << sanitizeSingleLine(snapshot.shipRuntimeState.locationLabel) << "\n"
+            << "ship_ownership_state=" << static_cast<int>(snapshot.shipRuntimeState.ownershipState) << "\n"
+            << "ship_occupancy_state=" << static_cast<int>(snapshot.shipRuntimeState.occupancyState) << "\n"
+            << "ship_boarding_count=" << snapshot.shipRuntimeState.boardingCount << "\n"
+            << "ship_boarding_unlocked=" << (snapshot.shipRuntimeState.boardingUnlocked ? "yes" : "no") << "\n"
+            << "ship_docked=" << (snapshot.shipRuntimeState.docked ? "yes" : "no") << "\n"
+            << "ship_player_boarded=" << (snapshot.shipRuntimeState.playerBoarded ? "yes" : "no") << "\n"
+            << "ship_power_online=" << (snapshot.shipRuntimeState.powerOnline ? "yes" : "no") << "\n"
+            << "ship_airlock_pressurized=" << (snapshot.shipRuntimeState.airlockPressurized ? "yes" : "no") << "\n"
+            << "ship_command_claimed=" << (snapshot.shipRuntimeState.commandClaimed ? "yes" : "no") << "\n"
+            << "ship_launch_prep_ready=" << (snapshot.shipRuntimeState.launchPrepReady ? "yes" : "no") << "\n"
+            << "ship_frontier_surface_access_unlocked=" << (snapshot.shipRuntimeState.frontierSurfaceAccessUnlocked ? "yes" : "no") << "\n"
+            << "ship_frontier_surface_active=" << (snapshot.shipRuntimeState.frontierSurfaceActive ? "yes" : "no") << "\n"
+            << "ship_last_beat=" << sanitizeSingleLine(snapshot.shipRuntimeState.lastBeat) << "\n"
+            << "orbital_layer_unlocked=" << (snapshot.orbitalRuntimeState.orbitalLayerUnlocked ? "yes" : "no") << "\n"
+            << "orbital_layer_active=" << (snapshot.orbitalRuntimeState.orbitalLayerActive ? "yes" : "no") << "\n"
+            << "orbital_departure_authorized=" << (snapshot.orbitalRuntimeState.departureAuthorized ? "yes" : "no") << "\n"
+            << "orbital_survey_orbit_reached=" << (snapshot.orbitalRuntimeState.surveyOrbitReached ? "yes" : "no") << "\n"
+            << "orbital_relay_track_reached=" << (snapshot.orbitalRuntimeState.relayTrackReached ? "yes" : "no") << "\n"
+            << "orbital_relay_platform_docked=" << (snapshot.orbitalRuntimeState.relayPlatformDocked ? "yes" : "no") << "\n"
+            << "orbital_return_route_authorized=" << (snapshot.orbitalRuntimeState.returnRouteAuthorized ? "yes" : "no") << "\n"
+            << "orbital_home_dock_reached=" << (snapshot.orbitalRuntimeState.homeDockReached ? "yes" : "no") << "\n"
+            << "orbital_travel_in_progress=" << (snapshot.orbitalRuntimeState.travelInProgress ? "yes" : "no") << "\n"
+            << "orbital_transfer_count=" << snapshot.orbitalRuntimeState.transferCount << "\n"
+            << "orbital_travel_ticks_remaining=" << snapshot.orbitalRuntimeState.travelTicksRemaining << "\n"
+            << "orbital_current_node=" << static_cast<int>(snapshot.orbitalRuntimeState.currentNode) << "\n"
+            << "orbital_target_node=" << static_cast<int>(snapshot.orbitalRuntimeState.targetNode) << "\n"
+            << "orbital_phase=" << static_cast<int>(snapshot.orbitalRuntimeState.phase) << "\n"
+            << "orbital_rule_text=" << sanitizeSingleLine(snapshot.orbitalRuntimeState.ruleText) << "\n"
+            << "orbital_last_beat=" << sanitizeSingleLine(snapshot.orbitalRuntimeState.lastBeat) << "\n"
             << "hazard_ticks=" << snapshot.hazardTicks << "\n"
             << "terrain_consequence_events=" << snapshot.terrainConsequenceEvents << "\n"
             << "current_hazard_label=" << sanitizeSingleLine(snapshot.currentHazardLabel) << "\n"
@@ -810,7 +863,9 @@ namespace war
             ? static_cast<uint32_t>(schemaVersion)
             : (version <= 1ull ? 1u : 3u);
         snapshot.persistenceLoadedSchemaVersion = loadedSchemaVersion;
-        snapshot.persistenceSchemaVersion = loadedSchemaVersion < 3u ? 3u : loadedSchemaVersion;
+        snapshot.persistenceSchemaVersion = loadedSchemaVersion < kCurrentPersistenceSchemaVersion
+            ? kCurrentPersistenceSchemaVersion
+            : loadedSchemaVersion;
 
         if (tryParseUnsigned(values, "migrated_from_schema_version", migratedFromSchemaVersion)
             || tryParseUnsigned(values, "persistence_migrated_from_version", migratedFromSchemaVersion))
@@ -1053,6 +1108,259 @@ namespace war
         snapshot.combatEncounterState.hostileMinDamage = hostileMinDamage;
         snapshot.combatEncounterState.hostileMaxDamage = hostileMaxDamage;
         snapshot.combatEncounterState.lastOutcome = combatLastOutcome;
+
+        const bool missionSurfaceExpected =
+            loadedSchemaVersion >= kCurrentPersistenceSchemaVersion
+            || hasKey("mission_id")
+            || hasKey("mission_phase");
+
+        if (missionSurfaceExpected)
+        {
+            int missionId = 0;
+            int missionPhase = 0;
+            bool transitDataRecovered = false;
+            bool medlabDiagnosisComplete = false;
+            bool quarantineGateUnlocked = false;
+            bool quarantineEncounterResolved = false;
+            bool quarantineControlRestored = false;
+            bool shipRuntimePrepReady = false;
+            bool orbitalDepartureComplete = false;
+            bool surveyOrbitReached = false;
+            bool relayTrackStabilized = false;
+            bool relayPlatformDocked = false;
+            bool dustFrontierLanded = false;
+            bool frontierRelaySecured = false;
+            bool returnLaunchComplete = false;
+            bool homeDockRestored = false;
+            bool returnLoopComplete = false;
+            bool missionComplete = false;
+
+            if (!parseOrFailInt("mission_id", missionId)
+                || !parseOrFailInt("mission_phase", missionPhase)
+                || !parseOrFailUnsigned("mission_advancement_count", snapshot.missionRuntimeState.advancementCount)
+                || !tryParseYesNo(values, "mission_transit_data_recovered", transitDataRecovered)
+                || !tryParseYesNo(values, "mission_medlab_diagnosis_complete", medlabDiagnosisComplete)
+                || !tryParseYesNo(values, "mission_quarantine_gate_unlocked", quarantineGateUnlocked)
+                || !tryParseYesNo(values, "mission_quarantine_encounter_resolved", quarantineEncounterResolved)
+                || !tryParseYesNo(values, "mission_quarantine_control_restored", quarantineControlRestored)
+                || !tryParseYesNo(values, "mission_ship_runtime_prep_ready", shipRuntimePrepReady)
+                || !(tryParseYesNo(values, "mission_orbital_departure_complete", orbitalDepartureComplete) || loadedSchemaVersion < kCurrentPersistenceSchemaVersion)
+                || !(tryParseYesNo(values, "mission_survey_orbit_reached", surveyOrbitReached) || loadedSchemaVersion < kCurrentPersistenceSchemaVersion)
+                || !(tryParseYesNo(values, "mission_relay_track_stabilized", relayTrackStabilized) || loadedSchemaVersion < kCurrentPersistenceSchemaVersion)
+                || !(tryParseYesNo(values, "mission_relay_platform_docked", relayPlatformDocked) || loadedSchemaVersion < kCurrentPersistenceSchemaVersion)
+                || !(tryParseYesNo(values, "mission_dust_frontier_landed", dustFrontierLanded) || loadedSchemaVersion < kCurrentPersistenceSchemaVersion)
+                || !(tryParseYesNo(values, "mission_frontier_relay_secured", frontierRelaySecured) || loadedSchemaVersion < kCurrentPersistenceSchemaVersion)
+                || !(tryParseYesNo(values, "mission_return_launch_complete", returnLaunchComplete) || loadedSchemaVersion < kCurrentPersistenceSchemaVersion)
+                || !(tryParseYesNo(values, "mission_home_dock_restored", homeDockRestored) || loadedSchemaVersion < kCurrentPersistenceSchemaVersion)
+                || !(tryParseYesNo(values, "mission_return_loop_complete", returnLoopComplete) || loadedSchemaVersion < kCurrentPersistenceSchemaVersion)
+                || !tryParseYesNo(values, "mission_complete", missionComplete))
+            {
+                outError = "Authoritative snapshot missing mission runtime fields.";
+                snapshot.valid = false;
+                return snapshot;
+            }
+
+            snapshot.missionRuntimeState.activeMission = static_cast<MissionId>(missionId);
+            snapshot.missionRuntimeState.phase = static_cast<MissionPhase>(missionPhase);
+            snapshot.missionRuntimeState.transitDataRecovered = transitDataRecovered;
+            snapshot.missionRuntimeState.medlabDiagnosisComplete = medlabDiagnosisComplete;
+            snapshot.missionRuntimeState.quarantineGateUnlocked = quarantineGateUnlocked;
+            snapshot.missionRuntimeState.quarantineEncounterResolved = quarantineEncounterResolved;
+            snapshot.missionRuntimeState.quarantineControlRestored = quarantineControlRestored;
+            snapshot.missionRuntimeState.shipRuntimePrepReady = shipRuntimePrepReady;
+            snapshot.missionRuntimeState.orbitalDepartureComplete = orbitalDepartureComplete;
+            snapshot.missionRuntimeState.surveyOrbitReached = surveyOrbitReached;
+            snapshot.missionRuntimeState.relayTrackStabilized = relayTrackStabilized;
+            snapshot.missionRuntimeState.relayPlatformDocked = relayPlatformDocked;
+            snapshot.missionRuntimeState.dustFrontierLanded = dustFrontierLanded;
+            snapshot.missionRuntimeState.frontierRelaySecured = frontierRelaySecured;
+            snapshot.missionRuntimeState.returnLaunchComplete = returnLaunchComplete;
+            snapshot.missionRuntimeState.homeDockRestored = homeDockRestored;
+            snapshot.missionRuntimeState.returnLoopComplete = returnLoopComplete;
+            snapshot.missionRuntimeState.missionComplete = missionComplete;
+            if (!tryParseString(values, "mission_last_beat", snapshot.missionRuntimeState.lastBeat))
+            {
+                snapshot.missionRuntimeState.lastBeat = "Mission state restored from authoritative snapshot.";
+            }
+        }
+        else
+        {
+            snapshot.missionRuntimeState = MissionRuntimeState{};
+            snapshot.missionRuntimeState.lastBeat = "Mission state synthesized during schema migration.";
+        }
+
+        const bool shipSurfaceExpected =
+            loadedSchemaVersion >= kCurrentPersistenceSchemaVersion
+            || hasKey("ship_id")
+            || hasKey("ship_name");
+
+        if (shipSurfaceExpected)
+        {
+            int shipId = 0;
+            int ownershipState = 0;
+            int occupancyState = 0;
+            bool boardingUnlocked = false;
+            bool docked = false;
+            bool playerBoarded = false;
+            bool powerOnline = false;
+            bool airlockPressurized = false;
+            bool commandClaimed = false;
+            bool launchPrepReady = false;
+            bool frontierSurfaceAccessUnlocked = false;
+            bool frontierSurfaceActive = false;
+
+            if (!parseOrFailInt("ship_id", shipId)
+                || !parseOrFailInt("ship_ownership_state", ownershipState)
+                || !parseOrFailInt("ship_occupancy_state", occupancyState)
+                || !parseOrFailUnsigned("ship_boarding_count", snapshot.shipRuntimeState.boardingCount)
+                || !tryParseYesNo(values, "ship_boarding_unlocked", boardingUnlocked)
+                || !tryParseYesNo(values, "ship_docked", docked)
+                || !tryParseYesNo(values, "ship_player_boarded", playerBoarded)
+                || !tryParseYesNo(values, "ship_power_online", powerOnline)
+                || !tryParseYesNo(values, "ship_airlock_pressurized", airlockPressurized)
+                || !tryParseYesNo(values, "ship_command_claimed", commandClaimed)
+                || !tryParseYesNo(values, "ship_launch_prep_ready", launchPrepReady)
+                || !(tryParseYesNo(values, "ship_frontier_surface_access_unlocked", frontierSurfaceAccessUnlocked) || loadedSchemaVersion < kCurrentPersistenceSchemaVersion)
+                || !(tryParseYesNo(values, "ship_frontier_surface_active", frontierSurfaceActive) || loadedSchemaVersion < kCurrentPersistenceSchemaVersion))
+            {
+                outError = "Authoritative snapshot missing ship runtime fields.";
+                snapshot.valid = false;
+                return snapshot;
+            }
+
+            snapshot.shipRuntimeState.activeShip = static_cast<ShipId>(shipId);
+            snapshot.shipRuntimeState.ownershipState = static_cast<ShipOwnershipState>(ownershipState);
+            snapshot.shipRuntimeState.occupancyState = static_cast<ShipOccupancyState>(occupancyState);
+            snapshot.shipRuntimeState.boardingUnlocked = boardingUnlocked;
+            snapshot.shipRuntimeState.docked = docked;
+            snapshot.shipRuntimeState.playerBoarded = playerBoarded;
+            snapshot.shipRuntimeState.powerOnline = powerOnline;
+            snapshot.shipRuntimeState.airlockPressurized = airlockPressurized;
+            snapshot.shipRuntimeState.commandClaimed = commandClaimed;
+            snapshot.shipRuntimeState.launchPrepReady = launchPrepReady;
+            snapshot.shipRuntimeState.frontierSurfaceAccessUnlocked = frontierSurfaceAccessUnlocked;
+            snapshot.shipRuntimeState.frontierSurfaceActive = frontierSurfaceActive;
+            if (!tryParseString(values, "ship_name", snapshot.shipRuntimeState.shipName))
+            {
+                snapshot.shipRuntimeState.shipName = "Responder Shuttle Khepri";
+            }
+            if (!tryParseString(values, "ship_location", snapshot.shipRuntimeState.locationLabel))
+            {
+                snapshot.shipRuntimeState.locationLabel = "cargo-bay-dock";
+            }
+            if (!tryParseString(values, "ship_last_beat", snapshot.shipRuntimeState.lastBeat))
+            {
+                snapshot.shipRuntimeState.lastBeat = "Ship state restored from authoritative snapshot.";
+            }
+        }
+        else
+        {
+            snapshot.shipRuntimeState = ShipRuntimeState{};
+            snapshot.shipRuntimeState.boardingUnlocked = snapshot.missionRuntimeState.shipRuntimePrepReady;
+            snapshot.shipRuntimeState.lastBeat = "Ship state synthesized during schema migration.";
+        }
+
+        const bool orbitalSurfaceExpected =
+            loadedSchemaVersion >= kCurrentPersistenceSchemaVersion
+            || hasKey("orbital_layer_unlocked")
+            || hasKey("orbital_phase");
+
+        if (orbitalSurfaceExpected)
+        {
+            bool orbitalLayerUnlocked = false;
+            bool orbitalLayerActive = false;
+            bool departureAuthorized = false;
+            bool surveyOrbitReached = false;
+            bool relayTrackReached = false;
+            bool relayPlatformDocked = false;
+            bool returnRouteAuthorized = false;
+            bool homeDockReached = false;
+            bool travelInProgress = false;
+            uint64_t orbitalTravelTicksRemaining = 0;
+            int currentNode = 0;
+            int targetNode = 0;
+            int orbitalPhase = 0;
+
+            if (!tryParseYesNo(values, "orbital_layer_unlocked", orbitalLayerUnlocked)
+                || !tryParseYesNo(values, "orbital_layer_active", orbitalLayerActive)
+                || !tryParseYesNo(values, "orbital_departure_authorized", departureAuthorized)
+                || !tryParseYesNo(values, "orbital_survey_orbit_reached", surveyOrbitReached)
+                || !tryParseYesNo(values, "orbital_relay_track_reached", relayTrackReached)
+                || !(tryParseYesNo(values, "orbital_relay_platform_docked", relayPlatformDocked) || loadedSchemaVersion < kCurrentPersistenceSchemaVersion)
+                || !(tryParseYesNo(values, "orbital_return_route_authorized", returnRouteAuthorized) || loadedSchemaVersion < kCurrentPersistenceSchemaVersion)
+                || !(tryParseYesNo(values, "orbital_home_dock_reached", homeDockReached) || loadedSchemaVersion < kCurrentPersistenceSchemaVersion)
+                || !tryParseYesNo(values, "orbital_travel_in_progress", travelInProgress)
+                || !parseOrFailUnsigned("orbital_transfer_count", snapshot.orbitalRuntimeState.transferCount)
+                || !parseOrFailUnsigned("orbital_travel_ticks_remaining", orbitalTravelTicksRemaining)
+                || !parseOrFailInt("orbital_current_node", currentNode)
+                || !parseOrFailInt("orbital_target_node", targetNode)
+                || !parseOrFailInt("orbital_phase", orbitalPhase))
+            {
+                outError = "Authoritative snapshot missing orbital runtime fields.";
+                snapshot.valid = false;
+                return snapshot;
+            }
+
+            snapshot.orbitalRuntimeState.orbitalLayerUnlocked = orbitalLayerUnlocked;
+            snapshot.orbitalRuntimeState.orbitalLayerActive = orbitalLayerActive;
+            snapshot.orbitalRuntimeState.departureAuthorized = departureAuthorized;
+            snapshot.orbitalRuntimeState.surveyOrbitReached = surveyOrbitReached;
+            snapshot.orbitalRuntimeState.relayTrackReached = relayTrackReached;
+            snapshot.orbitalRuntimeState.relayPlatformDocked = relayPlatformDocked;
+            snapshot.orbitalRuntimeState.returnRouteAuthorized = returnRouteAuthorized;
+            snapshot.orbitalRuntimeState.homeDockReached = homeDockReached;
+            snapshot.orbitalRuntimeState.travelInProgress = travelInProgress;
+            snapshot.orbitalRuntimeState.travelTicksRemaining = static_cast<uint32_t>(orbitalTravelTicksRemaining);
+            snapshot.orbitalRuntimeState.currentNode = static_cast<OrbitalNodeId>(currentNode);
+            snapshot.orbitalRuntimeState.targetNode = static_cast<OrbitalNodeId>(targetNode);
+            snapshot.orbitalRuntimeState.phase = static_cast<OrbitalTravelPhase>(orbitalPhase);
+            if (!tryParseString(values, "orbital_rule_text", snapshot.orbitalRuntimeState.ruleText))
+            {
+                snapshot.orbitalRuntimeState.ruleText = "Orbital runtime restored from authoritative snapshot.";
+            }
+            if (!tryParseString(values, "orbital_last_beat", snapshot.orbitalRuntimeState.lastBeat))
+            {
+                snapshot.orbitalRuntimeState.lastBeat = "Orbital runtime restored from authoritative snapshot.";
+            }
+        }
+        else
+        {
+            snapshot.orbitalRuntimeState = OrbitalRuntimeState{};
+            if (loadedSchemaVersion < kCurrentPersistenceSchemaVersion && snapshot.shipRuntimeState.commandClaimed)
+            {
+                snapshot.orbitalRuntimeState.orbitalLayerUnlocked = true;
+                snapshot.orbitalRuntimeState.departureAuthorized = true;
+                snapshot.orbitalRuntimeState.ruleText = "Migrated shuttle command state into orbital departure readiness.";
+                snapshot.orbitalRuntimeState.lastBeat = "Orbital runtime synthesized during schema migration.";
+                snapshot.missionRuntimeState.phase = MissionPhase::EnterOrbitalLane;
+                snapshot.missionRuntimeState.missionComplete = false;
+                snapshot.missionRuntimeState.lastBeat = "Shuttle command carried forward into orbital departure readiness.";
+            }
+        }
+
+        if (loadedSchemaVersion < kCurrentPersistenceSchemaVersion && snapshot.shipRuntimeState.commandClaimed)
+        {
+            snapshot.missionRuntimeState.shipRuntimePrepReady = true;
+
+            if (snapshot.missionRuntimeState.relayTrackStabilized
+                || snapshot.missionRuntimeState.phase == MissionPhase::DockRelayPlatform)
+            {
+                snapshot.missionRuntimeState.phase = MissionPhase::DockRelayPlatform;
+                snapshot.missionRuntimeState.missionComplete = false;
+                snapshot.missionRuntimeState.lastBeat = "M43 relay holding track migrated into M44 docking readiness.";
+                snapshot.orbitalRuntimeState.orbitalLayerUnlocked = true;
+                snapshot.orbitalRuntimeState.orbitalLayerActive = true;
+                snapshot.orbitalRuntimeState.departureAuthorized = true;
+                snapshot.orbitalRuntimeState.relayTrackReached = true;
+                snapshot.orbitalRuntimeState.currentNode = OrbitalNodeId::RelayHoldingTrack;
+                snapshot.orbitalRuntimeState.targetNode = OrbitalNodeId::RelayHoldingTrack;
+                snapshot.orbitalRuntimeState.phase = OrbitalTravelPhase::RelayHolding;
+                snapshot.orbitalRuntimeState.ruleText = "Relay holding track stable. Dock with Dust Frontier Relay Platform to begin the landing slice.";
+                snapshot.orbitalRuntimeState.lastBeat = "Relay holding track stabilized prior to M44 migration.";
+                snapshot.shipRuntimeState.frontierSurfaceAccessUnlocked = false;
+                snapshot.shipRuntimeState.frontierSurfaceActive = false;
+            }
+        }
 
         (void)parseUnsignedAlias("hazard_ticks", nullptr, snapshot.hazardTicks);
         (void)parseUnsignedAlias("terrain_consequence_events", nullptr, snapshot.terrainConsequenceEvents);

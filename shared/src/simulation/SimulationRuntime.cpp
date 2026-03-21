@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <utility>
 
 #include "engine/core/LocalDemoDiagnostics.h"
@@ -16,6 +17,29 @@ namespace war
 {
     namespace
     {
+        constexpr uint32_t kCurrentPersistenceSchemaVersion = 7u;
+        constexpr std::string_view kTransitServiceTerminalLabel = "Transit Service Terminal";
+        constexpr std::string_view kDiagnosticStationLabel = "Diagnostic Station";
+        constexpr std::string_view kQuarantineControlTerminalLabel = "Quarantine Control Terminal";
+        constexpr std::string_view kBridgeAccessChokepointLabel = "Bridge Access Chokepoint";
+        constexpr std::string_view kQuarantineAccessGateLabel = "Quarantine Access Gate";
+        constexpr std::string_view kTriageConvergenceLabel = "Triage Convergence";
+        constexpr std::string_view kResponderShuttleLabel = "Responder Shuttle Khepri";
+        constexpr std::string_view kShuttleHelmTerminalLabel = "Shuttle Helm Terminal";
+        constexpr std::string_view kOrbitalNavigationConsoleLabel = "Orbital Navigation Console";
+        constexpr std::string_view kDockedBoardingCollarLabel = "Docked Boarding Collar";
+        constexpr std::string_view kFrontierRelayBeaconLabel = "Frontier Relay Beacon";
+        constexpr std::string_view kDustFrontierLandingPadLabel = "Dust Frontier Landing Pad";
+
+        constexpr TileCoord kHomeDockShipTile{ 6, 20 };
+        constexpr TileCoord kHomeDockHelmTile{ 8, 20 };
+        constexpr TileCoord kHomeDockNavTile{ 9, 20 };
+        constexpr TileCoord kHomeDockPlayerTile{ 7, 21 };
+        constexpr TileCoord kFrontierDockShipTile{ 44, 3 };
+        constexpr TileCoord kFrontierDockHelmTile{ 45, 3 };
+        constexpr TileCoord kFrontierDockNavTile{ 46, 3 };
+        constexpr TileCoord kFrontierPadPlayerTile{ 43, 4 };
+
         float clampAccumulator(float value)
         {
             constexpr float kFixedStepSeconds = 0.05f;
@@ -166,11 +190,153 @@ namespace war
                 && entity.lootClaimed == replicated.lootClaimed;
         }
 
+        bool missionStateMatches(const MissionRuntimeState& lhs, const MissionRuntimeState& rhs)
+        {
+            return lhs.activeMission == rhs.activeMission
+                && lhs.phase == rhs.phase
+                && lhs.advancementCount == rhs.advancementCount
+                && lhs.transitDataRecovered == rhs.transitDataRecovered
+                && lhs.medlabDiagnosisComplete == rhs.medlabDiagnosisComplete
+                && lhs.quarantineGateUnlocked == rhs.quarantineGateUnlocked
+                && lhs.quarantineEncounterResolved == rhs.quarantineEncounterResolved
+                && lhs.quarantineControlRestored == rhs.quarantineControlRestored
+                && lhs.shipRuntimePrepReady == rhs.shipRuntimePrepReady
+                && lhs.orbitalDepartureComplete == rhs.orbitalDepartureComplete
+                && lhs.surveyOrbitReached == rhs.surveyOrbitReached
+                && lhs.relayTrackStabilized == rhs.relayTrackStabilized
+                && lhs.relayPlatformDocked == rhs.relayPlatformDocked
+                && lhs.dustFrontierLanded == rhs.dustFrontierLanded
+                && lhs.frontierRelaySecured == rhs.frontierRelaySecured
+                && lhs.returnLaunchComplete == rhs.returnLaunchComplete
+                && lhs.homeDockRestored == rhs.homeDockRestored
+                && lhs.returnLoopComplete == rhs.returnLoopComplete
+                && lhs.missionComplete == rhs.missionComplete
+                && lhs.lastBeat == rhs.lastBeat;
+        }
+
+        bool shipStateMatches(const ShipRuntimeState& lhs, const ShipRuntimeState& rhs)
+        {
+            return lhs.activeShip == rhs.activeShip
+                && lhs.ownershipState == rhs.ownershipState
+                && lhs.occupancyState == rhs.occupancyState
+                && lhs.boardingCount == rhs.boardingCount
+                && lhs.boardingUnlocked == rhs.boardingUnlocked
+                && lhs.docked == rhs.docked
+                && lhs.playerBoarded == rhs.playerBoarded
+                && lhs.powerOnline == rhs.powerOnline
+                && lhs.airlockPressurized == rhs.airlockPressurized
+                && lhs.commandClaimed == rhs.commandClaimed
+                && lhs.launchPrepReady == rhs.launchPrepReady
+                && lhs.frontierSurfaceAccessUnlocked == rhs.frontierSurfaceAccessUnlocked
+                && lhs.frontierSurfaceActive == rhs.frontierSurfaceActive
+                && lhs.shipName == rhs.shipName
+                && lhs.locationLabel == rhs.locationLabel
+                && lhs.lastBeat == rhs.lastBeat;
+        }
+
+        bool orbitalStateMatches(const OrbitalRuntimeState& lhs, const OrbitalRuntimeState& rhs)
+        {
+            return lhs.orbitalLayerUnlocked == rhs.orbitalLayerUnlocked
+                && lhs.orbitalLayerActive == rhs.orbitalLayerActive
+                && lhs.departureAuthorized == rhs.departureAuthorized
+                && lhs.surveyOrbitReached == rhs.surveyOrbitReached
+                && lhs.relayTrackReached == rhs.relayTrackReached
+                && lhs.relayPlatformDocked == rhs.relayPlatformDocked
+                && lhs.returnRouteAuthorized == rhs.returnRouteAuthorized
+                && lhs.homeDockReached == rhs.homeDockReached
+                && lhs.travelInProgress == rhs.travelInProgress
+                && lhs.transferCount == rhs.transferCount
+                && lhs.travelTicksRemaining == rhs.travelTicksRemaining
+                && lhs.currentNode == rhs.currentNode
+                && lhs.targetNode == rhs.targetNode
+                && lhs.phase == rhs.phase
+                && lhs.ruleText == rhs.ruleText
+                && lhs.lastBeat == rhs.lastBeat;
+        }
+
         void appendSimulationInitTrace(std::string_view line)
         {
             RuntimeBoundaryReport runtimeBoundaryReport = RuntimePaths::buildReport();
             RuntimePaths::ensureRuntimeDirectories(runtimeBoundaryReport);
             LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "simulation_init_trace.txt", line);
+        }
+
+        const WorldAuthoringHotspot* findHotspotByLabel(const WorldState& worldState, std::string_view label)
+        {
+            for (const WorldAuthoringHotspot& hotspot : worldState.authoringHotspots())
+            {
+                if (hotspot.label == label)
+                {
+                    return &hotspot;
+                }
+            }
+
+            return nullptr;
+        }
+
+        WorldAuthoringHotspot* findHotspotByLabelMutable(WorldState& worldState, std::string_view label)
+        {
+            for (const WorldAuthoringHotspot& hotspot : worldState.authoringHotspots())
+            {
+                if (hotspot.label == label)
+                {
+                    return worldState.authoringHotspotAtMutable(hotspot.tile);
+                }
+            }
+
+            return nullptr;
+        }
+
+        Entity* findEntityByLabelMutable(WorldState& worldState, std::string_view label)
+        {
+            for (const Entity& entity : worldState.entities().all())
+            {
+                if (entity.name == label)
+                {
+                    return worldState.entities().getAt(entity.tile);
+                }
+            }
+
+            return nullptr;
+        }
+
+        std::string missionObjectiveText(const MissionRuntimeState& missionState)
+        {
+            switch (missionState.phase)
+            {
+            case MissionPhase::RecoverTransitData:
+                return "Reach the Transit Service Terminal and recover route data.";
+            case MissionPhase::DiagnoseMedlab:
+                return "Inspect the Diagnostic Station in the MedLab to identify the breach route.";
+            case MissionPhase::SecureQuarantineGate:
+                return "Push through the unlocked quarantine lane and secure the Quarantine Access Gate.";
+            case MissionPhase::RestoreQuarantineControl:
+                return "Use the Quarantine Control Terminal to restore the evac corridor.";
+            case MissionPhase::BoardResponderShuttle:
+                return "Return to the cargo bay and board Responder Shuttle Khepri.";
+            case MissionPhase::ClaimShuttleCommand:
+                return "Use Shuttle Helm Terminal to claim command authority over the docked shuttle.";
+            case MissionPhase::EnterOrbitalLane:
+                return "Use Shuttle Helm Terminal to clear the docking collar and enter the local orbital traffic lane.";
+            case MissionPhase::ReachSurveyOrbit:
+                return "Use Orbital Navigation Console to plot transfer to Debris Survey Orbit.";
+            case MissionPhase::StabilizeRelayTrack:
+                return "Use Orbital Navigation Console to stabilize the relay holding track.";
+            case MissionPhase::DockRelayPlatform:
+                return "Use Orbital Navigation Console to dock with Dust Frontier Relay Platform.";
+            case MissionPhase::LandDustFrontier:
+                return "Interact with Responder Shuttle Khepri to disembark onto Dust Frontier Landing Pad.";
+            case MissionPhase::SecureFrontierRelay:
+                return "Use Frontier Relay Beacon to secure the surface relay handoff.";
+            case MissionPhase::ReturnToShuttle:
+                return "Re-board Responder Shuttle Khepri and use Shuttle Helm Terminal to launch back toward Khepri Dock.";
+            case MissionPhase::ReturnToHomeDock:
+                return "Disembark from Responder Shuttle Khepri at Khepri Dock to complete the return loop.";
+            case MissionPhase::MissionComplete:
+                return "Docking, landing, and return-loop continuity are stable. M45 internal-alpha packaging is unblocked.";
+            default:
+                return "No active mission objective.";
+            }
         }
     }
 
@@ -200,6 +366,9 @@ namespace war
         appendSimulationInitTrace("SimulationRuntime::initializeForLocalAuthority actor state initialized");
 
         m_combatEncounterState = CombatEncounterState{};
+        initializeMissionState();
+        initializeShipRuntimeState();
+        initializeOrbitalRuntimeState();
         m_diagnostics = SharedSimulationDiagnostics{};
         m_diagnostics.currentHazardLabel = "none";
         m_diagnostics.currentTerrainConsequence = "stable";
@@ -216,14 +385,15 @@ namespace war
         m_diagnostics.persistenceMigrationApplied = false;
         m_diagnostics.lastPersistenceSaveSucceeded = false;
         m_diagnostics.lastPersistenceLoadSucceeded = false;
-        m_diagnostics.persistenceSchemaVersion = 3;
+        m_diagnostics.persistenceSchemaVersion = kCurrentPersistenceSchemaVersion;
         m_diagnostics.persistenceLoadedSchemaVersion = 0;
         m_diagnostics.persistenceMigratedFromSchemaVersion = 0;
         m_diagnostics.persistenceSlotName = "primary";
         m_diagnostics.lastPersistenceError.clear();
 
-        appendEvent("Milestone 40 initialized");
-        appendEvent("six-second combat / encounter resolution active");
+        appendEvent("Milestone 44 initialized");
+        appendEvent("docking / landing / cross-layer transition persistence / return loop active");
+        appendEvent(std::string("Objective: ") + missionObjectiveText(m_missionRuntimeState));
         refreshDiagnosticsFromState();
         appendSimulationInitTrace("SimulationRuntime::initializeForLocalAuthority completed");
     }
@@ -342,7 +512,8 @@ namespace war
         {
             m_previousAuthoritativePlayerPosition = m_authoritativePlayerPosition;
 
-            processQueuedIntents();
+            std::vector<SimulationIntent> processedIntents{};
+            processQueuedIntents(processedIntents);
             ActionSystem::processPending(
                 m_worldState,
                 m_actions,
@@ -352,6 +523,11 @@ namespace war
                 m_pathIndex,
                 m_eventLog);
 
+            for (const SimulationIntent& intent : processedIntents)
+            {
+                evaluateMissionProgressFromIntent(intent);
+            }
+
             if (!m_combatEncounterState.active)
             {
                 advanceAuthoritativePlayer(kFixedStepSeconds);
@@ -360,6 +536,7 @@ namespace war
             processSurvivalState(kFixedStepSeconds);
             evaluateEncounterTriggers();
             updateCombatEncounter();
+            updateOrbitalTravel();
 
             if (m_hasMovementTarget
                 && (m_currentPath.empty() || m_pathIndex >= m_currentPath.size())
@@ -465,6 +642,9 @@ namespace war
         bool entityCorrected = false;
         bool actorCorrected = false;
         bool combatCorrected = false;
+        bool missionCorrected = false;
+        bool shipCorrected = false;
+        bool orbitalCorrected = false;
 
         const float dx = m_authoritativePlayerPosition.x - snapshot.authoritativePlayerPosition.x;
         const float dy = m_authoritativePlayerPosition.y - snapshot.authoritativePlayerPosition.y;
@@ -537,6 +717,24 @@ namespace war
             combatCorrected = true;
         }
 
+        if (!missionStateMatches(m_missionRuntimeState, snapshot.missionRuntimeState))
+        {
+            corrected = true;
+            missionCorrected = true;
+        }
+
+        if (!shipStateMatches(m_shipRuntimeState, snapshot.shipRuntimeState))
+        {
+            corrected = true;
+            shipCorrected = true;
+        }
+
+        if (!orbitalStateMatches(m_orbitalRuntimeState, snapshot.orbitalRuntimeState))
+        {
+            corrected = true;
+            orbitalCorrected = true;
+        }
+
         m_diagnostics.lastSnapshotSequence = snapshot.lastProcessedIntentSequence;
         m_diagnostics.lastSnapshotSimulationTicks = snapshot.simulationTicks;
         m_diagnostics.lastPathDivergence = pathCorrected;
@@ -545,7 +743,7 @@ namespace war
         m_diagnostics.terrainConsequenceEvents = snapshot.terrainConsequenceEvents;
         m_diagnostics.persistenceSchemaVersion = snapshot.persistenceSchemaVersion > 0
             ? snapshot.persistenceSchemaVersion
-            : 3u;
+            : kCurrentPersistenceSchemaVersion;
         m_diagnostics.persistenceLoadedSchemaVersion = snapshot.persistenceLoadedSchemaVersion;
         m_diagnostics.persistenceMigratedFromSchemaVersion = snapshot.persistenceMigratedFromSchemaVersion;
         m_diagnostics.persistenceMigrationApplied = snapshot.persistenceMigratedFromSchemaVersion > 0;
@@ -595,6 +793,18 @@ namespace war
         {
             outCorrectionReason += ", combat";
         }
+        if (missionCorrected)
+        {
+            outCorrectionReason += ", mission";
+        }
+        if (shipCorrected)
+        {
+            outCorrectionReason += ", ship";
+        }
+        if (orbitalCorrected)
+        {
+            outCorrectionReason += ", orbital";
+        }
         outCorrectionReason += " | drift=" + std::to_string(positionDistance);
         outCorrectionReason += " | snapshot age ms=" + std::to_string(snapshotAgeMilliseconds);
 
@@ -616,6 +826,9 @@ namespace war
         snapshot.eventLog = m_eventLog;
         snapshot.playerActorState = m_playerActorState;
         snapshot.combatEncounterState = m_combatEncounterState;
+        snapshot.missionRuntimeState = m_missionRuntimeState;
+        snapshot.shipRuntimeState = m_shipRuntimeState;
+        snapshot.orbitalRuntimeState = m_orbitalRuntimeState;
         snapshot.hazardTicks = m_diagnostics.hazardTicks;
         snapshot.terrainConsequenceEvents = m_diagnostics.terrainConsequenceEvents;
         snapshot.persistenceSchemaVersion = m_diagnostics.persistenceSchemaVersion;
@@ -674,9 +887,13 @@ namespace war
         m_movementTargetTile = snapshot.movementTargetTile;
         m_playerActorState = snapshot.playerActorState;
         m_combatEncounterState = snapshot.combatEncounterState;
+        m_missionRuntimeState = snapshot.missionRuntimeState;
+        m_shipRuntimeState = snapshot.shipRuntimeState;
+        m_orbitalRuntimeState = snapshot.orbitalRuntimeState;
         m_eventLog = snapshot.eventLog;
         trimEventLog();
 
+        m_worldState.initializeTestWorld();
         m_worldState.entities().clear();
         for (const ReplicatedEntityState& replicated : snapshot.entities)
         {
@@ -701,7 +918,7 @@ namespace war
         m_diagnostics.terrainConsequenceEvents = snapshot.terrainConsequenceEvents;
         m_diagnostics.persistenceSchemaVersion = snapshot.persistenceSchemaVersion > 0
             ? snapshot.persistenceSchemaVersion
-            : 3u;
+            : kCurrentPersistenceSchemaVersion;
         m_diagnostics.persistenceLoadedSchemaVersion = snapshot.persistenceLoadedSchemaVersion;
         m_diagnostics.persistenceMigratedFromSchemaVersion = snapshot.persistenceMigratedFromSchemaVersion;
         m_diagnostics.persistenceMigrationApplied = snapshot.persistenceMigratedFromSchemaVersion > 0;
@@ -714,6 +931,7 @@ namespace war
             ? snapshot.nextIntentSequence
             : snapshot.lastProcessedIntentSequence + 1ull;
         m_nextIntentSequence = (std::max)(m_nextIntentSequence, recoveredNextIntentSequence);
+        applyMissionWorldState();
         refreshDiagnosticsFromState();
         return true;
     }
@@ -786,6 +1004,12 @@ namespace war
         switch (intent.type)
         {
         case SimulationIntentType::MoveToTile:
+            if (m_shipRuntimeState.playerBoarded)
+            {
+                ack.result = SimulationIntentAckResult::Rejected;
+                ack.reason = "shipboard movement locked to runtime controls";
+                return ack;
+            }
             if (!m_worldState.world().isInBounds(intent.target))
             {
                 ack.result = SimulationIntentAckResult::Rejected;
@@ -808,6 +1032,12 @@ namespace war
             {
                 ack.result = SimulationIntentAckResult::Rejected;
                 ack.reason = "target out of bounds";
+                return ack;
+            }
+            if (m_shipRuntimeState.playerBoarded && !isShipboardInteractionTarget(intent.target))
+            {
+                ack.result = SimulationIntentAckResult::Rejected;
+                ack.reason = "planetary interaction unavailable while aboard ship";
                 return ack;
             }
             ack.result = SimulationIntentAckResult::Accepted;
@@ -845,7 +1075,7 @@ namespace war
             + ")");
     }
 
-    void SimulationRuntime::processQueuedIntents()
+    void SimulationRuntime::processQueuedIntents(std::vector<SimulationIntent>& processedIntents)
     {
         while (!m_pendingIntents.empty())
         {
@@ -863,6 +1093,7 @@ namespace war
             }
 
             m_actions.push(action);
+            processedIntents.push_back(intent);
             ++m_diagnostics.intentsProcessed;
             m_diagnostics.lastIntentSequence = intent.sequence;
         }
@@ -959,6 +1190,799 @@ namespace war
         m_diagnostics.hostileLabel = m_combatEncounterState.hostileLabel.empty() ? "none" : m_combatEncounterState.hostileLabel;
         m_diagnostics.hostileHealth = m_combatEncounterState.hostileHealth;
         m_diagnostics.hostileMaxHealth = m_combatEncounterState.hostileMaxHealth;
+
+        m_diagnostics.missionActive = m_missionRuntimeState.activeMission != MissionId::None;
+        m_diagnostics.missionComplete = m_missionRuntimeState.missionComplete;
+        switch (m_missionRuntimeState.phase)
+        {
+        case MissionPhase::SecureQuarantineGate:
+            m_diagnostics.missionGateLocked = !m_missionRuntimeState.quarantineGateUnlocked;
+            break;
+        case MissionPhase::BoardResponderShuttle:
+            m_diagnostics.missionGateLocked = !m_shipRuntimeState.boardingUnlocked;
+            break;
+        case MissionPhase::ClaimShuttleCommand:
+            m_diagnostics.missionGateLocked = !m_shipRuntimeState.playerBoarded;
+            break;
+        case MissionPhase::EnterOrbitalLane:
+            m_diagnostics.missionGateLocked = !m_orbitalRuntimeState.departureAuthorized;
+            break;
+        case MissionPhase::DockRelayPlatform:
+            m_diagnostics.missionGateLocked = !m_missionRuntimeState.relayTrackStabilized;
+            break;
+        case MissionPhase::LandDustFrontier:
+            m_diagnostics.missionGateLocked = !m_orbitalRuntimeState.relayPlatformDocked;
+            break;
+        case MissionPhase::SecureFrontierRelay:
+            m_diagnostics.missionGateLocked = false;
+            break;
+        case MissionPhase::ReturnToShuttle:
+            m_diagnostics.missionGateLocked = !m_shipRuntimeState.frontierSurfaceActive && !m_shipRuntimeState.playerBoarded;
+            break;
+        case MissionPhase::ReturnToHomeDock:
+            m_diagnostics.missionGateLocked = !m_orbitalRuntimeState.homeDockReached;
+            break;
+        default:
+            m_diagnostics.missionGateLocked = false;
+            break;
+        }
+        m_diagnostics.shipRuntimePrepReady = m_missionRuntimeState.shipRuntimePrepReady;
+        m_diagnostics.missionAdvancementCount = m_missionRuntimeState.advancementCount;
+        m_diagnostics.activeMissionId = missionIdText(m_missionRuntimeState.activeMission);
+        m_diagnostics.missionPhaseText = missionPhaseText(m_missionRuntimeState.phase);
+        m_diagnostics.missionObjectiveText = missionObjectiveText(m_missionRuntimeState);
+        m_diagnostics.missionLastBeat = m_missionRuntimeState.lastBeat.empty()
+            ? std::string("none")
+            : m_missionRuntimeState.lastBeat;
+
+        m_diagnostics.shipActive = m_shipRuntimeState.activeShip != ShipId::None;
+        m_diagnostics.shipBoarded = m_shipRuntimeState.playerBoarded;
+        m_diagnostics.shipDocked = m_shipRuntimeState.docked;
+        m_diagnostics.shipPowerOnline = m_shipRuntimeState.powerOnline;
+        m_diagnostics.shipAirlockPressurized = m_shipRuntimeState.airlockPressurized;
+        m_diagnostics.shipCommandClaimed = m_shipRuntimeState.commandClaimed;
+        m_diagnostics.shipLaunchPrepReady = m_shipRuntimeState.launchPrepReady;
+        m_diagnostics.shipBoardingCount = m_shipRuntimeState.boardingCount;
+        m_diagnostics.activeShipId = shipIdText(m_shipRuntimeState.activeShip);
+        m_diagnostics.shipName = m_shipRuntimeState.shipName.empty() ? std::string("none") : m_shipRuntimeState.shipName;
+        m_diagnostics.shipOwnershipText = shipOwnershipStateText(m_shipRuntimeState.ownershipState);
+        m_diagnostics.shipOccupancyText = shipOccupancyStateText(m_shipRuntimeState.occupancyState);
+        m_diagnostics.shipLocationText = m_shipRuntimeState.locationLabel.empty() ? std::string("unknown") : m_shipRuntimeState.locationLabel;
+        m_diagnostics.shipLastBeat = m_shipRuntimeState.lastBeat.empty()
+            ? std::string("none")
+            : m_shipRuntimeState.lastBeat;
+        m_diagnostics.frontierSurfaceActive = m_shipRuntimeState.frontierSurfaceActive;
+        m_diagnostics.frontierSiteText = m_shipRuntimeState.frontierSurfaceActive ? std::string("dust-frontier-pad") : std::string("khepri-dock");
+
+        m_diagnostics.orbitalLayerActive = m_orbitalRuntimeState.orbitalLayerActive;
+        m_diagnostics.orbitalDepartureAuthorized = m_orbitalRuntimeState.departureAuthorized;
+        m_diagnostics.orbitalTravelInProgress = m_orbitalRuntimeState.travelInProgress;
+        m_diagnostics.orbitalSurveyOrbitReached = m_orbitalRuntimeState.surveyOrbitReached;
+        m_diagnostics.orbitalRelayTrackReached = m_orbitalRuntimeState.relayTrackReached;
+        m_diagnostics.orbitalRelayPlatformDocked = m_orbitalRuntimeState.relayPlatformDocked;
+        m_diagnostics.orbitalReturnRouteAuthorized = m_orbitalRuntimeState.returnRouteAuthorized;
+        m_diagnostics.orbitalHomeDockReached = m_orbitalRuntimeState.homeDockReached;
+        m_diagnostics.orbitalTransferCount = m_orbitalRuntimeState.transferCount;
+        m_diagnostics.orbitalTravelTicksRemaining = m_orbitalRuntimeState.travelTicksRemaining;
+        m_diagnostics.orbitalPhaseText = orbitalTravelPhaseText(m_orbitalRuntimeState.phase);
+        m_diagnostics.orbitalCurrentNodeText = orbitalNodeText(m_orbitalRuntimeState.currentNode);
+        m_diagnostics.orbitalTargetNodeText = orbitalNodeText(m_orbitalRuntimeState.targetNode);
+        m_diagnostics.orbitalRuleText = m_orbitalRuntimeState.ruleText.empty() ? std::string("none") : m_orbitalRuntimeState.ruleText;
+        m_diagnostics.orbitalLastBeat = m_orbitalRuntimeState.lastBeat.empty() ? std::string("none") : m_orbitalRuntimeState.lastBeat;
+
+        if (m_orbitalRuntimeState.orbitalLayerActive)
+        {
+            m_diagnostics.playerRuntimeContextText = "orbital-space";
+        }
+        else if (m_shipRuntimeState.playerBoarded)
+        {
+            m_diagnostics.playerRuntimeContextText = "aboard-docked-ship";
+        }
+        else if (m_shipRuntimeState.frontierSurfaceActive)
+        {
+            m_diagnostics.playerRuntimeContextText = "second-destination-surface";
+        }
+        else
+        {
+            m_diagnostics.playerRuntimeContextText = "planet-surface";
+        }
+    }
+
+    void SimulationRuntime::initializeMissionState()
+    {
+        m_missionRuntimeState = MissionRuntimeState{};
+        applyMissionWorldState();
+    }
+
+    void SimulationRuntime::initializeShipRuntimeState()
+    {
+        m_shipRuntimeState = ShipRuntimeState{};
+        m_shipRuntimeState.boardingUnlocked = false;
+        m_shipRuntimeState.powerOnline = false;
+        m_shipRuntimeState.airlockPressurized = false;
+        m_shipRuntimeState.commandClaimed = false;
+        m_shipRuntimeState.launchPrepReady = false;
+        applyShipRuntimeWorldState();
+    }
+
+    void SimulationRuntime::initializeOrbitalRuntimeState()
+    {
+        m_orbitalRuntimeState = OrbitalRuntimeState{};
+    }
+
+    void SimulationRuntime::applyMissionWorldState()
+    {
+        if (WorldAuthoringHotspot* bridgeChokepoint = findHotspotByLabelMutable(m_worldState, kBridgeAccessChokepointLabel))
+        {
+            bridgeChokepoint->encounterReady = false;
+        }
+
+        if (WorldAuthoringHotspot* quarantineGate = findHotspotByLabelMutable(m_worldState, kQuarantineAccessGateLabel))
+        {
+            quarantineGate->encounterReady =
+                m_missionRuntimeState.quarantineGateUnlocked
+                && !m_missionRuntimeState.quarantineEncounterResolved;
+            m_worldState.world().setBlocked(
+                quarantineGate->tile,
+                !m_missionRuntimeState.quarantineGateUnlocked);
+        }
+
+        m_shipRuntimeState.boardingUnlocked = m_missionRuntimeState.shipRuntimePrepReady;
+        applyShipRuntimeWorldState();
+    }
+
+    void SimulationRuntime::applyShipRuntimeWorldState()
+    {
+        const bool shipAtFrontierAnchor =
+            m_shipRuntimeState.frontierSurfaceActive
+            || m_orbitalRuntimeState.relayPlatformDocked
+            || m_orbitalRuntimeState.currentNode == OrbitalNodeId::RelayPlatformDock;
+
+        if (Entity* shipEntity = findEntityByLabelMutable(m_worldState, kResponderShuttleLabel))
+        {
+            shipEntity->tile = shipAtFrontierAnchor ? kFrontierDockShipTile : kHomeDockShipTile;
+            shipEntity->isPowered = m_shipRuntimeState.powerOnline;
+            shipEntity->isLocked = !m_shipRuntimeState.boardingUnlocked;
+        }
+
+        if (Entity* helmTerminal = findEntityByLabelMutable(m_worldState, kShuttleHelmTerminalLabel))
+        {
+            helmTerminal->tile = shipAtFrontierAnchor ? kFrontierDockHelmTile : kHomeDockHelmTile;
+            helmTerminal->isPowered = m_shipRuntimeState.playerBoarded || m_shipRuntimeState.commandClaimed;
+            helmTerminal->isLocked = !m_shipRuntimeState.playerBoarded;
+        }
+
+        if (Entity* navConsole = findEntityByLabelMutable(m_worldState, kOrbitalNavigationConsoleLabel))
+        {
+            navConsole->tile = shipAtFrontierAnchor ? kFrontierDockNavTile : kHomeDockNavTile;
+            navConsole->isPowered = m_shipRuntimeState.commandClaimed || m_orbitalRuntimeState.orbitalLayerActive;
+            navConsole->isLocked = !m_shipRuntimeState.commandClaimed;
+        }
+
+        if (Entity* frontierBeacon = findEntityByLabelMutable(m_worldState, kFrontierRelayBeaconLabel))
+        {
+            frontierBeacon->isPowered = m_shipRuntimeState.frontierSurfaceActive || m_missionRuntimeState.frontierRelaySecured;
+            frontierBeacon->isLocked = !m_shipRuntimeState.frontierSurfaceActive;
+        }
+
+        if (WorldAuthoringHotspot* boardingCollar = findHotspotByLabelMutable(m_worldState, kDockedBoardingCollarLabel))
+        {
+            boardingCollar->encounterReady = false;
+            if (m_orbitalRuntimeState.orbitalLayerActive)
+            {
+                boardingCollar->summary = "Docking collar has retracted. Responder Shuttle Khepri is operating off-surface.";
+            }
+            else if (m_missionRuntimeState.homeDockRestored)
+            {
+                boardingCollar->summary = "Khepri Dock has accepted the shuttle return. Disembark here to close the return loop.";
+            }
+            else
+            {
+                boardingCollar->summary = m_shipRuntimeState.boardingUnlocked
+                    ? "Pressurized shuttle collar is authorized for boarding."
+                    : "Boarding collar remains locked until the quarantine corridor is restored.";
+            }
+        }
+
+        if (WorldAuthoringHotspot* frontierPad = findHotspotByLabelMutable(m_worldState, kDustFrontierLandingPadLabel))
+        {
+            frontierPad->encounterReady = m_orbitalRuntimeState.relayPlatformDocked || m_shipRuntimeState.frontierSurfaceActive;
+            if (m_shipRuntimeState.frontierSurfaceActive)
+            {
+                frontierPad->summary = "Dust Frontier Landing Pad is active. Secure the relay beacon and return to the shuttle.";
+            }
+            else if (m_orbitalRuntimeState.relayPlatformDocked)
+            {
+                frontierPad->summary = "Dust Frontier Landing Pad is docked and ready for disembark.";
+            }
+            else
+            {
+                frontierPad->summary = "Dust Frontier Landing Pad remains isolated until Dust Frontier docking is complete.";
+            }
+        }
+    }
+
+    void SimulationRuntime::updateOrbitalTravel()
+    {
+        if (!m_orbitalRuntimeState.travelInProgress)
+        {
+            return;
+        }
+
+        if (m_orbitalRuntimeState.travelTicksRemaining > 0)
+        {
+            --m_orbitalRuntimeState.travelTicksRemaining;
+        }
+
+        if (m_orbitalRuntimeState.travelTicksRemaining == 0)
+        {
+            completeOrbitalTransfer();
+        }
+    }
+
+    void SimulationRuntime::beginOrbitalTransfer(OrbitalNodeId targetNode, OrbitalTravelPhase transferPhase, uint32_t transferTicks)
+    {
+        m_orbitalRuntimeState.travelInProgress = true;
+        m_orbitalRuntimeState.orbitalLayerActive = true;
+        m_orbitalRuntimeState.targetNode = targetNode;
+        m_orbitalRuntimeState.phase = transferPhase;
+        m_orbitalRuntimeState.travelTicksRemaining = transferTicks;
+        if (targetNode != OrbitalNodeId::RelayPlatformDock)
+        {
+            m_orbitalRuntimeState.relayPlatformDocked = false;
+        }
+        if (targetNode != OrbitalNodeId::HomeDockAnchor)
+        {
+            m_orbitalRuntimeState.homeDockReached = false;
+        }
+        ++m_orbitalRuntimeState.transferCount;
+        m_shipRuntimeState.docked = false;
+        m_shipRuntimeState.frontierSurfaceActive = false;
+        m_shipRuntimeState.occupancyState = ShipOccupancyState::AboardOrbitalShip;
+        m_shipRuntimeState.locationLabel = orbitalNodeText(targetNode);
+        applyShipRuntimeWorldState();
+    }
+
+    void SimulationRuntime::completeOrbitalTransfer()
+    {
+        m_orbitalRuntimeState.travelInProgress = false;
+        m_orbitalRuntimeState.currentNode = m_orbitalRuntimeState.targetNode;
+        m_shipRuntimeState.locationLabel = orbitalNodeText(m_orbitalRuntimeState.currentNode);
+
+        switch (m_orbitalRuntimeState.targetNode)
+        {
+        case OrbitalNodeId::TrafficSeparationLane:
+            m_orbitalRuntimeState.orbitalLayerActive = true;
+            m_orbitalRuntimeState.phase = OrbitalTravelPhase::TrafficLaneHolding;
+            m_orbitalRuntimeState.lastBeat = "Responder Shuttle Khepri cleared the dock and stabilized in the local orbital traffic lane.";
+            m_orbitalRuntimeState.ruleText = "Traffic lane stabilized. Survey orbit must be plotted from the orbital navigation console.";
+            m_missionRuntimeState.orbitalDepartureComplete = true;
+            m_missionRuntimeState.phase = MissionPhase::ReachSurveyOrbit;
+            ++m_missionRuntimeState.advancementCount;
+            m_missionRuntimeState.lastBeat = "Local orbit entered cleanly. Plot the first survey transfer.";
+            appendEvent("Orbital transition: shuttle clears the dock and enters the traffic separation lane.");
+            appendEvent(std::string("Objective: ") + missionObjectiveText(m_missionRuntimeState));
+            break;
+
+        case OrbitalNodeId::DebrisSurveyOrbit:
+            m_orbitalRuntimeState.surveyOrbitReached = true;
+            m_orbitalRuntimeState.phase = OrbitalTravelPhase::SurveyHolding;
+            m_orbitalRuntimeState.lastBeat = "Survey orbit reached. Debris ring telemetry is stable enough to continue.";
+            m_orbitalRuntimeState.ruleText = "Relay holding track remains gated until the survey orbit pass is complete.";
+            m_missionRuntimeState.surveyOrbitReached = true;
+            m_missionRuntimeState.phase = MissionPhase::StabilizeRelayTrack;
+            ++m_missionRuntimeState.advancementCount;
+            m_missionRuntimeState.lastBeat = "Debris Survey Orbit reached. Stabilize the relay holding track next.";
+            appendEvent("Orbital navigation: Debris Survey Orbit reached.");
+            appendEvent(std::string("Objective: ") + missionObjectiveText(m_missionRuntimeState));
+            break;
+
+        case OrbitalNodeId::RelayHoldingTrack:
+            m_orbitalRuntimeState.relayTrackReached = true;
+            m_orbitalRuntimeState.phase = OrbitalTravelPhase::RelayHolding;
+            m_orbitalRuntimeState.lastBeat = "Relay holding track stabilized. Dust Frontier docking is now the next live beat.";
+            m_orbitalRuntimeState.ruleText = "Relay holding track stable. Dock with Dust Frontier Relay Platform to begin the landing slice.";
+            m_missionRuntimeState.relayTrackStabilized = true;
+            m_missionRuntimeState.phase = MissionPhase::DockRelayPlatform;
+            m_missionRuntimeState.missionComplete = false;
+            ++m_missionRuntimeState.advancementCount;
+            m_missionRuntimeState.lastBeat = "Relay holding track stabilized. Dock with Dust Frontier Relay Platform next.";
+            appendEvent("Orbital navigation: relay holding track stabilized.");
+            appendEvent("M44 unlocked: Dust Frontier docking and return-loop continuity are now live.");
+            appendEvent(std::string("Objective: ") + missionObjectiveText(m_missionRuntimeState));
+            break;
+
+        case OrbitalNodeId::RelayPlatformDock:
+            m_orbitalRuntimeState.relayPlatformDocked = true;
+            m_orbitalRuntimeState.orbitalLayerActive = false;
+            m_orbitalRuntimeState.phase = OrbitalTravelPhase::RelayPlatformDocked;
+            m_orbitalRuntimeState.lastBeat = "Responder Shuttle Khepri docked cleanly with Dust Frontier Relay Platform.";
+            m_orbitalRuntimeState.ruleText = "Dust Frontier dock stable. Interact with Responder Shuttle Khepri to disembark onto the frontier pad.";
+            m_shipRuntimeState.docked = true;
+            m_shipRuntimeState.frontierSurfaceAccessUnlocked = true;
+            m_shipRuntimeState.locationLabel = "dust-frontier-pad";
+            setAuthoritativePlayerTile(kFrontierDockShipTile);
+            m_missionRuntimeState.relayPlatformDocked = true;
+            m_missionRuntimeState.phase = MissionPhase::LandDustFrontier;
+            ++m_missionRuntimeState.advancementCount;
+            m_missionRuntimeState.lastBeat = "Dust Frontier relay platform docked. Disembark to the surface pad.";
+            applyShipRuntimeWorldState();
+            appendEvent("Orbital docking: Dust Frontier Relay Platform secured.");
+            appendEvent(std::string("Objective: ") + missionObjectiveText(m_missionRuntimeState));
+            break;
+
+        case OrbitalNodeId::HomeDockAnchor:
+            m_orbitalRuntimeState.homeDockReached = true;
+            m_orbitalRuntimeState.returnRouteAuthorized = false;
+            m_orbitalRuntimeState.orbitalLayerActive = false;
+            m_orbitalRuntimeState.phase = OrbitalTravelPhase::HomeDocked;
+            m_orbitalRuntimeState.lastBeat = "Responder Shuttle Khepri has redocked with Khepri Dock.";
+            m_orbitalRuntimeState.ruleText = "Home dock stable. Disembark to close the first planet-orbit-planet return loop.";
+            m_shipRuntimeState.docked = true;
+            m_shipRuntimeState.frontierSurfaceActive = false;
+            m_shipRuntimeState.locationLabel = "cargo-bay-dock";
+            setAuthoritativePlayerTile(kHomeDockShipTile);
+            m_missionRuntimeState.homeDockRestored = true;
+            m_missionRuntimeState.lastBeat = "Khepri Dock restored. Disembark to complete the return loop.";
+            applyShipRuntimeWorldState();
+            appendEvent("Orbital docking: Responder Shuttle Khepri redocks with Khepri Dock.");
+            appendEvent(std::string("Objective: ") + missionObjectiveText(m_missionRuntimeState));
+            break;
+
+        default:
+            break;
+        }
+
+        refreshDiagnosticsFromState();
+    }
+
+    void SimulationRuntime::setAuthoritativePlayerTile(TileCoord tile, bool clearMovementState)
+    {
+        m_authoritativePlayerPosition = m_worldState.world().tileToWorldCenter(tile);
+        m_previousAuthoritativePlayerPosition = m_authoritativePlayerPosition;
+        m_presentedPlayerPosition = m_authoritativePlayerPosition;
+        if (clearMovementState)
+        {
+            clearMovement();
+            m_pendingIntents.clear();
+        }
+    }
+
+    bool SimulationRuntime::isShipboardInteractionTarget(TileCoord target) const
+    {
+        const Entity* entity = m_worldState.entities().getAt(target);
+        if (entity == nullptr)
+        {
+            return false;
+        }
+
+        return entity->name == kResponderShuttleLabel
+            || entity->name == kShuttleHelmTerminalLabel
+            || entity->name == kOrbitalNavigationConsoleLabel;
+    }
+
+    void SimulationRuntime::evaluateMissionProgressFromIntent(const SimulationIntent& intent)
+    {
+        switch (intent.type)
+        {
+        case SimulationIntentType::InspectTile:
+            handleMissionInspect(intent.target);
+            break;
+        case SimulationIntentType::InteractTile:
+            handleMissionInteraction(intent.target);
+            break;
+        default:
+            break;
+        }
+    }
+
+    void SimulationRuntime::handleMissionInspect(TileCoord target)
+    {
+        if (m_missionRuntimeState.phase != MissionPhase::DiagnoseMedlab)
+        {
+            return;
+        }
+
+        const Entity* entity = m_worldState.entities().getAt(target);
+        const WorldAuthoringHotspot* hotspot = m_worldState.authoringHotspotAt(target);
+
+        const bool diagnosticStationInspected =
+            entity != nullptr && entity->name == kDiagnosticStationLabel;
+        const bool triageHotspotInspected =
+            hotspot != nullptr && hotspot->label == kTriageConvergenceLabel;
+
+        if (!diagnosticStationInspected && !triageHotspotInspected)
+        {
+            return;
+        }
+
+        m_missionRuntimeState.medlabDiagnosisComplete = true;
+        m_missionRuntimeState.quarantineGateUnlocked = true;
+        m_missionRuntimeState.phase = MissionPhase::SecureQuarantineGate;
+        ++m_missionRuntimeState.advancementCount;
+        m_missionRuntimeState.lastBeat = "MedLab diagnostics identified the quarantine breach route.";
+
+        applyMissionWorldState();
+        appendEvent("Mission advanced: MedLab diagnostics identify the quarantine breach route.");
+        appendEvent("Gate update: Quarantine Access Gate is now unlocked.");
+        appendEvent(std::string("Objective: ") + missionObjectiveText(m_missionRuntimeState));
+        refreshDiagnosticsFromState();
+    }
+
+    void SimulationRuntime::handleMissionInteraction(TileCoord target)
+    {
+        const Entity* entity = m_worldState.entities().getAt(target);
+        if (entity == nullptr)
+        {
+            return;
+        }
+
+        if (entity->name == kTransitServiceTerminalLabel)
+        {
+            if (m_missionRuntimeState.phase == MissionPhase::RecoverTransitData)
+            {
+                m_missionRuntimeState.transitDataRecovered = true;
+                m_missionRuntimeState.phase = MissionPhase::DiagnoseMedlab;
+                ++m_missionRuntimeState.advancementCount;
+                m_missionRuntimeState.lastBeat = "Transit route data recovered from the service terminal.";
+
+                appendEvent("Mission advanced: Transit route data recovered.");
+                appendEvent(std::string("Objective: ") + missionObjectiveText(m_missionRuntimeState));
+                refreshDiagnosticsFromState();
+                return;
+            }
+
+            appendEvent("Transit Service Terminal confirms the route package is already cached.");
+            return;
+        }
+
+        if (entity->name == kQuarantineControlTerminalLabel)
+        {
+            if (m_missionRuntimeState.phase != MissionPhase::RestoreQuarantineControl
+                && m_missionRuntimeState.phase != MissionPhase::BoardResponderShuttle
+                && m_missionRuntimeState.phase != MissionPhase::ClaimShuttleCommand
+                && m_missionRuntimeState.phase != MissionPhase::EnterOrbitalLane
+                && m_missionRuntimeState.phase != MissionPhase::ReachSurveyOrbit
+                && m_missionRuntimeState.phase != MissionPhase::StabilizeRelayTrack
+                && m_missionRuntimeState.phase != MissionPhase::DockRelayPlatform
+                && m_missionRuntimeState.phase != MissionPhase::LandDustFrontier
+                && m_missionRuntimeState.phase != MissionPhase::SecureFrontierRelay
+                && m_missionRuntimeState.phase != MissionPhase::ReturnToShuttle
+                && m_missionRuntimeState.phase != MissionPhase::ReturnToHomeDock
+                && m_missionRuntimeState.phase != MissionPhase::MissionComplete)
+            {
+                appendEvent("Mission gate: Quarantine control rejects reroute commands until the access gate is secured.");
+                return;
+            }
+
+            if (m_missionRuntimeState.quarantineControlRestored)
+            {
+                appendEvent("Quarantine Control Terminal confirms the evac corridor is already restored.");
+                return;
+            }
+
+            m_missionRuntimeState.quarantineControlRestored = true;
+            m_missionRuntimeState.shipRuntimePrepReady = true;
+            m_missionRuntimeState.phase = MissionPhase::BoardResponderShuttle;
+            ++m_missionRuntimeState.advancementCount;
+            m_missionRuntimeState.lastBeat = "Quarantine corridor restored. Shuttle boarding authorization is now live.";
+            m_shipRuntimeState.boardingUnlocked = true;
+            m_shipRuntimeState.lastBeat = "Docked responder shuttle is now authorized for boarding.";
+
+            applyMissionWorldState();
+            appendEvent("Mission advanced: Quarantine corridor restored.");
+            appendEvent("Boarding update: Responder Shuttle Khepri is now authorized for boarding.");
+            appendEvent(std::string("Objective: ") + missionObjectiveText(m_missionRuntimeState));
+            refreshDiagnosticsFromState();
+            return;
+        }
+
+        if (entity->name == kFrontierRelayBeaconLabel)
+        {
+            if (!m_shipRuntimeState.frontierSurfaceActive)
+            {
+                appendEvent("Mission gate: Frontier Relay Beacon remains inaccessible until Dust Frontier landing is complete.");
+                return;
+            }
+
+            if (m_missionRuntimeState.phase != MissionPhase::SecureFrontierRelay
+                && m_missionRuntimeState.phase != MissionPhase::ReturnToShuttle
+                && m_missionRuntimeState.phase != MissionPhase::ReturnToHomeDock
+                && m_missionRuntimeState.phase != MissionPhase::MissionComplete)
+            {
+                appendEvent("Frontier Relay Beacon has no actionable route handoff for the current mission beat.");
+                return;
+            }
+
+            if (m_missionRuntimeState.frontierRelaySecured)
+            {
+                appendEvent("Frontier Relay Beacon confirms the surface handoff package is already secured.");
+                return;
+            }
+
+            m_missionRuntimeState.frontierRelaySecured = true;
+            m_missionRuntimeState.phase = MissionPhase::ReturnToShuttle;
+            ++m_missionRuntimeState.advancementCount;
+            m_missionRuntimeState.lastBeat = "Dust Frontier relay package secured. Return to the shuttle and launch home.";
+            m_orbitalRuntimeState.returnRouteAuthorized = true;
+            m_orbitalRuntimeState.ruleText = "Return route to Khepri Dock authorized. Re-board the shuttle and use the helm to launch home.";
+            m_orbitalRuntimeState.lastBeat = "Surface relay secured. Homeward route authority granted.";
+            m_shipRuntimeState.lastBeat = "Dust Frontier surface handoff complete. Shuttle return is now authorized.";
+
+            applyShipRuntimeWorldState();
+            appendEvent("Mission advanced: Dust Frontier relay package secured.");
+            appendEvent(std::string("Objective: ") + missionObjectiveText(m_missionRuntimeState));
+            refreshDiagnosticsFromState();
+            return;
+        }
+
+        if (entity->name == kResponderShuttleLabel)
+        {
+            if (m_shipRuntimeState.playerBoarded)
+            {
+                if (m_missionRuntimeState.phase == MissionPhase::LandDustFrontier
+                    && m_orbitalRuntimeState.relayPlatformDocked)
+                {
+                    m_shipRuntimeState.playerBoarded = false;
+                    m_shipRuntimeState.occupancyState = ShipOccupancyState::PlanetSurface;
+                    m_shipRuntimeState.frontierSurfaceActive = true;
+                    m_shipRuntimeState.lastBeat = "Disembarked from Responder Shuttle Khepri onto Dust Frontier Landing Pad.";
+                    setAuthoritativePlayerTile(kFrontierPadPlayerTile);
+                    m_missionRuntimeState.dustFrontierLanded = true;
+                    m_missionRuntimeState.phase = MissionPhase::SecureFrontierRelay;
+                    ++m_missionRuntimeState.advancementCount;
+                    m_missionRuntimeState.lastBeat = "Dust Frontier landing confirmed. Secure the relay beacon.";
+                    applyShipRuntimeWorldState();
+                    appendEvent("Landing: you disembark onto Dust Frontier Landing Pad.");
+                    appendEvent(std::string("Objective: ") + missionObjectiveText(m_missionRuntimeState));
+                    refreshDiagnosticsFromState();
+                    return;
+                }
+
+                if (m_missionRuntimeState.phase == MissionPhase::ReturnToHomeDock
+                    && m_orbitalRuntimeState.homeDockReached)
+                {
+                    m_shipRuntimeState.playerBoarded = false;
+                    m_shipRuntimeState.occupancyState = ShipOccupancyState::PlanetSurface;
+                    m_shipRuntimeState.frontierSurfaceActive = false;
+                    m_shipRuntimeState.lastBeat = "Disembarked from Responder Shuttle Khepri at Khepri Dock.";
+                    setAuthoritativePlayerTile(kHomeDockPlayerTile);
+                    m_missionRuntimeState.returnLoopComplete = true;
+                    m_missionRuntimeState.missionComplete = true;
+                    m_missionRuntimeState.phase = MissionPhase::MissionComplete;
+                    ++m_missionRuntimeState.advancementCount;
+                    m_missionRuntimeState.lastBeat = "Khepri Dock return loop completed cleanly.";
+                    applyShipRuntimeWorldState();
+                    appendEvent("Return loop: you disembark at Khepri Dock and close the first planet-orbit-planet continuity lane.");
+                    appendEvent(std::string("Objective: ") + missionObjectiveText(m_missionRuntimeState));
+                    refreshDiagnosticsFromState();
+                    return;
+                }
+
+                appendEvent("Responder Shuttle Khepri confirms you are already aboard the active vessel.");
+                return;
+            }
+
+            const bool initialBoardingAllowed =
+                m_shipRuntimeState.boardingUnlocked
+                && (m_missionRuntimeState.phase == MissionPhase::BoardResponderShuttle
+                    || m_missionRuntimeState.phase == MissionPhase::ClaimShuttleCommand
+                    || m_missionRuntimeState.phase == MissionPhase::EnterOrbitalLane
+                    || m_missionRuntimeState.phase == MissionPhase::ReachSurveyOrbit
+                    || m_missionRuntimeState.phase == MissionPhase::StabilizeRelayTrack
+                    || m_missionRuntimeState.phase == MissionPhase::DockRelayPlatform
+                    || m_missionRuntimeState.phase == MissionPhase::ReturnToHomeDock
+                    || m_missionRuntimeState.phase == MissionPhase::MissionComplete);
+
+            const bool frontierReboardingAllowed =
+                m_shipRuntimeState.frontierSurfaceActive
+                && (m_missionRuntimeState.phase == MissionPhase::ReturnToShuttle
+                    || m_missionRuntimeState.phase == MissionPhase::ReturnToHomeDock
+                    || m_missionRuntimeState.phase == MissionPhase::MissionComplete);
+
+            if (!initialBoardingAllowed && !frontierReboardingAllowed)
+            {
+                appendEvent("Mission gate: shuttle boarding remains locked until the corridor is restored.");
+                return;
+            }
+
+            m_shipRuntimeState.playerBoarded = true;
+            m_shipRuntimeState.occupancyState = ShipOccupancyState::AboardDockedShip;
+            m_shipRuntimeState.powerOnline = true;
+            m_shipRuntimeState.airlockPressurized = true;
+            ++m_shipRuntimeState.boardingCount;
+            setAuthoritativePlayerTile(
+                m_shipRuntimeState.frontierSurfaceActive ? kFrontierDockShipTile : kHomeDockShipTile);
+
+            if (frontierReboardingAllowed)
+            {
+                m_shipRuntimeState.frontierSurfaceActive = false;
+                m_shipRuntimeState.lastBeat = "Re-boarded Responder Shuttle Khepri from Dust Frontier Landing Pad.";
+                applyShipRuntimeWorldState();
+                appendEvent("Ship runtime: you re-board Responder Shuttle Khepri from Dust Frontier Landing Pad.");
+                appendEvent(std::string("Objective: ") + missionObjectiveText(m_missionRuntimeState));
+                refreshDiagnosticsFromState();
+                return;
+            }
+
+            m_shipRuntimeState.lastBeat = "Boarded the docked responder shuttle through the cargo collar.";
+            m_missionRuntimeState.phase = MissionPhase::ClaimShuttleCommand;
+            ++m_missionRuntimeState.advancementCount;
+            m_missionRuntimeState.lastBeat = "Responder Shuttle Khepri boarded. Helm authority is the next beat.";
+
+            applyShipRuntimeWorldState();
+            appendEvent("Ship runtime: you board Responder Shuttle Khepri.");
+            appendEvent(std::string("Objective: ") + missionObjectiveText(m_missionRuntimeState));
+            refreshDiagnosticsFromState();
+            return;
+        }
+
+        if (entity->name == kShuttleHelmTerminalLabel)
+        {
+            if (!m_shipRuntimeState.playerBoarded)
+            {
+                appendEvent("Mission gate: Shuttle Helm Terminal will not grant command authority until you are aboard.");
+                return;
+            }
+
+            if (!m_shipRuntimeState.commandClaimed)
+            {
+                if (m_missionRuntimeState.phase != MissionPhase::ClaimShuttleCommand)
+                {
+                    appendEvent("Mission gate: helm authorization is not yet the active beat.");
+                    return;
+                }
+
+                m_shipRuntimeState.commandClaimed = true;
+                m_shipRuntimeState.launchPrepReady = true;
+                m_shipRuntimeState.ownershipState = ShipOwnershipState::PlayerCommand;
+                m_shipRuntimeState.lastBeat = "Shuttle helm accepted your command credentials for departure prep.";
+
+                m_missionRuntimeState.shipRuntimePrepReady = true;
+                m_missionRuntimeState.phase = MissionPhase::EnterOrbitalLane;
+                ++m_missionRuntimeState.advancementCount;
+                m_missionRuntimeState.lastBeat = "Command authority claimed. Depart into local orbit next.";
+
+                m_orbitalRuntimeState.orbitalLayerUnlocked = true;
+                m_orbitalRuntimeState.departureAuthorized = true;
+                m_orbitalRuntimeState.ruleText = "Use Shuttle Helm Terminal once more to clear the docking collar and enter local orbit.";
+                m_orbitalRuntimeState.lastBeat = "Orbital layer unlocked from shuttle helm authority.";
+
+                applyShipRuntimeWorldState();
+                appendEvent("Ship runtime: Shuttle Helm Terminal transfers command authority to you.");
+                appendEvent("M43 unlocked: local orbital departure is now authorized.");
+                appendEvent(std::string("Objective: ") + missionObjectiveText(m_missionRuntimeState));
+                refreshDiagnosticsFromState();
+                return;
+            }
+
+            if (m_missionRuntimeState.phase == MissionPhase::EnterOrbitalLane)
+            {
+                if (m_orbitalRuntimeState.travelInProgress)
+                {
+                    appendEvent("Orbital navigation: departure transfer already underway.");
+                    return;
+                }
+                if (m_orbitalRuntimeState.orbitalLayerActive)
+                {
+                    appendEvent("Shuttle helm confirms the traffic separation lane is already stable. Use Orbital Navigation Console for the next route.");
+                    return;
+                }
+
+                beginOrbitalTransfer(OrbitalNodeId::TrafficSeparationLane, OrbitalTravelPhase::UndockingTransfer, 80u);
+                m_orbitalRuntimeState.lastBeat = "Undocking burn committed from the shuttle helm.";
+                m_orbitalRuntimeState.ruleText = "During transfer, shipboard movement remains locked and route changes are unavailable.";
+                appendEvent("Orbital transition: undocking burn committed from Shuttle Helm Terminal.");
+                refreshDiagnosticsFromState();
+                return;
+            }
+
+            if (m_missionRuntimeState.phase == MissionPhase::ReturnToShuttle)
+            {
+                if (!m_orbitalRuntimeState.returnRouteAuthorized)
+                {
+                    appendEvent("Mission gate: the frontier relay package must be secured before the homeward launch is authorized.");
+                    return;
+                }
+
+                if (m_orbitalRuntimeState.travelInProgress)
+                {
+                    appendEvent("Orbital navigation: return launch already underway.");
+                    return;
+                }
+
+                m_missionRuntimeState.returnLaunchComplete = true;
+                m_missionRuntimeState.phase = MissionPhase::ReturnToHomeDock;
+                ++m_missionRuntimeState.advancementCount;
+                m_missionRuntimeState.lastBeat = "Homeward launch committed from Dust Frontier.";
+                m_orbitalRuntimeState.lastBeat = "Homeward burn committed from Dust Frontier shuttle helm.";
+                m_orbitalRuntimeState.ruleText = "Home dock transfer active. Hold course until Khepri Dock capture is confirmed.";
+                beginOrbitalTransfer(OrbitalNodeId::HomeDockAnchor, OrbitalTravelPhase::HomeDockTransfer, 140u);
+                appendEvent("Orbital transition: homeward launch committed from Dust Frontier shuttle helm.");
+                appendEvent(std::string("Objective: ") + missionObjectiveText(m_missionRuntimeState));
+                refreshDiagnosticsFromState();
+                return;
+            }
+
+            appendEvent("Shuttle helm confirms command authority remains stable.");
+            return;
+        }
+
+        if (entity->name == kOrbitalNavigationConsoleLabel)
+        {
+            if (!m_shipRuntimeState.commandClaimed)
+            {
+                appendEvent("Mission gate: Orbital Navigation Console remains locked until helm command authority is claimed.");
+                return;
+            }
+
+            if (m_orbitalRuntimeState.travelInProgress)
+            {
+                appendEvent("Orbital navigation: active transfer in progress. Wait for the current route to resolve.");
+                return;
+            }
+
+            if (m_missionRuntimeState.phase == MissionPhase::EnterOrbitalLane)
+            {
+                appendEvent("Mission gate: use Shuttle Helm Terminal to enter the traffic separation lane before plotting further routes.");
+                return;
+            }
+
+            if (m_missionRuntimeState.phase == MissionPhase::ReachSurveyOrbit)
+            {
+                beginOrbitalTransfer(OrbitalNodeId::DebrisSurveyOrbit, OrbitalTravelPhase::SurveyTransfer, 120u);
+                m_orbitalRuntimeState.lastBeat = "Survey route plotted toward the debris ring observation lane.";
+                m_orbitalRuntimeState.ruleText = "Survey transfer active. Relay holding track remains unavailable until arrival is confirmed.";
+                appendEvent("Orbital navigation: transfer to Debris Survey Orbit plotted.");
+                refreshDiagnosticsFromState();
+                return;
+            }
+
+            if (m_missionRuntimeState.phase == MissionPhase::StabilizeRelayTrack)
+            {
+                beginOrbitalTransfer(OrbitalNodeId::RelayHoldingTrack, OrbitalTravelPhase::RelayTransfer, 100u);
+                m_orbitalRuntimeState.lastBeat = "Relay holding track stabilization run initiated from the navigation console.";
+                m_orbitalRuntimeState.ruleText = "Relay transfer active. Hold course until the orbital lane stabilizes.";
+                appendEvent("Orbital navigation: relay holding track stabilization run initiated.");
+                refreshDiagnosticsFromState();
+                return;
+            }
+
+            if (m_missionRuntimeState.phase == MissionPhase::DockRelayPlatform)
+            {
+                beginOrbitalTransfer(OrbitalNodeId::RelayPlatformDock, OrbitalTravelPhase::DockingTransfer, 110u);
+                m_orbitalRuntimeState.lastBeat = "Docking run plotted toward Dust Frontier Relay Platform.";
+                m_orbitalRuntimeState.ruleText = "Dust Frontier docking transfer active. Hold course until the platform capture is confirmed.";
+                appendEvent("Orbital docking: transfer to Dust Frontier Relay Platform plotted.");
+                refreshDiagnosticsFromState();
+                return;
+            }
+
+            if (m_missionRuntimeState.phase == MissionPhase::MissionComplete)
+            {
+                appendEvent("Orbital Navigation Console confirms the first return loop is stable and ready for M45 hardening.");
+                return;
+            }
+        }
+    }
+
+    void SimulationRuntime::handleMissionEncounterVictory(const std::string& encounterLabel)
+    {
+        if (encounterLabel != kQuarantineAccessGateLabel
+            || m_missionRuntimeState.phase != MissionPhase::SecureQuarantineGate)
+        {
+            return;
+        }
+
+        m_missionRuntimeState.quarantineEncounterResolved = true;
+        m_missionRuntimeState.phase = MissionPhase::RestoreQuarantineControl;
+        ++m_missionRuntimeState.advancementCount;
+        m_missionRuntimeState.lastBeat = "Quarantine Access Gate secured after the six-second combat beat.";
+
+        applyMissionWorldState();
+        appendEvent("Mission advanced: Quarantine Access Gate secured.");
+        appendEvent(std::string("Objective: ") + missionObjectiveText(m_missionRuntimeState));
+        refreshDiagnosticsFromState();
     }
 
     void SimulationRuntime::processSurvivalState(float stepSeconds)
@@ -1190,6 +2214,8 @@ namespace war
             + " secured.");
         m_diagnostics.currentTerrainConsequence = "combat encounter secured";
         ++m_diagnostics.terrainConsequenceEvents;
+
+        handleMissionEncounterVictory(m_combatEncounterState.label);
         refreshDiagnosticsFromState();
     }
 

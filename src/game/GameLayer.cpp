@@ -145,12 +145,15 @@ namespace war
         writeClientReplicationStatus();
         appendClientTrace(m_runtimeBoundaryReport, "GameLayer::initialize client replication status write attempted");
 
-        auto pushM40StartupEvents = [this]()
+        auto pushM44StartupEvents = [this]()
         {
-            pushEvent("Milestone 40 initialized");
-            pushEvent("six-second combat / encounter resolution active");
+            const SharedSimulationDiagnostics& diagnostics = m_simulationRuntime.diagnostics();
+            pushEvent("Milestone 44 initialized");
+            pushEvent("docking / landing / cross-layer transition persistence / return loop active");
             pushEvent("Simulation owner: SharedSimulationRuntime with authoritative localhost host lane");
             pushEvent("Headless host launch: WARServer.exe");
+            pushEvent(std::string("Objective: ") + diagnostics.missionObjectiveText);
+            pushEvent(std::string("Mission phase: ") + diagnostics.missionPhaseText);
             pushEvent(std::string("Build: ")
                 + m_localDemoDiagnosticsReport.buildConfiguration
                 + " | "
@@ -174,7 +177,7 @@ namespace war
                 pushEvent("No external headless host heartbeat detected yet");
             }
 
-            pushEvent("Move into encounter hotspots to trigger the first authoritative combat lane.");
+            pushEvent("Follow the directed chain: transit terminal -> medlab diagnostics -> quarantine gate -> control terminal -> board shuttle -> claim helm -> enter orbital lane -> survey orbit -> relay track -> dock Dust Frontier -> secure relay beacon -> return to Khepri Dock.");
             pushEvent("Press J / K / L for harness toggle, latency preset, and jitter preset");
         };
 
@@ -182,7 +185,7 @@ namespace war
         if (preferred->initialize(m_window->getHandle()))
         {
             m_renderDevice = std::move(preferred);
-            pushM40StartupEvents();
+            pushM44StartupEvents();
             pushEvent(std::string("Active backend: ") + m_renderDevice->name());
             appendClientTrace(m_runtimeBoundaryReport, "GameLayer::initialize bgfx backend initialized");
             return;
@@ -192,7 +195,7 @@ namespace war
         const bool fallbackReady = fallback->initialize(m_window->getHandle());
         m_renderDevice = std::move(fallback);
 
-        pushM40StartupEvents();
+        pushM44StartupEvents();
         pushEvent("bgfx unavailable, falling back to GDI");
         pushEvent(std::string("Active backend: ") + m_renderDevice->name());
         if (!fallbackReady)
@@ -316,7 +319,8 @@ namespace war
                 playerPosition,
                 eventLog,
                 m_lastDeltaTime,
-                m_bgfxWorldRenderer.statusMessage());
+                m_bgfxWorldRenderer.statusMessage(),
+                simulationDiagnostics);
         }
 
         m_renderDevice->endFrame(m_window->getHandle());
@@ -691,7 +695,7 @@ namespace war
         const SharedSimulationDiagnostics& diagnostics = m_simulationRuntime.diagnostics();
         std::ostringstream output;
         output
-            << "version=2\n"
+            << "version=3\n"
             << "authority_mode=" << (m_useHeadlessHostAuthority ? "headless-host" : "local") << "\n"
             << "runtime_mode=" << (m_runtimeBoundaryReport.runningFromSourceTree ? "source-tree" : "packaged") << "\n"
             << "host_online=" << (m_headlessHostPresenceReport.hostOnline ? "yes" : "no") << "\n"
@@ -767,7 +771,48 @@ namespace war
             << "hostile_max_health=" << diagnostics.hostileMaxHealth << "\n"
             << "combat_rounds_resolved=" << diagnostics.combatRoundsResolved << "\n"
             << "encounter_wins=" << diagnostics.encounterWins << "\n"
-            << "encounters_survived=" << diagnostics.encountersSurvived << "\n";
+            << "encounters_survived=" << diagnostics.encountersSurvived << "\n"
+            << "mission_active=" << (diagnostics.missionActive ? "yes" : "no") << "\n"
+            << "mission_id=" << sanitizeSingleLine(diagnostics.activeMissionId) << "\n"
+            << "mission_phase=" << sanitizeSingleLine(diagnostics.missionPhaseText) << "\n"
+            << "mission_objective=" << sanitizeSingleLine(diagnostics.missionObjectiveText) << "\n"
+            << "mission_last_beat=" << sanitizeSingleLine(diagnostics.missionLastBeat) << "\n"
+            << "mission_advancement_count=" << diagnostics.missionAdvancementCount << "\n"
+            << "mission_complete=" << (diagnostics.missionComplete ? "yes" : "no") << "\n"
+            << "mission_gate_locked=" << (diagnostics.missionGateLocked ? "yes" : "no") << "\n"
+            << "ship_runtime_prep_ready=" << (diagnostics.shipRuntimePrepReady ? "yes" : "no") << "\n"
+            << "ship_active=" << (diagnostics.shipActive ? "yes" : "no") << "\n"
+            << "active_ship_id=" << sanitizeSingleLine(diagnostics.activeShipId) << "\n"
+            << "ship_name=" << sanitizeSingleLine(diagnostics.shipName) << "\n"
+            << "ship_boarded=" << (diagnostics.shipBoarded ? "yes" : "no") << "\n"
+            << "ship_docked=" << (diagnostics.shipDocked ? "yes" : "no") << "\n"
+            << "ship_power_online=" << (diagnostics.shipPowerOnline ? "yes" : "no") << "\n"
+            << "ship_airlock_pressurized=" << (diagnostics.shipAirlockPressurized ? "yes" : "no") << "\n"
+            << "ship_command_claimed=" << (diagnostics.shipCommandClaimed ? "yes" : "no") << "\n"
+            << "ship_launch_prep_ready=" << (diagnostics.shipLaunchPrepReady ? "yes" : "no") << "\n"
+            << "ship_ownership=" << sanitizeSingleLine(diagnostics.shipOwnershipText) << "\n"
+            << "ship_occupancy=" << sanitizeSingleLine(diagnostics.shipOccupancyText) << "\n"
+            << "ship_location=" << sanitizeSingleLine(diagnostics.shipLocationText) << "\n"
+            << "ship_last_beat=" << sanitizeSingleLine(diagnostics.shipLastBeat) << "\n"
+            << "ship_boarding_count=" << diagnostics.shipBoardingCount << "\n"
+            << "orbital_layer_active=" << (diagnostics.orbitalLayerActive ? "yes" : "no") << "\n"
+            << "orbital_departure_authorized=" << (diagnostics.orbitalDepartureAuthorized ? "yes" : "no") << "\n"
+            << "orbital_travel_in_progress=" << (diagnostics.orbitalTravelInProgress ? "yes" : "no") << "\n"
+            << "orbital_survey_orbit_reached=" << (diagnostics.orbitalSurveyOrbitReached ? "yes" : "no") << "\n"
+            << "orbital_relay_track_reached=" << (diagnostics.orbitalRelayTrackReached ? "yes" : "no") << "\n"
+            << "orbital_relay_platform_docked=" << (diagnostics.orbitalRelayPlatformDocked ? "yes" : "no") << "\n"
+            << "orbital_return_route_authorized=" << (diagnostics.orbitalReturnRouteAuthorized ? "yes" : "no") << "\n"
+            << "orbital_home_dock_reached=" << (diagnostics.orbitalHomeDockReached ? "yes" : "no") << "\n"
+            << "orbital_phase=" << sanitizeSingleLine(diagnostics.orbitalPhaseText) << "\n"
+            << "orbital_current_node=" << sanitizeSingleLine(diagnostics.orbitalCurrentNodeText) << "\n"
+            << "orbital_target_node=" << sanitizeSingleLine(diagnostics.orbitalTargetNodeText) << "\n"
+            << "orbital_rule=" << sanitizeSingleLine(diagnostics.orbitalRuleText) << "\n"
+            << "orbital_last_beat=" << sanitizeSingleLine(diagnostics.orbitalLastBeat) << "\n"
+            << "orbital_transfer_count=" << diagnostics.orbitalTransferCount << "\n"
+            << "orbital_travel_ticks_remaining=" << diagnostics.orbitalTravelTicksRemaining << "\n"
+            << "frontier_surface_active=" << (diagnostics.frontierSurfaceActive ? "yes" : "no") << "\n"
+            << "frontier_site=" << sanitizeSingleLine(diagnostics.frontierSiteText) << "\n"
+            << "player_runtime_context=" << sanitizeSingleLine(diagnostics.playerRuntimeContextText) << "\n";
 
         const std::filesystem::path statusPath = m_runtimeBoundaryReport.logsDirectory / "client_replication_status.txt";
         if (!writeTextFileAtomically(statusPath, output.str()))

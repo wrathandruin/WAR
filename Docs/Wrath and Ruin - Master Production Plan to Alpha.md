@@ -16,21 +16,24 @@ The legacy repo should remain the **reference source for production lessons, ser
 
 What the current `WAR` repo proves:
 
-- Win32 runtime shell
-- top-down world camera and traversal prototype
-- interaction and action queue prototype
+- Windows client shell and packaged local demo lane
+- split desktop/server/shared baseline
+- top-down world camera, traversal, inspect, and interaction flow
+- headless authoritative host on a stable localhost authority lane
+- versioned persistence and restart continuity
+- actor, inventory, hazard, and six-second combat runtime
+- directed planetary mission slice plus docked-ship and narrow local-orbit progression
 - render abstraction and bgfx path
-- shader pipeline and first sprite/atlas groundwork through the current renderer work
 
 What it does **not** yet prove:
 
-- authoritative server runtime
-- persistence strategy
-- deployable multiplayer session flow
-- production packaging and update path
-- telemetry, crash capture, or operations
-- content pipeline suitable for shipping
-- a complete planet-to-space gameplay loop
+- real remote transport or hosted-session flow
+- account/session/ticket ownership in this repo
+- production deployment and environment model in this repo
+- telemetry, crash capture, admin tooling, or support flow in this repo
+- a scalable content pipeline for mission, text, and authored progression
+- a convincing text/social MUD identity in the live slice
+- a complete planet-to-space return loop through verified M44 sign-off
 
 What the legacy repo proves:
 
@@ -131,6 +134,17 @@ At alpha, a player should be able to:
 - complete a short mission chain
 - leave and return to a persistent world with retained state
 
+Alpha should also feel recognizably like Wrath and Ruin rather than only like a competent top-down prototype.
+That means the alpha slice must preserve enough of the MUD soul to evaluate:
+
+- text-supported mission and world context
+- room or interior entry descriptions on meaningful authored spaces
+- inspect and event-log readability
+- a prompt or status surface that feels session-like rather than purely diagnostic
+- a typed command surface for a small but real core vocabulary
+- local speech and emote support
+- at least one shared-presence proof that demonstrates the game as a multiplayer social space, not only a solo route
+
 ### 3.2 Beta Definition
 
 At beta, the game should additionally prove:
@@ -179,15 +193,15 @@ At market candidate, the project should additionally prove:
 
 ### 4.3 Critical Gaps In The New Repo
 
-- no shared simulation module
-- no headless server executable
-- no authoritative protocol
-- no persistence surface
-- no account, launcher, or update direction yet in this repo
-- no deployment scripts or environment model
-- no telemetry, crash capture, or admin tools
-- no market-facing packaging plan
-- workspace structure is still prototype-shaped around one native executable tree
+- no real remote transport yet
+- no hosted account/session/ticket flow in this repo
+- no deployment scripts or environment model in this repo
+- no telemetry, crash capture, admin, or moderation surface in this repo
+- no explicit trust-boundary or security plan in this repo
+- no clearly scalable mission/text/content pipeline yet
+- no convincing text/social interaction MVP yet
+- no proven multi-user playtest surface yet
+- no authored room-description or interior-description layer yet
 
 ### 4.4 Directional Risk
 
@@ -250,6 +264,15 @@ The old project should not be copied wholesale, but it should absolutely inform 
 - runtime/source separation
 - regression and smoke-test gates
 - deployment runbooks as real production assets
+
+### 5.3 Immediate Legacy Lessons For Phase 5
+
+The legacy repo adds three urgent lessons that Phase 5 should now treat as explicit requirements:
+
+- hosted product reality matters as much as local slice quality
+- account/session/ticket identity must be designed before broad tester onboarding
+- "fun" must be evaluated through a graphical-MUD session, not only through a cleaner top-down mission loop
+- text entry into spaces matters early: a room, interior, station, or destination should feel described when entered, not only visible
 
 ### 5.2 Redesign For The New Game
 
@@ -503,9 +526,10 @@ Exit Criteria:
 
 The implemented milestone train should now be treated as current through **M28**.
 
-The active tactical roadmap for the next lead developer is **M29 through M48** and is detailed in:
+The active tactical roadmap for the next lead developer is now **M29 through M70** and is detailed in:
 
 - `Docs/Wrath and Ruin - M29-M48 Lead Developer Milestone Plan.md`
+- `Docs/Wrath and Ruin - M45-M70 Alpha Playtest Runway.md`
 - `Docs/Wrath and Ruin - Milestone Delivery Standard.md`
 - `Docs/milestones/WAR_Strategic_Roadmap.md`
 
@@ -537,12 +561,53 @@ The active tactical roadmap for the next lead developer is **M29 through M48** a
 - M43: Orbital Space Layer / Travel State / Navigation Rules
 - M44: Docking / Landing / Cross-Layer Transition Persistence / Return Loop
 
-### Phase 5 - Alpha Hardening And Product Runway
+### Phase 5A - Hosted Product Foundation
 
-- M45: Internal Alpha Package / Hosted Deploy / Telemetry Baseline
-- M46: Alpha Hardening / Crash Capture / Admin Tooling
-- M47: External Beta Onboarding / Launcher-Update Direction / Support Flow
-- M48: Market Foundation / Release Ops / Analytics / Readiness Gate
+- M45: Remote Transport Contract / Hosted Session Bootstrap
+- M46: Trust Boundary / Environment Config / Secrets Baseline
+- M47: Account Session Ticket Handoff / Authenticated Entry
+- M48: Structured Telemetry / Crash Capture / Runtime Event Pipeline
+- M49: Admin Surface / Backup Restore / Recovery Discipline
+- M50: Security Hardening Pass 1 / Abuse Controls / Rate Limits
+
+### Phase 5B - Graphical MUD Session MVP
+
+- M51: Room And Interior Description Runtime / Location Titles
+- M52: Prompt Vitals Session HUD / Event Log Partitioning
+- M53: Typed Command Bar / Core Command Routing / Help
+- M54: Speech Emote And Local Social Text Visibility
+- M55: Shared Presence / Same-Space Awareness / Interest Rules
+- M56: Reconnect Resume / Session Continuity / Drop Recovery
+- M57: Description Mission Journal Data Schema / Authoring Pipeline
+- M58: Art Integration Pass 1 / Environment Identity / Text Presentation
+
+### Phase 5C - Alpha Cohort Readiness
+
+- M59: Multi-User Scenario Beat / Cooperation And Communication Validation
+- M60: Hosted Staging Acceptance / Soak / Alerting
+- M61: Performance Budgets / Hitch Memory Network Diagnostics
+- M62: Accessibility / Keybinding / Input Resilience / Readability
+- M63: First Session Onboarding / Tutorialization / Expectation Setting
+- M64: Support Workflow / Player Reports / Incident Response
+- M65: Launcher Installer Update Channel / Build Distribution
+- M66: Analytics Funnel / Survey / Feedback Instrumentation
+- M67: Content Reliability / Description Coverage / Art Pass 2
+- M68: Alpha Cohort Rehearsal / Go-No-Go Gate
+
+### Immediate Post-Playtest Follow-On
+
+- M69: Alpha Cohort 1 Execution / Live Observation / Rapid Triage
+- M70: Alpha Stabilization / Roadmap Recut / Beta Gate Reset
+
+Runway note:
+The first real alpha playtest gate is now M68, not M48.
+M69 and M70 exist so the first cohort is treated as a managed product event rather than a celebratory one-off.
+
+See:
+
+- `Docs/Wrath and Ruin - M44 Roadmap Audit and Phase 5 Amendments.md`
+- `Docs/Wrath and Ruin - Art Production and Asset Planning Track.md`
+- `Docs/Wrath and Ruin - M45-M70 Alpha Playtest Runway.md`
 
 ---
 
@@ -572,25 +637,40 @@ AI-assisted execution may compress or expand individual tasks, but the weekly ca
 - M41 through M44
 - complete the mission-bearing planet-to-space loop
 
-### Weeks 17-20
+### Weeks 17-22
 
-- M45 through M48
-- host, harden, instrument, support, and evaluate the slice as a product
+- M45 through M50
+- replace localhost-only assumptions with a hosted product foundation
+
+### Weeks 23-30
+
+- M51 through M58
+- add the first true graphical-MUD session identity to the slice
+
+### Weeks 31-40
+
+- M59 through M68
+- prepare, rehearse, and gate the first real alpha cohort
+
+### Weeks 41-44
+
+- M69 through M70
+- run the first cohort and recut the roadmap from evidence
 
 ---
 
-## 11. Post-M48 Continuation
+## 11. Post-M70 Continuation
 
-The next detailed tactical runway should stop at M48 so leadership can assess the product honestly before broadening the plan again.
+After M70, leadership should reassess the product using real alpha evidence rather than speculative planning.
 
-However, the likely continuation after M48 is:
+The likely continuation after M70 is:
 
-- M49: beta content scale, retention expansion, and release-candidate discipline
-- M50: launcher, installer, and update productionization
-- M51: market onboarding and first-session polish
-- M52: live-ops tooling, analytics hardening, and release management
-- M53: compliance, storefront, support, and policy readiness
-- M54: launch rehearsal, market candidate review, and go/no-go sign-off
+- beta content scaling
+- retention expansion
+- live-ops tooling maturity
+- launcher/update productionization
+- broader compliance and platform readiness
+- market candidate discipline based on observed player behavior
 
 ---
 
