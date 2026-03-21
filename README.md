@@ -20,12 +20,15 @@ This milestone is intentionally narrow:
 - persists mission, ship, orbital, and return-loop state through authoritative snapshots and host save/load
 - adds schema-version migration from the prior M43 persistence surface into the M44 docking stage
 - surfaces docking, landing-site, and return-route state in overlay, bgfx debug, host status, and client replication status
-- stages an M44 local demo package and M44 acceptance wrapper
+- stages an M44 local demo package, packaged authoritative smoke lane, M43 regression acceptance wrapper, and M44 return-loop acceptance wrapper
 
 ## Manual validation procedure
 1. Build/stage with `scripts/build_local_demo_package_win64.bat Release`
-2. Launch the headless host with `scripts/launch_headless_host_win64.bat`
-3. Launch the client with `scripts/launch_local_client_against_host_win64.bat`
+2. Change into the staged package root:
+   - `cd out\local_demo\WAR_M44_Release`
+3. Run the packaged launch scripts from that staged root, not from the repo-level `scripts/` directory:
+   - `launch_headless_host_win64.bat`
+   - `launch_local_client_against_host_win64.bat`
 4. Complete the directed chain through M43:
    - Transit Service Terminal
    - Diagnostic Station
@@ -36,20 +39,27 @@ This milestone is intentionally narrow:
    - Shuttle Helm Terminal orbital departure
    - Orbital Navigation Console -> Debris Survey Orbit
    - Orbital Navigation Console -> Relay Holding Track
-5. Continue the M44 chain:
+5. Run the packaged M43 regression acceptance wrapper from the staged root:
+   - `acceptance_m43_orbital_space_layer_win64.bat`
+6. Continue the M44 chain:
    - Orbital Navigation Console -> Dust Frontier Relay Platform
    - Responder Shuttle Khepri -> Dust Frontier Landing Pad disembark
    - Frontier Relay Beacon
    - Responder Shuttle Khepri re-board
    - Shuttle Helm Terminal -> Khepri Dock return
    - Responder Shuttle Khepri -> disembark at Khepri Dock
-6. Confirm:
+7. Run the packaged M44 acceptance wrapper from the staged root:
+   - `acceptance_m44_return_loop_win64.bat`
+8. Confirm:
+   - `smoke_test_local_demo_win64.bat` proves the staged client-against-host boot lane instead of a standalone local client fallback boot
+   - `acceptance_m43_orbital_space_layer_win64.bat` only passes after the authoritative orbital progression has actually reached relay-track completion state
+   - `acceptance_m44_return_loop_win64.bat` only passes after authoritative docking, landing, relay, and home-return continuity have actually completed
    - mission objectives advance through docking, landing, surface handoff, and return
    - ship/helm/nav positions remain coherent with the active dock context
-   - `frontier_surface_active`, `orbital_relay_platform_docked`, and `orbital_home_dock_reached` update coherently
+   - `orbital_relay_platform_docked`, `orbital_return_route_authorized`, and `orbital_home_dock_reached` update coherently
    - `player_runtime_context` transitions through `planet-surface`, `aboard-docked-ship`, `orbital-space`, `second-destination-surface`, and back again
    - the return loop completes without authority or persistence regressions
-7. Close and restart the host at any intermediate step, then confirm mission/ship/orbital/return state restores from `runtime/Saves/authoritative_world_primary.txt`
+9. Close and restart the host at any intermediate step, then confirm mission/ship/orbital/return state restores from `runtime/Saves/authoritative_world_primary.txt`
 
 ## Known limits
 - localhost authority lane only

@@ -22,7 +22,7 @@ namespace war
             LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "client_runtime_trace.txt", "Application::run entered");
 
             Win32Window window;
-            if (!window.create(1600, 900, L"WAR - Milestone 40"))
+            if (!window.create(1600, 900, L"WAR - Milestone 44"))
             {
                 LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "client_runtime_trace.txt", "Application::run window.create failed");
                 return -1;

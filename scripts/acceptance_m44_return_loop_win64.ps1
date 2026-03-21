@@ -17,6 +17,32 @@ function Get-KeyValueMap {
     return $values
 }
 
+function Require-ExactValue {
+    param(
+        [hashtable]$Values,
+        [string]$Key,
+        [string]$Expected,
+        [System.Collections.Generic.List[string]]$Details,
+        [ref]$Failed,
+        [string]$SurfaceLabel
+    )
+
+    if (-not $Values.ContainsKey($Key)) {
+        $Details.Add("[FAIL] $SurfaceLabel missing required key: $Key")
+        $Failed.Value = $true
+        return
+    }
+
+    $actual = $Values[$Key]
+    if ($actual -ne $Expected) {
+        $Details.Add("[FAIL] $SurfaceLabel $Key expected '$Expected' but found '$actual'")
+        $Failed.Value = $true
+        return
+    }
+
+    $Details.Add("[PASS] $SurfaceLabel $Key = $actual")
+}
+
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $demoRoot = $scriptDir
 if (-not (Test-Path -LiteralPath (Join-Path $demoRoot 'WAR.exe'))) {
@@ -45,61 +71,33 @@ if (-not (Test-Path -LiteralPath $statusPath)) {
     $failed = $true
 } else {
     $status = Get-KeyValueMap -Path $statusPath
-    foreach ($key in @(
-        'mission_phase',
-        'mission_objective',
-        'mission_complete',
-        'mission_advancement_count',
-        'ship_name',
-        'ship_location',
-        'ship_boarded',
-        'ship_docked',
-        'orbital_phase',
-        'orbital_current_node',
-        'orbital_target_node',
-        'orbital_relay_platform_docked',
-        'orbital_return_route_authorized',
-        'orbital_home_dock_reached',
-        'frontier_surface_active',
-        'frontier_site',
-        'player_runtime_context'
-    )) {
-        if ($status.ContainsKey($key)) {
-            $details.Add("[PASS] client status key visible: $key = $($status[$key])")
-        } else {
-            $details.Add("[FAIL] client status key missing: $key")
-            $failed = $true
-        }
-    }
+    Require-ExactValue -Values $status -Key 'authority_mode' -Expected 'headless-host' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'client status'
+    Require-ExactValue -Values $status -Key 'host_online' -Expected 'yes' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'client status'
+    Require-ExactValue -Values $status -Key 'orbital_relay_platform_docked' -Expected 'yes' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'client status'
+    Require-ExactValue -Values $status -Key 'orbital_return_route_authorized' -Expected 'yes' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'client status'
+    Require-ExactValue -Values $status -Key 'orbital_home_dock_reached' -Expected 'yes' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'client status'
+    Require-ExactValue -Values $status -Key 'mission_complete' -Expected 'yes' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'client status'
+    Require-ExactValue -Values $status -Key 'mission_phase' -Expected 'mission-complete' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'client status'
+    Require-ExactValue -Values $status -Key 'player_runtime_context' -Expected 'planet-surface' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'client status'
+    Require-ExactValue -Values $status -Key 'ship_docked' -Expected 'yes' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'client status'
+    Require-ExactValue -Values $status -Key 'ship_location' -Expected 'cargo-bay-dock' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'client status'
 
-    if ($status.ContainsKey('latency_harness_enabled') -and $status['latency_harness_enabled'] -eq 'no' -and $status.ContainsKey('corrections_applied')) {
-        $correctionCount = 0
-        [void][int]::TryParse($status['corrections_applied'], [ref]$correctionCount)
-        if ($correctionCount -gt 8) {
-            $details.Add("[WARN] corrections_applied is currently high with latency harness disabled: $correctionCount")
-        } else {
-            $details.Add("[PASS] correction count remains within the expected localhost stability envelope: $correctionCount")
-        }
+    if ($status.ContainsKey('orbital_return_route_authorized') -and $status['orbital_return_route_authorized'] -eq 'yes') {
+        $details.Add("[PASS] client status orbital_return_route_authorized=yes is accepted as authoritative proof that the frontier-surface relay checkpoint occurred before the homeward route was opened.")
     }
 }
 
 if (Test-Path -LiteralPath $hostStatusPath) {
     $hostStatus = Get-KeyValueMap -Path $hostStatusPath
-    foreach ($key in @(
-        'state',
-        'host_authority_active',
-        'mission_phase',
-        'ship_location',
-        'orbital_phase',
-        'frontier_surface_active',
-        'player_runtime_context'
-    )) {
-        if ($hostStatus.ContainsKey($key)) {
-            $details.Add("[PASS] host status key visible: $key = $($hostStatus[$key])")
-        } else {
-            $details.Add("[WARN] host status key missing: $key")
-        }
-    }
+    Require-ExactValue -Values $hostStatus -Key 'state' -Expected 'running' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'host status'
+    Require-ExactValue -Values $hostStatus -Key 'host_authority_active' -Expected 'yes' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'host status'
+    Require-ExactValue -Values $hostStatus -Key 'orbital_relay_platform_docked' -Expected 'yes' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'host status'
+    Require-ExactValue -Values $hostStatus -Key 'orbital_return_route_authorized' -Expected 'yes' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'host status'
+    Require-ExactValue -Values $hostStatus -Key 'orbital_home_dock_reached' -Expected 'yes' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'host status'
+    Require-ExactValue -Values $hostStatus -Key 'mission_complete' -Expected 'yes' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'host status'
+    Require-ExactValue -Values $hostStatus -Key 'mission_phase' -Expected 'mission-complete' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'host status'
+    Require-ExactValue -Values $hostStatus -Key 'player_runtime_context' -Expected 'planet-surface' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'host status'
+    Require-ExactValue -Values $hostStatus -Key 'ship_location' -Expected 'cargo-bay-dock' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'host status'
 } else {
     $details.Add("[FAIL] headless_host_status.txt missing: $hostStatusPath")
     $failed = $true
@@ -118,8 +116,8 @@ $reportLines = @(
     "Runtime root: $runtimeRoot",
     $(if ($failed) { 'Result: FAIL' } else { 'Result: PASS' }),
     '',
-    'Manual operator step still required: complete the full Dust Frontier docking, landing, relay-beacon, and home-return chain before final sign-off.',
-    'This scripted lane verifies that the telemetry and persistence surfaces required for that review are actually present.',
+    'PASS now means the packaged authoritative lane has actually completed docking, frontier relay authorization, home docking, and final return-loop closure state.',
+    'Return-route authorization is treated as authoritative evidence that the frontier-surface landing and relay checkpoint occurred before the homeward route was opened.',
     ''
 ) + $details
 

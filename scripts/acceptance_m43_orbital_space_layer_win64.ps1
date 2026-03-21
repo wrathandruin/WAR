@@ -17,6 +17,32 @@ function Get-KeyValueMap {
     return $values
 }
 
+function Require-ExactValue {
+    param(
+        [hashtable]$Values,
+        [string]$Key,
+        [string]$Expected,
+        [System.Collections.Generic.List[string]]$Details,
+        [ref]$Failed,
+        [string]$SurfaceLabel
+    )
+
+    if (-not $Values.ContainsKey($Key)) {
+        $Details.Add("[FAIL] $SurfaceLabel missing required key: $Key")
+        $Failed.Value = $true
+        return
+    }
+
+    $actual = $Values[$Key]
+    if ($actual -ne $Expected) {
+        $Details.Add("[FAIL] $SurfaceLabel $Key expected '$Expected' but found '$actual'")
+        $Failed.Value = $true
+        return
+    }
+
+    $Details.Add("[PASS] $SurfaceLabel $Key = $actual")
+}
+
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $demoRoot = $scriptDir
 if (-not (Test-Path -LiteralPath (Join-Path $demoRoot 'WAR.exe'))) {
@@ -45,55 +71,26 @@ if (-not (Test-Path -LiteralPath $statusPath)) {
     $failed = $true
 } else {
     $status = Get-KeyValueMap -Path $statusPath
-    foreach ($key in @(
-        'mission_phase',
-        'mission_objective',
-        'mission_complete',
-        'ship_name',
-        'ship_command_claimed',
-        'player_runtime_context',
-        'orbital_layer_active',
-        'orbital_departure_authorized',
-        'orbital_travel_in_progress',
-        'orbital_survey_orbit_reached',
-        'orbital_relay_track_reached',
-        'orbital_phase',
-        'orbital_current_node',
-        'orbital_target_node',
-        'orbital_rule',
-        'orbital_last_beat',
-        'orbital_transfer_count',
-        'orbital_travel_ticks_remaining'
-    )) {
-        if ($status.ContainsKey($key)) {
-            $details.Add("[PASS] client status key visible: $key = $($status[$key])")
-        } else {
-            $details.Add("[FAIL] client status key missing: $key")
-            $failed = $true
-        }
-    }
+    Require-ExactValue -Values $status -Key 'authority_mode' -Expected 'headless-host' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'client status'
+    Require-ExactValue -Values $status -Key 'host_online' -Expected 'yes' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'client status'
+    Require-ExactValue -Values $status -Key 'ship_command_claimed' -Expected 'yes' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'client status'
+    Require-ExactValue -Values $status -Key 'player_runtime_context' -Expected 'orbital-space' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'client status'
+    Require-ExactValue -Values $status -Key 'orbital_survey_orbit_reached' -Expected 'yes' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'client status'
+    Require-ExactValue -Values $status -Key 'orbital_relay_track_reached' -Expected 'yes' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'client status'
+    Require-ExactValue -Values $status -Key 'orbital_phase' -Expected 'relay-holding' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'client status'
+    Require-ExactValue -Values $status -Key 'orbital_current_node' -Expected 'relay-holding-track' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'client status'
+    Require-ExactValue -Values $status -Key 'mission_phase' -Expected 'dock-relay-platform' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'client status'
 }
 
 if (Test-Path -LiteralPath $hostStatusPath) {
     $hostStatus = Get-KeyValueMap -Path $hostStatusPath
-    foreach ($key in @(
-        'state',
-        'host_authority_active',
-        'ship_active',
-        'ship_command_claimed',
-        'orbital_layer_active',
-        'orbital_departure_authorized',
-        'orbital_phase',
-        'orbital_current_node',
-        'orbital_target_node'
-    )) {
-        if ($hostStatus.ContainsKey($key)) {
-            $details.Add("[PASS] host status key visible: $key = $($hostStatus[$key])")
-        } else {
-            $details.Add("[FAIL] host status key missing: $key")
-            $failed = $true
-        }
-    }
+    Require-ExactValue -Values $hostStatus -Key 'state' -Expected 'running' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'host status'
+    Require-ExactValue -Values $hostStatus -Key 'host_authority_active' -Expected 'yes' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'host status'
+    Require-ExactValue -Values $hostStatus -Key 'ship_command_claimed' -Expected 'yes' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'host status'
+    Require-ExactValue -Values $hostStatus -Key 'orbital_layer_active' -Expected 'yes' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'host status'
+    Require-ExactValue -Values $hostStatus -Key 'orbital_survey_orbit_reached' -Expected 'yes' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'host status'
+    Require-ExactValue -Values $hostStatus -Key 'orbital_relay_track_reached' -Expected 'yes' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'host status'
+    Require-ExactValue -Values $hostStatus -Key 'player_runtime_context' -Expected 'orbital-space' -Details $details -Failed ([ref]$failed) -SurfaceLabel 'host status'
 } else {
     $details.Add("[FAIL] headless_host_status.txt missing: $hostStatusPath")
     $failed = $true
@@ -112,8 +109,8 @@ $reportLines = @(
     "Runtime root: $runtimeRoot",
     $(if ($failed) { 'Result: FAIL' } else { 'Result: PASS' }),
     '',
-    'Manual operator steps still required: complete the directed mission chain, board and command Responder Shuttle Khepri, enter the orbital lane, reach Debris Survey Orbit, and stabilize Relay Holding Track before final sign-off.',
-    'This scripted lane verifies that the telemetry and persistence surfaces needed for that review are actually present.',
+    'PASS now means the packaged authoritative lane has actually reached relay-track completion state.',
+    'This lane no longer passes on key presence alone.',
     ''
 ) + $details
 

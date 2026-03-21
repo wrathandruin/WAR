@@ -58,11 +58,11 @@ call :check_file "%HOST_LOG%" "Headless host log"
 
 type "%REPORT_PATH%"
 if "%FAILED%"=="0" (
-    echo [M40] Host smoke test passed.
+    echo [M44] Host smoke test passed.
     exit /b 0
 )
 
-echo [M40] Host smoke test failed.
+echo [M44] Host smoke test failed.
 exit /b 1
 
 :check_file

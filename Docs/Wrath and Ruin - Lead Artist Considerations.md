@@ -1,4 +1,16 @@
-Wrath and Ruin
+# Wrath and Ruin - Lead Artist Considerations
+
+Status:
+
+- this remains a strong detailed art brief
+- where this document conflicts with the newer onboarding package, the onboarding package wins
+
+Read alongside:
+
+- `Docs/Wrath and Ruin - Art Audit and Direction Lock.md`
+- `Docs/Wrath and Ruin - Lore and Visual Theme Guide.md`
+- `Docs/Wrath and Ruin - Lead Artist Onboarding Package.md`
+
 Lead Artist Production Brief v1
 1. Core Art Direction
 

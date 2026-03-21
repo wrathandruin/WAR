@@ -75,6 +75,7 @@ if exist "%REPO_ROOT%\assets" xcopy /y /i /e "%REPO_ROOT%\assets" "%STAGE_ROOT%\
 
 for %%F in (
     "README.md"
+    "Docs\Wrath and Ruin - M40-M44 Sign-Off Report.md"
     "Docs\Wrath and Ruin - M43 Validation and Acceptance Checklist.md"
     "Docs\Wrath and Ruin - M44 Validation and Acceptance Checklist.md"
     "Milestones\M43_Orbital_Space_Layer_Travel_State_Navigation_Rules.md"
@@ -102,6 +103,7 @@ for %%F in (
     echo Host executable: %STAGE_ROOT%\WARServer.exe
     echo Runtime root: %RUNTIME_STAGE%
     echo Save path: %RUNTIME_STAGE%\Saves\authoritative_world_primary.txt
+    echo Packaged authoritative integration smoke: %STAGE_ROOT%\smoke_test_local_demo_win64.bat
     echo M43 regression script: %STAGE_ROOT%\acceptance_m43_orbital_space_layer_win64.bat
     echo M44 acceptance script: %STAGE_ROOT%\acceptance_m44_return_loop_win64.bat
 ) > "%MANIFEST_PATH%"

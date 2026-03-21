@@ -1,5 +1,19 @@
 # Wrath and Ruin - Art Production and Asset Planning Track
 
+## Source Of Truth Note
+
+This document is a production-planning track, not the only technical art specification.
+
+For locked technical direction and lead-artist onboarding, use these documents alongside it:
+
+- `Docs/Wrath and Ruin - Art Audit and Direction Lock.md`
+- `Docs/Wrath and Ruin - Lore and Visual Theme Guide.md`
+- `Docs/Wrath and Ruin - Lead Artist Onboarding Package.md`
+- `Docs/Wrath and Ruin - Art Asset Delivery Contract.md`
+- `Docs/Wrath and Ruin - Lead Artist Milestone Runway.md`
+
+If there is a conflict, the onboarding package wins.
+
 ## 1. Purpose
 
 This document defines how art production should run alongside the active milestone roadmap.
@@ -27,6 +41,22 @@ That means:
 - milestone needs can still outrun art support
 - placeholder visuals can distort playtest conclusions
 - text-heavy atmosphere can be weakened when authored spaces do not yet look intentional
+
+It also means the team must now respect the difference between:
+
+- source-art production standards
+- current engine-integration constraints
+
+At the moment, the runtime still uses a BMP-backed atlas lane for immediate integration.
+That should not define the long-term art target, but it must be accounted for in delivery planning.
+
+For production-ready source art, the art lane now uses a fixed delivery contract:
+
+- world gameplay assets = four PNG files mandatory
+- inventory-bearing items = matching icon pack mandatory
+- UI surfaces = locked UI surface pack mandatory
+
+Use `Docs/Wrath and Ruin - Art Asset Delivery Contract.md` for the exact file-level rules.
 
 ## 3. Strategic Rule
 
@@ -156,8 +186,10 @@ That means engineering and art should treat room-description presentation as a s
 The lead artist should eventually maintain:
 
 - an asset request board grouped by milestone
+- an exact artist milestone plan aligned to the alpha runway
 - a style guide for the current alpha slice
 - a naming and export convention for source and runtime-ready assets
+- a manifest discipline proving that required world packs and icon packs are included
 - a placeholder-versus-final tracking sheet
 - a review cadence with engineering before milestone acceptance
 
@@ -169,6 +201,10 @@ Before M45 begins in earnest:
 - mark every item by milestone dependency
 - call out which assets are required for the MUD-feel MVP
 - include room-description presentation in the first UI/art collaboration pass
+- use the lore/theme guide so faction and location identity do not get invented ad hoc
+- use the onboarding package so camera, scale, atlas, format, and state-variant rules stay locked
+- use the lead artist milestone runway so the artist is executing a schedule instead of only a backlog
+- use the art asset delivery contract so file-count and icon coverage are not left to interpretation
 
 ## 12. Working Rule
 

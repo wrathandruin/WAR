@@ -1,3 +1,19 @@
+# Wrath and Ruin - Art Direction Asset List
+
+Status:
+
+- this document is a broad backlog and intake reference
+- this document is not the only technical source of truth
+
+Use these documents first when there is any ambiguity:
+
+- `Docs/Wrath and Ruin - Art Audit and Direction Lock.md`
+- `Docs/Wrath and Ruin - Lore and Visual Theme Guide.md`
+- `Docs/Wrath and Ruin - Lead Artist Onboarding Package.md`
+- `Docs/Wrath and Ruin - Lead Artist Considerations.md`
+
+The list below remains useful as a backlog, but measurements, camera rules, export requirements, and runtime-integration constraints are locked in the onboarding package.
+
 1. Modular human character system
 
 This is the single most important asset family.
