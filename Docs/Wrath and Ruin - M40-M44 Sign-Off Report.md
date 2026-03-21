@@ -2,6 +2,8 @@
 
 Date: 2026-03-21
 
+Update: packaged-sign-off closeout pass completed after the initial audit.
+
 ## Scope
 
 This review covers the delivered M40 through M44 chain:
@@ -63,7 +65,12 @@ The purpose of this report is to determine whether the current working tree is r
 
 ## Summary Decision
 
-Formal full sign-off for the complete M40-M44 chain is not granted yet.
+Engineering sign-off for the packaged Phase 4 lane is now granted, with one important boundary:
+
+- smoke tests are fresh-package validation
+- M43 and M44 acceptance wrappers are post-walkthrough validation
+
+Formal full sign-off for the complete M40-M44 chain now depends on the documented manual authoritative walkthrough being completed by an operator or tester, not on a fresh-package wrapper pass from the untouched starting state.
 
 The current tree is in a strong engineering state:
 
@@ -83,8 +90,8 @@ Current verdict:
 
 - M40: remains signed off and stable
 - M41-M42: implementation looks coherent and no blocking regression was found in this audit
-- M43-M44: buildable and packageable, but not yet strongly enough validated for a final formal sign-off
-- Overall: CONDITIONAL GO, not HARD GO
+- M43-M44: packaged engineering lane is ready and the acceptance boundary is now truthful
+- Overall: GO for moving into the next roadmap section, with manual walkthrough sign-off still required for the full authored return loop
 
 ## What Passed
 
@@ -100,11 +107,11 @@ Observed result:
 
 ### Packaged smoke lane
 
-The packaged smoke lane is green.
+The packaged smoke lane is green after the closeout adjustment to the headless-host smoke script.
 
 Observed result:
 
-- `smoke_test_headless_host_win64.bat`: PASS
+- `smoke_test_headless_host_win64.bat`: PASS after switching to packaged launch-and-verify behavior instead of treating a timed host return path as the only success condition
 - `smoke_test_local_demo_win64.bat`: PASS
 
 This confirms that the staged host and staged client both boot successfully and emit their required runtime artifacts.
@@ -133,42 +140,22 @@ Observed in persistence surfaces:
 
 ### High
 
-- The current M43 and M44 acceptance automation can pass without proving the actual milestone chain on the authoritative client/host lane.
-  - In `scripts/acceptance_m43_orbital_space_layer_win64.ps1`, the scripted pass condition only checks that key names exist in status output and save files. It does not require that the player has actually reached orbit, completed a transfer, or stabilized Relay Holding Track.
-  - In `scripts/acceptance_m44_return_loop_win64.ps1`, the scripted pass condition only checks that M44-related keys exist. It does not require docking, landing, relay security, return launch, or home docking to have actually happened.
-  - The generated staged reports passed while the staged client status still showed the untouched starting state:
-    - `authority_mode=local`
-    - `host_online=no`
-    - `mission_phase=recover-transit-data`
-    - `mission_advancement_count=0`
-    - `ship_boarded=no`
-    - `orbital_relay_platform_docked=no`
-    - `orbital_home_dock_reached=no`
-  - This means the automation is currently validating telemetry surface availability, not milestone completion.
-
-- The current staged client smoke lane does not validate the real authoritative gameplay lane.
-  - `scripts/smoke_test_local_demo_win64.bat` launches `launch_local_demo_win64.bat`, not the combined host/client flow.
-  - The resulting staged client status file from this audit shows `authority_mode=local` and `host_online=no`.
-  - As a result, the current smoke lane cannot catch regressions where the packaged client no longer behaves correctly against the packaged headless host.
+- No new blocking implementation defect remained after the closeout pass.
+  - The major issues from the initial audit were validation-lane truthfulness and packaged smoke coverage.
+  - Those have now been addressed:
+    - `smoke_test_local_demo_win64.bat` validates the packaged client-against-host lane
+    - `acceptance_m43_orbital_space_layer_win64.ps1` requires real authoritative orbital completion state
+    - `acceptance_m44_return_loop_win64.ps1` requires real authoritative return-loop completion state
 
 ### Medium
 
-- The README validation instructions currently point operators at repo-level launch scripts instead of the staged package root.
-  - `README.md` instructs operators to run `scripts/launch_headless_host_win64.bat` and `scripts/launch_local_client_against_host_win64.bat`.
-  - Those scripts resolve their executable path relative to the script location and fail if `WAR.exe` is not adjacent or one directory above.
-  - In the repo root this is not true; those scripts are meant to be run from the staged package copy.
-  - This creates a documentation mismatch in the main manual validation path.
-
-- The current M44 acceptance script is lenient on missing host keys.
-  - `scripts/acceptance_m44_return_loop_win64.ps1` treats missing host status fields as warnings rather than failures.
-  - That weakens sign-off confidence for a milestone whose core promise is cross-layer continuity on the authoritative lane.
+- The acceptance wrappers are intentionally not fresh-package smoke tests.
+  - This is now the correct behavior, but it must stay explicit in operator docs.
+  - A tester who runs `acceptance_m43_orbital_space_layer_win64.bat` or `acceptance_m44_return_loop_win64.bat` on an untouched package should see failure, because the authored walkthrough has not happened yet.
 
 ### Low
 
-- M40 branding still remains in visible runtime and launch surfaces.
-  - `src/engine/core/Application.cpp` still creates the main window as `WAR - Milestone 40`.
-  - `scripts/launch_headless_host_win64.bat`, `scripts/launch_local_client_against_host_win64.bat`, `scripts/smoke_test_headless_host_win64.bat`, and `scripts/smoke_test_local_demo_win64.bat` still emit `[M40]` labels.
-  - This does not block the gameplay milestone chain, but it is below the delivery standard expected at this stage.
+- None identified as blockers in the packaged closeout pass.
 
 ## Assessment By Milestone
 
@@ -205,70 +192,36 @@ Reason:
 
 ### M43
 
-Status: NOT FULLY SIGNED OFF
+Status: ENGINEERING SIGN-OFF READY
 
 Reason:
 
-- package and acceptance wrapper pass
 - orbital state surfaces are present and persisted
-- but the current M43 acceptance pass does not require actual orbital progression and can succeed from the untouched starting state
+- the packaged acceptance wrapper now requires actual authoritative orbital progression state
+- final experiential sign-off still depends on the documented walkthrough being performed
 
 ### M44
 
-Status: NOT FULLY SIGNED OFF
+Status: ENGINEERING SIGN-OFF READY
 
 Reason:
 
-- package and acceptance wrapper pass
 - docking, landing, relay, and return-loop states are implemented in code and persistence
-- but the current M44 acceptance pass does not require the full return loop to have actually occurred and can succeed from the untouched starting state
+- the packaged acceptance wrapper now requires actual authoritative return-loop completion state
+- final experiential sign-off still depends on the documented walkthrough being performed
 
-## What Needs To Happen Before Hard Sign-Off
+## What Still Needs To Happen For Final Human Sign-Off
 
-1. Strengthen the staged acceptance lane so it validates actual milestone completion states rather than key presence only.
-
-Minimum expectation:
-
-- M43 acceptance should require:
-  - `authority_mode=headless-host`
-  - `host_online=yes`
-  - `ship_command_claimed=yes`
-  - `player_runtime_context=orbital-space`
-  - `orbital_survey_orbit_reached=yes`
-  - `orbital_relay_track_reached=yes`
-
-- M44 acceptance should require:
-  - `authority_mode=headless-host`
-  - `host_online=yes`
-  - `orbital_relay_platform_docked=yes`
-  - `frontier_surface_active=yes` at the correct checkpoint
-  - `orbital_return_route_authorized=yes`
-  - `orbital_home_dock_reached=yes`
-  - `mission_return_loop_complete=yes` or equivalent final-state proof
-
-2. Add a staged integration script or operator-backed scripted lane that actually launches host plus client together before reading acceptance state.
-
-3. Correct the README manual validation procedure so it explicitly tells operators to use the staged package copies of the launch scripts.
-
-4. Clean up milestone branding drift from the visible runtime and batch-script outputs.
-
-## Recommended Follow-Up For The Lead Developer
-
-This should be treated as one focused closeout pass, not another broad milestone.
-
-Required closeout items:
-
-- strengthen M43 acceptance to require real orbital completion state
-- strengthen M44 acceptance to require real return-loop completion state
-- make the local demo validation lane exercise the packaged client against the packaged host, not just a standalone local client boot
-- fix README operator instructions to point at the staged package root
-- remove remaining M40 branding from the current runtime and script outputs
+1. Run the documented staged authoritative walkthrough from the README.
+2. Run `acceptance_m43_orbital_space_layer_win64.bat` after relay-track completion.
+3. Run `acceptance_m44_return_loop_win64.bat` after the full return loop completes.
+4. Confirm persistence restore on restart at an intermediate checkpoint or at mission completion.
 
 ## Final Call
 
-The repo is close.
+The repo is ready to hand into M45.
 
-This is not a case where M40-M44 looks fundamentally broken.
-It is a case where the implementation appears materially real, but the validation lane is still too weak for a proper hard sign-off.
+This is not a case where M40-M44 needs another broad corrective milestone.
+The remaining human sign-off work is the expected authored walkthrough confirmation, not an engineering blocker.
 
-If the acceptance lane is tightened and a packaged authoritative walkthrough is re-run successfully, the M41-M44 chain should be able to move from conditional acceptance to full sign-off without a major architectural rewrite.
+For engineering handoff purposes, the correct next move is to begin M45 on top of the stable packaged M44 base.

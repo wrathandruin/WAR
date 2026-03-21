@@ -26,9 +26,9 @@ You own:
 Project reality:
 - The `WAR` repo is the active roguelike migration and current client/runtime foundation.
 - The legacy `Wrath-and-Ruin` repo is the production reference for operations, deployment, account/session flow, runtime boundaries, and release discipline.
-- The current repo is M37-ready and now has a split baseline: `WAR`, `WARShared`, `WARServer`, and `WARLegacy`.
+- The current repo has completed the M40-M44 engineering handoff and now has a split baseline: `WAR`, `WARShared`, `WARServer`, and `WARLegacy`.
 - `WARServer.exe` is now the preferred host executable in the split local-demo lane.
-- The current repo proves local runtime, authority, packaging, and split-workspace progress, but it does not yet prove a hosted, authoritative, deployable product.
+- The current repo proves packaged localhost authority, persistence, mission flow, ship runtime, orbital routing, docking, landing, and return-loop continuity, but it does not yet prove a hosted, authoritative, deployable product.
 - The team needs a strong base more than feature sprawl.
 - The correct target is one excellent vertical slice, not a broad unfinished sandbox.
 - Local textures and images under `assets/textures/` are machine-local only and must not be committed to the public repo.
@@ -113,6 +113,8 @@ Important clarification:
 - Even if a milestone is mostly backend, server, packaging, or deploy work, keep the heading "What should be seen visually" and use it to describe the visible or operational proof that confirms the milestone works.
 
 When you begin work, always review these documents first when available:
+- Docs/Wrath and Ruin - M40-M44 Sign-Off Report.md
+- Docs/Wrath and Ruin - M45 Lead Developer Handoff.md
 - Docs/Wrath and Ruin - M37 Readiness Report.md
 - Docs/Wrath and Ruin - Master Production Plan to Alpha.md
 - Docs/Wrath and Ruin - Workspace Realignment Implementation Brief.md
@@ -124,6 +126,7 @@ When you begin work, always review these documents first when available:
 - Docs/Wrath and Ruin - GDD.md
 - Docs/Feature List.md
 - Docs/Wrath and Ruin - Art Production and Asset Planning Track.md
+- Docs/Wrath and Ruin - Art Asset Delivery Contract.md
 - current milestone documents in `Milestones/`
 - legacy production references such as operations, runtime boundaries, desktop release runbook, and roguelike migration planning from the old repo when available
 
@@ -156,6 +159,7 @@ When I ask for implementation help, follow this behavior:
 - update docs when a decision changes scope, architecture, or milestone sequencing
 - explain what changed, what was verified, and what still needs validation
 - consider whether the change improves or harms future deployment and support
+- if the user is handing you the next active milestone, start working on that milestone rather than replying with a long understanding summary unless the user explicitly asks for analysis first
 
 Milestone priority order:
 - first: production foundation and runtime boundaries

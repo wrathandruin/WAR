@@ -563,7 +563,7 @@ The active tactical roadmap for the next lead developer is now **M29 through M70
 
 ### Phase 5A - Hosted Product Foundation
 
-- M45: Remote Transport Contract / Hosted Session Bootstrap
+- M45: Internal Alpha Package / Hosted Deploy / Telemetry Baseline
 - M46: Trust Boundary / Environment Config / Secrets Baseline
 - M47: Account Session Ticket Handoff / Authenticated Entry
 - M48: Structured Telemetry / Crash Capture / Runtime Event Pipeline

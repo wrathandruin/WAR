@@ -41,6 +41,7 @@ This milestone is intentionally narrow:
    - Orbital Navigation Console -> Relay Holding Track
 5. Run the packaged M43 regression acceptance wrapper from the staged root:
    - `acceptance_m43_orbital_space_layer_win64.bat`
+   - this is a post-progression validation step, not a fresh-package smoke test
 6. Continue the M44 chain:
    - Orbital Navigation Console -> Dust Frontier Relay Platform
    - Responder Shuttle Khepri -> Dust Frontier Landing Pad disembark
@@ -50,6 +51,7 @@ This milestone is intentionally narrow:
    - Responder Shuttle Khepri -> disembark at Khepri Dock
 7. Run the packaged M44 acceptance wrapper from the staged root:
    - `acceptance_m44_return_loop_win64.bat`
+   - this is a post-progression validation step, not a fresh-package smoke test
 8. Confirm:
    - `smoke_test_local_demo_win64.bat` proves the staged client-against-host boot lane instead of a standalone local client fallback boot
    - `acceptance_m43_orbital_space_layer_win64.bat` only passes after the authoritative orbital progression has actually reached relay-track completion state
@@ -60,6 +62,12 @@ This milestone is intentionally narrow:
    - `player_runtime_context` transitions through `planet-surface`, `aboard-docked-ship`, `orbital-space`, `second-destination-surface`, and back again
    - the return loop completes without authority or persistence regressions
 9. Close and restart the host at any intermediate step, then confirm mission/ship/orbital/return state restores from `runtime/Saves/authoritative_world_primary.txt`
+
+Important operator note:
+
+- a fresh packaged build is expected to fail the M43 and M44 acceptance wrappers until the directed walkthrough has actually advanced the authoritative state to those checkpoints
+- the smoke tests prove packaged boot and authority wiring
+- the M43 and M44 acceptance wrappers prove post-walkthrough milestone completion
 
 ## Known limits
 - localhost authority lane only

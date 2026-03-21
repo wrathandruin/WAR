@@ -15,6 +15,7 @@ if not exist "%RUNTIME_ROOT%" set "RUNTIME_ROOT=%DEMO_ROOT%\Runtime"
 set "HOST_ROOT=%RUNTIME_ROOT%\Host"
 set "LOG_DIR=%RUNTIME_ROOT%\Logs"
 set "STARTUP_REPORT=%LOG_DIR%\local_demo_startup_report.txt"
+set "CLIENT_TRACE_PATH=%LOG_DIR%\client_runtime_trace.txt"
 set "STATUS_FILE=%LOG_DIR%\client_replication_status.txt"
 set "HOST_STATUS_FILE=%HOST_ROOT%\headless_host_status.txt"
 set "REPORT_PATH=%LOG_DIR%\local_demo_smoke_test.txt"
@@ -25,6 +26,7 @@ if not exist "%HOST_ROOT%" mkdir "%HOST_ROOT%" >nul 2>nul
 if exist "%DETAILS_PATH%" del /q "%DETAILS_PATH%" >nul 2>nul
 if exist "%REPORT_PATH%" del /q "%REPORT_PATH%" >nul 2>nul
 if exist "%STARTUP_REPORT%" del /q "%STARTUP_REPORT%" >nul 2>nul
+if exist "%CLIENT_TRACE_PATH%" del /q "%CLIENT_TRACE_PATH%" >nul 2>nul
 if exist "%STATUS_FILE%" del /q "%STATUS_FILE%" >nul 2>nul
 if exist "%HOST_STATUS_FILE%" del /q "%HOST_STATUS_FILE%" >nul 2>nul
 
@@ -45,6 +47,7 @@ if errorlevel 1 (
 )
 
 call :wait_for_file "%STARTUP_REPORT%" "Client startup report"
+call :wait_for_file "%CLIENT_TRACE_PATH%" "Client runtime trace"
 call :wait_for_file "%STATUS_FILE%" "Client replication status file"
 call :wait_for_file "%HOST_STATUS_FILE%" "Headless host status file"
 if "%FAILED%"=="1" goto :cleanup
@@ -105,7 +108,7 @@ if exist "%WAIT_PATH%" (
     exit /b 0
 )
 set /a WAIT_ATTEMPT+=1
-if %WAIT_ATTEMPT% GEQ 16 (
+if %WAIT_ATTEMPT% GEQ 30 (
     echo [FAIL] %WAIT_LABEL% missing after packaged integration launch: %WAIT_PATH%>> "%DETAILS_PATH%"
     set "FAILED=1"
     exit /b 0

@@ -47,33 +47,40 @@ M69 and M70 cover immediate execution and stabilization after the first cohort b
 
 ### Title
 
-M45 - Remote Transport Contract / Hosted Session Bootstrap
+M45 - Internal Alpha Package / Hosted Deploy / Telemetry Baseline
 
 ### Description
 
-M45 replaces the current localhost-only proof with the first real remote session lane.
+M45 packages the current slice into the first internally hostable alpha candidate.
 
-The goal is not broad matchmaking or large-scale multiplayer.
-The goal is one honest hosted connect path with protocol ownership, remote host boot, and a client/server lane that no longer depends on local file exchange as the product truth.
+The goal is not broad public release, full auth, or large-scale multiplayer.
+The goal is one honest internal-alpha product lane with hosted boot, remote connect direction, telemetry visibility, and the first explicit MUD-feel session surfaces.
 
 ### Required focus
 
+- internal alpha package shape
+- hosted deploy and boot lane
 - remote client/server transport direction
 - protocol ownership and first version stamp
-- remote host boot and connect flow
-- local and hosted configuration split
-- narrow but real connect/disconnect path
+- telemetry baseline for host, client, session, and build identity
+- room-entry descriptions for key authored spaces
+- first prompt or vitals direction
+- first typed command-bar shell or MVP entry surface
+- localhost fallback validation retained
 
 ### Acceptance signals
 
-- a client can connect to a non-localhost host target
+- a packaged internal-alpha lane exists and is operator-usable
+- a client can connect to a non-localhost or explicitly hosted target lane
 - protocol version mismatch is detectable and diagnosable
 - connect and disconnect failures are visible instead of silent
+- room-entry descriptions appear in key authored spaces
+- a prompt or vitals direction and a typed command-entry surface are visible
 - localhost validation still remains as a fallback test lane
 
 ### Why this is important
 
-Without M45, the project is still proving a packaged prototype rather than a hosted product.
+Without M45, the project is still proving a packaged prototype rather than an internally hostable product.
 
 ### Next milestone
 

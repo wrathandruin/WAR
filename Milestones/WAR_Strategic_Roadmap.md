@@ -13,11 +13,11 @@ The roadmap must merge those strengths without letting rendering remain the stra
 
 ## Active Production Checkpoint
 
-M40 is treated as signed off.
-The split desktop/server/shared baseline is healthy, the packaged localhost authority lane is back in a stable state, M41 established the directed planetary mission slice, M42 established the persistent docked-ship runtime, M43 established the authoritative local-orbit lane, and M44 is now the active production milestone.
+M40 remains signed off.
+The split desktop/server/shared baseline is healthy, the packaged localhost authority lane is stable, M41 established the directed planetary mission slice, M42 established the persistent docked-ship runtime, M43 established the authoritative local-orbit lane, and M44 completed the first directed planet-orbit-planet continuity lane on the packaged engineering base.
 
 The immediate goal is no longer to prove isolated systems.
-The immediate goal is to close the first directed planet-orbit-planet continuity lane cleanly, then hand a stable slice into M45 alpha hardening.
+The immediate goal is to hand the stable M44 slice into M45 and turn it into the first internally hostable alpha candidate.
 
 ## Current Strategic Judgment
 
@@ -185,7 +185,7 @@ The correct production move is to complete one tidy return loop and hand a stabl
 
 ### Phase 5A - Hosted Product Foundation
 
-- M45: Remote Transport Contract / Hosted Session Bootstrap
+- M45: Internal Alpha Package / Hosted Deploy / Telemetry Baseline
 - M46: Trust Boundary / Environment Config / Secrets Baseline
 - M47: Account Session Ticket Handoff / Authenticated Entry
 - M48: Structured Telemetry / Crash Capture / Runtime Event Pipeline
