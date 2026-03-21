@@ -12,6 +12,7 @@ namespace war
         bool repoRootResolved = false;
         bool assetRootResolved = false;
         bool runtimeDirectoriesReady = false;
+        bool runtimeRootOverrideActive = false;
 
         std::filesystem::path executablePath;
         std::filesystem::path executableDirectory;

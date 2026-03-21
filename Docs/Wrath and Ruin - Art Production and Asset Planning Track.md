@@ -50,6 +50,18 @@ It also means the team must now respect the difference between:
 At the moment, the runtime still uses a BMP-backed atlas lane for immediate integration.
 That should not define the long-term art target, but it must be accounted for in delivery planning.
 
+Local texture workspace layout now follows:
+
+- `assets/textures/runtime/`
+- `assets/textures/production/`
+- `assets/textures/audits/`
+
+The canonical active compatibility atlas is:
+
+- `assets/textures/runtime/active/world_atlas.bmp`
+
+The root alias `assets/textures/world_atlas.bmp` is retained only for compatibility with older tooling and fallback lookup paths.
+
 For production-ready source art, the art lane now uses a fixed delivery contract:
 
 - world gameplay assets = four PNG files mandatory

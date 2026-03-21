@@ -53,7 +53,7 @@ The most important current standards are:
 - small props native canvas: `48 x 48`
 - medium props native canvas: `96 x 96`
 - tall props native canvas: `96 x 144`
-- immediate runtime atlas compatibility lane: `world_atlas.bmp`, `320 x 128`, `5 x 2`, `64 x 64` cells
+- immediate runtime atlas compatibility lane: `runtime/active/world_atlas.bmp`, `320 x 128`, `5 x 2`, `64 x 64` cells
 
 ## Locked Production Texture Stack
 
@@ -106,6 +106,7 @@ Replace the current placeholder compatibility atlas with an intentional baseline
 **Required outputs**
 
 - `world_atlas.bmp`
+- canonical location: `runtime/active/world_atlas.bmp`
 - `world_atlas_base.png`
 - `world_atlas_mask.png`
 - size: `320 x 128`

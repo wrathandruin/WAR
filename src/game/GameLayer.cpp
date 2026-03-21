@@ -1,11 +1,14 @@
 #include "game/GameLayer.h"
 
 #include <algorithm>
+#include <cctype>
 #include <fstream>
 #include <memory>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <system_error>
+#include <vector>
 
 #include <windows.h>
 
@@ -17,6 +20,9 @@ namespace war
 {
     namespace
     {
+        constexpr uint32_t kExpectedProtocolVersion = 2u;
+        constexpr uint64_t kConnectFailureTimeoutMilliseconds = 2500ull;
+
         bool configsEqual(const ReplicationHarnessConfig& lhs, const ReplicationHarnessConfig& rhs)
         {
             return lhs.enabled == rhs.enabled
@@ -77,20 +83,20 @@ namespace war
                 return false;
             }
 
-#if defined(_WIN32)
+        #if defined(_WIN32)
             if (!MoveFileExW(tempPath.c_str(), path.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
             {
                 std::filesystem::remove(tempPath, error);
                 return false;
             }
-#else
+        #else
             std::filesystem::rename(tempPath, path, error);
             if (error)
             {
                 std::filesystem::remove(tempPath, error);
                 return false;
             }
-#endif
+        #endif
 
             return true;
         }
@@ -110,6 +116,66 @@ namespace war
         {
             LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "client_runtime_trace.txt", line);
         }
+
+        std::string buildClientIdentity(const char* prefix)
+        {
+            return std::string(prefix)
+                + "-"
+                + std::to_string(GetCurrentProcessId())
+                + "-"
+                + std::to_string(ReplicationHarness::currentEpochMilliseconds());
+        }
+
+        std::string toLowerTrim(std::string value)
+        {
+            value.erase(value.begin(), std::find_if(value.begin(), value.end(), [](unsigned char ch)
+            {
+                return !std::isspace(ch);
+            }));
+            value.erase(std::find_if(value.rbegin(), value.rend(), [](unsigned char ch)
+            {
+                return !std::isspace(ch);
+            }).base(), value.end());
+
+            std::transform(value.begin(), value.end(), value.begin(), [](unsigned char ch)
+            {
+                return static_cast<char>(std::tolower(ch));
+            });
+
+            return value;
+        }
+
+        const char* regionTitle(WorldRegionTagId tag)
+        {
+            switch (tag)
+            {
+            case WorldRegionTagId::CargoBay: return "Khepri Dock Cargo Bay";
+            case WorldRegionTagId::TransitSpine: return "Transit Spine";
+            case WorldRegionTagId::MedLab: return "MedLab Diagnostics";
+            case WorldRegionTagId::CommandDeck: return "Command Deck Approach";
+            case WorldRegionTagId::HazardContainment: return "Hazard Containment";
+            default: return "Unknown Interior";
+            }
+        }
+
+        const char* regionDescription(WorldRegionTagId tag)
+        {
+            switch (tag)
+            {
+            case WorldRegionTagId::CargoBay:
+                return "Cargo lifters sit dark under pressure lamps while the docked responder shuttle waits in its collar.";
+            case WorldRegionTagId::TransitSpine:
+                return "A narrow industrial transit corridor channels personnel and freight through the station's central spine.";
+            case WorldRegionTagId::MedLab:
+                return "Sterile light, diagnostic trays, and sealed med stations make this bay feel colder than the rest of the dock.";
+            case WorldRegionTagId::CommandDeck:
+                return "The command lane narrows into a defended choke where control authority and quarantine routing become decisive.";
+            case WorldRegionTagId::HazardContainment:
+                return "Containment walls are scarred by leak alarms and emergency patches; the air here feels recently fought over.";
+            default:
+                return "The current interior has not been formally authored yet.";
+            }
+        }
     }
 
     void GameLayer::initialize(IWindow& window)
@@ -126,85 +192,45 @@ namespace war
 
         m_runtimeBoundaryReport = RuntimePaths::buildReport();
         RuntimePaths::ensureRuntimeDirectories(m_runtimeBoundaryReport);
-        appendClientTrace(m_runtimeBoundaryReport, "GameLayer::initialize entered");
-        appendClientTrace(m_runtimeBoundaryReport, "GameLayer::initialize simulation initialized");
-        appendClientTrace(m_runtimeBoundaryReport, "GameLayer::initialize runtime paths ready");
         m_localDemoDiagnosticsReport = LocalDemoDiagnostics::buildReport(m_runtimeBoundaryReport);
         LocalDemoDiagnostics::writeStartupReport(m_runtimeBoundaryReport, m_localDemoDiagnosticsReport);
-        appendClientTrace(m_runtimeBoundaryReport, "GameLayer::initialize startup report written");
         m_headlessHostPresenceReport = HeadlessHostPresence::buildReport(m_runtimeBoundaryReport);
-        appendClientTrace(m_runtimeBoundaryReport, "GameLayer::initialize headless host presence read");
         m_authoritativeHostProtocolReport = AuthoritativeHostProtocol::buildReport(m_runtimeBoundaryReport);
-        appendClientTrace(m_runtimeBoundaryReport, "GameLayer::initialize authoritative protocol report built");
         m_replicationHarnessConfig = ReplicationHarness::loadConfig(m_runtimeBoundaryReport);
-        appendClientTrace(m_runtimeBoundaryReport, "GameLayer::initialize harness config loaded");
+
+        m_expectedProtocolVersion = kExpectedProtocolVersion;
+        m_clientStartedEpochMilliseconds = ReplicationHarness::currentEpochMilliseconds();
+        m_clientInstanceId = buildClientIdentity("client");
+        m_clientSessionId = buildClientIdentity("client-session");
+        m_connectState = "connect-pending";
+        m_connectFailureReason = "none";
+
         refreshAuthorityMode();
-        appendClientTrace(m_runtimeBoundaryReport, "GameLayer::initialize authority mode refreshed");
+        updateConnectionTelemetry();
         updateReplicationDiagnostics();
-        appendClientTrace(m_runtimeBoundaryReport, "GameLayer::initialize replication diagnostics updated");
+        updatePresentationRuntime();
         writeClientReplicationStatus();
-        appendClientTrace(m_runtimeBoundaryReport, "GameLayer::initialize client replication status write attempted");
 
-        auto pushM44StartupEvents = [this]()
-        {
-            const SharedSimulationDiagnostics& diagnostics = m_simulationRuntime.diagnostics();
-            pushEvent("Milestone 44 initialized");
-            pushEvent("docking / landing / cross-layer transition persistence / return loop active");
-            pushEvent("Simulation owner: SharedSimulationRuntime with authoritative localhost host lane");
-            pushEvent("Headless host launch: WARServer.exe");
-            pushEvent(std::string("Objective: ") + diagnostics.missionObjectiveText);
-            pushEvent(std::string("Mission phase: ") + diagnostics.missionPhaseText);
-            pushEvent(std::string("Build: ")
-                + m_localDemoDiagnosticsReport.buildConfiguration
-                + " | "
-                + m_localDemoDiagnosticsReport.buildTimestamp);
-            pushEvent(m_runtimeBoundaryReport.runningFromSourceTree
-                ? "Runtime mode: source-tree layout"
-                : "Runtime mode: packaged layout");
-            pushEvent(std::string("Startup report: ")
-                + RuntimePaths::displayPath(m_localDemoDiagnosticsReport.startupReportPath));
-
-            if (m_headlessHostPresenceReport.hostOnline)
-            {
-                pushEvent("Headless host heartbeat detected");
-            }
-            else if (m_headlessHostPresenceReport.statusFilePresent)
-            {
-                pushEvent("Headless host status file found but no fresh running heartbeat");
-            }
-            else
-            {
-                pushEvent("No external headless host heartbeat detected yet");
-            }
-
-            pushEvent("Follow the directed chain: transit terminal -> medlab diagnostics -> quarantine gate -> control terminal -> board shuttle -> claim helm -> enter orbital lane -> survey orbit -> relay track -> dock Dust Frontier -> secure relay beacon -> return to Khepri Dock.");
-            pushEvent("Press J / K / L for harness toggle, latency preset, and jitter preset");
-        };
+        pushEvent("Milestone 45 initialized");
+        pushEvent("internal alpha package / hosted deploy / telemetry baseline active");
+        pushEvent(std::string("Client instance: ") + m_clientInstanceId);
+        pushEvent(std::string("Client session: ") + m_clientSessionId);
+        pushEvent(std::string("Connect target: ") + m_localDemoDiagnosticsReport.connectTargetName);
+        pushEvent(std::string("Transport: ") + m_localDemoDiagnosticsReport.connectTransport);
+        pushEvent(std::string("Lane mode: ") + m_localDemoDiagnosticsReport.connectLaneMode);
+        pushEvent("MUD surfaces live: room descriptions, prompt strip, and typed command shell are active.");
+        pushEvent("Type 'help' and press Enter for MVP shell commands.");
 
         auto preferred = std::make_unique<BgfxRenderDevice>();
         if (preferred->initialize(m_window->getHandle()))
         {
             m_renderDevice = std::move(preferred);
-            pushM44StartupEvents();
-            pushEvent(std::string("Active backend: ") + m_renderDevice->name());
-            appendClientTrace(m_runtimeBoundaryReport, "GameLayer::initialize bgfx backend initialized");
             return;
         }
 
         auto fallback = std::make_unique<GdiRenderDevice>();
-        const bool fallbackReady = fallback->initialize(m_window->getHandle());
+        fallback->initialize(m_window->getHandle());
         m_renderDevice = std::move(fallback);
-
-        pushM44StartupEvents();
-        pushEvent("bgfx unavailable, falling back to GDI");
-        pushEvent(std::string("Active backend: ") + m_renderDevice->name());
-        if (!fallbackReady)
-        {
-            pushEvent("Warning: fallback backend failed to initialize");
-        }
-        appendClientTrace(m_runtimeBoundaryReport, fallbackReady
-            ? "GameLayer::initialize GDI fallback initialized"
-            : "GameLayer::initialize GDI fallback failed");
     }
 
     void GameLayer::update(float dt)
@@ -215,10 +241,12 @@ namespace war
         m_headlessHostPresenceReport = HeadlessHostPresence::buildReport(m_runtimeBoundaryReport);
         m_authoritativeHostProtocolReport = AuthoritativeHostProtocol::buildReport(m_runtimeBoundaryReport);
         refreshAuthorityMode();
+        updateConnectionTelemetry();
         pollAuthoritativeHostResponses();
         updateReplicationDiagnostics();
         updateInput();
         m_simulationRuntime.advanceFrame(dt);
+        updatePresentationRuntime();
 
         m_hasActionTargetTile = m_simulationRuntime.hasMovementTarget();
         if (m_hasActionTargetTile)
@@ -287,11 +315,16 @@ namespace war
                 m_localDemoDiagnosticsReport,
                 simulationDiagnostics,
                 m_headlessHostPresenceReport,
-                m_authoritativeHostProtocolReport);
+                m_authoritativeHostProtocolReport,
+                m_roomTitle,
+                m_roomDescription,
+                m_promptLine,
+                buildCommandBarText(),
+                m_commandEcho);
         }
         else
         {
-            const bool bgfxRendered = m_bgfxWorldRenderer.render(
+            (void)m_bgfxWorldRenderer.render(
                 worldState,
                 m_camera,
                 playerPosition,
@@ -309,18 +342,16 @@ namespace war
                 m_headlessHostPresenceReport,
                 m_authoritativeHostProtocolReport);
 
-            if (!bgfxRendered)
-            {
-                pushEvent(std::string("bgfx render status: ") + m_bgfxWorldRenderer.statusMessage());
-            }
-
             m_bgfxDebugFrameRenderer.render(
                 worldState,
                 playerPosition,
                 eventLog,
                 m_lastDeltaTime,
                 m_bgfxWorldRenderer.statusMessage(),
-                simulationDiagnostics);
+                simulationDiagnostics,
+                m_roomTitle,
+                m_promptLine,
+                buildCommandBarText());
         }
 
         m_renderDevice->endFrame(m_window->getHandle());
@@ -329,7 +360,6 @@ namespace war
     void GameLayer::shutdown()
     {
         m_bgfxWorldRenderer.shutdown();
-
         if (m_renderDevice)
         {
             m_renderDevice->shutdown();
@@ -339,6 +369,7 @@ namespace war
     void GameLayer::updateInput()
     {
         applyAuthoringHotkeys();
+        handleCommandBarInput();
 
         const WorldState& worldState = m_simulationRuntime.worldState();
 
@@ -348,46 +379,6 @@ namespace war
 
         m_hasHoveredTile = worldState.world().isInBounds(hovered);
         m_hoveredTile = hovered;
-
-        auto submitIntent = [this](SimulationIntentType type, TileCoord target, const std::string& queueFailureMessage)
-        {
-            const uint64_t queuedSequence = m_simulationRuntime.enqueueIntent(type, target);
-            if (queuedSequence == 0)
-            {
-                pushEvent(queueFailureMessage);
-                return;
-            }
-
-            if (!m_useHeadlessHostAuthority)
-            {
-                return;
-            }
-
-            SimulationIntent intent{};
-            intent.sequence = queuedSequence;
-            intent.type = type;
-            intent.target = target;
-
-            std::string protocolError;
-            if (AuthoritativeHostProtocol::writeIntentRequest(m_runtimeBoundaryReport, intent, protocolError))
-            {
-                return;
-            }
-
-            SimulationIntentAck rejection{};
-            rejection.sequence = queuedSequence;
-            rejection.type = type;
-            rejection.target = target;
-            rejection.result = SimulationIntentAckResult::Rejected;
-            rejection.reason = std::string("host queue write failed: ") + protocolError;
-            m_simulationRuntime.applyAcknowledgement(rejection);
-
-            pushEvent(
-                std::string("Failed to submit intent #")
-                + std::to_string(queuedSequence)
-                + " to headless host: "
-                + protocolError);
-        };
 
         POINT click{};
         if (m_window->consumeLeftClick(click))
@@ -400,7 +391,7 @@ namespace war
             m_actionTargetTile = targetTile;
             m_hasActionTargetTile = m_hasSelectedTile;
 
-            submitIntent(SimulationIntentType::MoveToTile, targetTile, "Failed to queue move intent.");
+            submitTypedIntent(SimulationIntentType::MoveToTile, targetTile, "Failed to queue move intent.");
         }
 
         POINT rightClick{};
@@ -413,7 +404,7 @@ namespace war
             m_hasSelectedTile = worldState.world().isInBounds(targetTile);
 
             const bool shiftDown = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
-            submitIntent(
+            submitTypedIntent(
                 shiftDown ? SimulationIntentType::InspectTile : SimulationIntentType::InteractTile,
                 targetTile,
                 shiftDown ? "Failed to queue inspect intent." : "Failed to queue interact intent.");
@@ -558,8 +549,10 @@ namespace war
 
     void GameLayer::refreshAuthorityMode()
     {
+        std::string compatibilityReason;
+        const bool hostCompatible = hostConnectionCompatible(compatibilityReason);
         const bool previousMode = m_useHeadlessHostAuthority;
-        m_useHeadlessHostAuthority = m_headlessHostPresenceReport.hostOnline;
+        m_useHeadlessHostAuthority = hostCompatible;
 
         m_simulationRuntime.setAuthorityMode(
             !m_useHeadlessHostAuthority,
@@ -576,11 +569,11 @@ namespace war
             m_lastAppliedSnapshotPublishedEpochMilliseconds = 0;
             m_lastAppliedSnapshotSimulationTicks = 0;
             m_lastAppliedSnapshotSequence = 0;
-            pushEvent("Authority mode: headless host online, client prediction + reconciliation active");
+            pushEvent("Authority mode: hosted headless host online, client prediction + reconciliation active");
             return;
         }
 
-        pushEvent("Authority mode: local fallback active");
+        pushEvent(std::string("Authority mode: local fallback active (") + compatibilityReason + ")");
     }
 
     void GameLayer::pollAuthoritativeHostResponses()
@@ -663,6 +656,152 @@ namespace war
         }
     }
 
+    void GameLayer::updateConnectionTelemetry()
+    {
+        if (!m_connectAttemptLogged)
+        {
+            const std::string attemptMessage = std::string("Connect attempt: target=")
+                + m_localDemoDiagnosticsReport.connectTargetName
+                + " | transport="
+                + m_localDemoDiagnosticsReport.connectTransport
+                + " | lane="
+                + m_localDemoDiagnosticsReport.connectLaneMode
+                + " | runtime_root="
+                + m_localDemoDiagnosticsReport.runtimeRootDisplay;
+            pushEvent(attemptMessage);
+            appendClientTrace(m_runtimeBoundaryReport, attemptMessage);
+            m_lastConnectEvent = "attempt";
+            m_connectAttemptLogged = true;
+        }
+
+        std::string compatibilityReason;
+        const bool hostCompatible = hostConnectionCompatible(compatibilityReason);
+
+        if (hostCompatible)
+        {
+            const bool sessionChanged = !m_connectionEstablished
+                || m_lastHostSessionId != m_headlessHostPresenceReport.sessionId
+                || m_lastConnectedHostInstanceId != m_headlessHostPresenceReport.hostInstanceId;
+
+            m_connectState = "connected-headless-host";
+            m_connectFailureReason = "none";
+            m_connectionEstablished = true;
+            m_connectFailureLogged = false;
+
+            if (sessionChanged)
+            {
+                const std::string connectedMessage = std::string("Connect success: target=")
+                    + m_headlessHostPresenceReport.connectTargetName
+                    + " | transport="
+                    + m_headlessHostPresenceReport.transportKind
+                    + " | session="
+                    + m_headlessHostPresenceReport.sessionId
+                    + " | host_instance="
+                    + m_headlessHostPresenceReport.hostInstanceId
+                    + " | protocol=v"
+                    + std::to_string(m_headlessHostPresenceReport.protocolVersion)
+                    + " | build="
+                    + m_headlessHostPresenceReport.buildIdentity;
+                pushEvent(connectedMessage);
+                appendClientTrace(m_runtimeBoundaryReport, connectedMessage);
+                m_lastConnectEvent = "connected";
+                m_lastHostSessionId = m_headlessHostPresenceReport.sessionId;
+                m_lastConnectedHostInstanceId = m_headlessHostPresenceReport.hostInstanceId;
+            }
+            return;
+        }
+
+        const uint64_t nowEpochMilliseconds = ReplicationHarness::currentEpochMilliseconds();
+        const uint64_t elapsedMilliseconds = nowEpochMilliseconds >= m_clientStartedEpochMilliseconds
+            ? nowEpochMilliseconds - m_clientStartedEpochMilliseconds
+            : 0;
+
+        if (m_connectionEstablished)
+        {
+            const std::string disconnectMessage = std::string("Disconnect event: reason=")
+                + compatibilityReason
+                + " | target="
+                + m_localDemoDiagnosticsReport.connectTargetName
+                + " | falling back to local authority";
+            pushEvent(disconnectMessage);
+            appendClientTrace(m_runtimeBoundaryReport, disconnectMessage);
+            m_connectionEstablished = false;
+            m_connectState = "fallback-local";
+            m_connectFailureReason = compatibilityReason;
+            m_lastDisconnectReason = compatibilityReason;
+            m_lastConnectEvent = "disconnected";
+            return;
+        }
+
+        if (elapsedMilliseconds < kConnectFailureTimeoutMilliseconds)
+        {
+            m_connectState = "connect-pending";
+            m_connectFailureReason = "none";
+            return;
+        }
+
+        m_connectState = "fallback-local";
+        m_connectFailureReason = compatibilityReason.empty() ? std::string("host-offline") : compatibilityReason;
+        if (!m_connectFailureLogged)
+        {
+            std::ostringstream failureMessage;
+            failureMessage
+                << "Connect failure: target=" << m_localDemoDiagnosticsReport.connectTargetName
+                << " unavailable (" << m_connectFailureReason << ")"
+                << " | transport=" << m_localDemoDiagnosticsReport.connectTransport
+                << " | lane=" << m_localDemoDiagnosticsReport.connectLaneMode
+                << " | runtime_root=" << m_localDemoDiagnosticsReport.runtimeRootDisplay;
+
+            pushEvent(failureMessage.str());
+            appendClientTrace(m_runtimeBoundaryReport, failureMessage.str());
+            m_lastConnectEvent = "failed";
+            m_connectFailureLogged = true;
+        }
+    }
+
+    bool GameLayer::hostConnectionCompatible(std::string& outReason) const
+    {
+        outReason.clear();
+
+        if (!m_headlessHostPresenceReport.statusFilePresent)
+        {
+            outReason = "host-status-missing";
+            return false;
+        }
+
+        if (!m_headlessHostPresenceReport.statusParseValid)
+        {
+            outReason = "host-status-invalid";
+            return false;
+        }
+
+        if (!m_headlessHostPresenceReport.heartbeatFresh || !m_headlessHostPresenceReport.hostOnline)
+        {
+            outReason = "host-offline";
+            return false;
+        }
+
+        if (m_headlessHostPresenceReport.protocolVersion != m_expectedProtocolVersion)
+        {
+            outReason = "protocol-version-mismatch";
+            return false;
+        }
+
+        if (m_headlessHostPresenceReport.transportKind != m_localDemoDiagnosticsReport.connectTransport)
+        {
+            outReason = "transport-mismatch";
+            return false;
+        }
+
+        if (m_headlessHostPresenceReport.connectTargetName != m_localDemoDiagnosticsReport.connectTargetName)
+        {
+            outReason = "connect-target-mismatch";
+            return false;
+        }
+
+        return true;
+    }
+
     void GameLayer::persistReplicationHarnessConfig()
     {
         std::string error;
@@ -695,130 +834,333 @@ namespace war
         const SharedSimulationDiagnostics& diagnostics = m_simulationRuntime.diagnostics();
         std::ostringstream output;
         output
-            << "version=3\n"
+            << "version=5\n"
+            << "build_identity=" << sanitizeSingleLine(m_localDemoDiagnosticsReport.buildIdentity) << "\n"
+            << "build_channel=" << sanitizeSingleLine(m_localDemoDiagnosticsReport.buildChannel) << "\n"
+            << "client_instance_id=" << sanitizeSingleLine(m_clientInstanceId) << "\n"
+            << "client_session_id=" << sanitizeSingleLine(m_clientSessionId) << "\n"
+            << "connect_target_name=" << sanitizeSingleLine(m_localDemoDiagnosticsReport.connectTargetName) << "\n"
+            << "connect_transport=" << sanitizeSingleLine(m_localDemoDiagnosticsReport.connectTransport) << "\n"
+            << "connect_lane_mode=" << sanitizeSingleLine(m_localDemoDiagnosticsReport.connectLaneMode) << "\n"
+            << "runtime_root=" << sanitizeSingleLine(m_localDemoDiagnosticsReport.runtimeRootDisplay) << "\n"
+            << "connect_state=" << sanitizeSingleLine(m_connectState) << "\n"
+            << "connect_failure_reason=" << sanitizeSingleLine(m_connectFailureReason) << "\n"
+            << "last_connect_event=" << sanitizeSingleLine(m_lastConnectEvent) << "\n"
+            << "last_disconnect_reason=" << sanitizeSingleLine(m_lastDisconnectReason) << "\n"
+            << "expected_protocol_version=" << m_expectedProtocolVersion << "\n"
             << "authority_mode=" << (m_useHeadlessHostAuthority ? "headless-host" : "local") << "\n"
-            << "runtime_mode=" << (m_runtimeBoundaryReport.runningFromSourceTree ? "source-tree" : "packaged") << "\n"
             << "host_online=" << (m_headlessHostPresenceReport.hostOnline ? "yes" : "no") << "\n"
-            << "status_parse_valid=" << (m_headlessHostPresenceReport.statusParseValid ? "yes" : "no") << "\n"
-            << "heartbeat_fresh=" << (m_headlessHostPresenceReport.heartbeatFresh ? "yes" : "no") << "\n"
+            << "host_protocol_version=" << m_headlessHostPresenceReport.protocolVersion << "\n"
+            << "host_transport_kind=" << sanitizeSingleLine(m_headlessHostPresenceReport.transportKind) << "\n"
+            << "host_connect_target_name=" << sanitizeSingleLine(m_headlessHostPresenceReport.connectTargetName) << "\n"
+            << "host_connect_lane_mode=" << sanitizeSingleLine(m_headlessHostPresenceReport.connectLaneMode) << "\n"
+            << "host_build_identity=" << sanitizeSingleLine(m_headlessHostPresenceReport.buildIdentity) << "\n"
+            << "host_instance_id=" << sanitizeSingleLine(m_headlessHostPresenceReport.hostInstanceId) << "\n"
+            << "host_session_id=" << sanitizeSingleLine(m_headlessHostPresenceReport.sessionId) << "\n"
+            << "host_restore_state=" << sanitizeSingleLine(m_headlessHostPresenceReport.restoreState) << "\n"
+            << "host_persistence_last_load_succeeded=" << (m_headlessHostPresenceReport.persistenceLastLoadSucceeded ? "yes" : "no") << "\n"
             << "protocol_lane_ready=" << (m_authoritativeHostProtocolReport.authorityLaneReady ? "yes" : "no") << "\n"
             << "snapshot_present=" << (m_authoritativeHostProtocolReport.snapshotPresent ? "yes" : "no") << "\n"
-            << "latency_harness_enabled=" << (m_replicationHarnessConfig.enabled ? "yes" : "no") << "\n"
-            << "intent_latency_ms=" << m_replicationHarnessConfig.intentLatencyMilliseconds << "\n"
-            << "ack_latency_ms=" << m_replicationHarnessConfig.acknowledgementLatencyMilliseconds << "\n"
-            << "snapshot_latency_ms=" << m_replicationHarnessConfig.snapshotLatencyMilliseconds << "\n"
-            << "jitter_ms=" << m_replicationHarnessConfig.jitterMilliseconds << "\n"
-            << "client_prediction_enabled=" << (diagnostics.clientPredictionEnabled ? "yes" : "no") << "\n"
-            << "last_snapshot_age_ms=" << diagnostics.lastSnapshotAgeMilliseconds << "\n"
-            << "last_snapshot_sequence=" << diagnostics.lastSnapshotSequence << "\n"
-            << "last_snapshot_simulation_ticks=" << diagnostics.lastSnapshotSimulationTicks << "\n"
-            << "last_position_drift_units=" << diagnostics.lastPositionDivergenceDistance << "\n"
-            << "last_path_divergence=" << (diagnostics.lastPathDivergence ? "yes" : "no") << "\n"
-            << "last_entity_divergence=" << (diagnostics.lastEntityDivergence ? "yes" : "no") << "\n"
-            << "corrections_applied=" << diagnostics.correctionsApplied << "\n"
-            << "divergence_events=" << diagnostics.divergenceEvents << "\n"
-            << "snapshot_read_failures=" << diagnostics.snapshotReadFailures << "\n"
-            << "last_snapshot_read_failed=" << (diagnostics.lastSnapshotReadFailed ? "yes" : "no") << "\n"
-            << "last_snapshot_read_error=" << sanitizeSingleLine(diagnostics.lastSnapshotReadError) << "\n"
-            << "persistence_active=" << (diagnostics.persistenceActive ? "yes" : "no") << "\n"
-            << "persistence_data_loaded=" << (diagnostics.persistenceDataLoaded ? "yes" : "no") << "\n"
-            << "persistence_schema_version=" << diagnostics.persistenceSchemaVersion << "\n"
-            << "persistence_loaded_schema_version=" << diagnostics.persistenceLoadedSchemaVersion << "\n"
-            << "persistence_migrated_from_version=" << diagnostics.persistenceMigratedFromSchemaVersion << "\n"
-            << "persistence_migration_applied=" << (diagnostics.persistenceMigrationApplied ? "yes" : "no") << "\n"
-            << "persistence_slot=" << sanitizeSingleLine(diagnostics.persistenceSlotName) << "\n"
-            << "persistence_save_count=" << diagnostics.persistenceSaveCount << "\n"
-            << "persistence_load_count=" << diagnostics.persistenceLoadCount << "\n"
-            << "persistence_last_save_succeeded=" << (diagnostics.lastPersistenceSaveSucceeded ? "yes" : "no") << "\n"
-            << "persistence_last_load_succeeded=" << (diagnostics.lastPersistenceLoadSucceeded ? "yes" : "no") << "\n"
-            << "persistence_last_save_epoch_ms=" << diagnostics.lastPersistenceSaveEpochMilliseconds << "\n"
-            << "persistence_last_load_epoch_ms=" << diagnostics.lastPersistenceLoadEpochMilliseconds << "\n"
-            << "persistence_last_error=" << sanitizeSingleLine(diagnostics.lastPersistenceError) << "\n"
-            << "host_pending_inbound_intents=" << m_headlessHostPresenceReport.pendingInboundIntentCount << "\n"
-            << "host_pending_outbound_acks=" << m_headlessHostPresenceReport.pendingOutboundAcknowledgementCount << "\n"
-            << "host_pending_snapshots=" << m_headlessHostPresenceReport.pendingSnapshotCount << "\n"
-            << "host_persistence_save_present=" << (m_headlessHostPresenceReport.persistenceSavePresent ? "yes" : "no") << "\n"
-            << "host_persistence_schema_version=" << m_headlessHostPresenceReport.persistenceSchemaVersion << "\n"
-            << "host_persistence_loaded_schema_version=" << m_headlessHostPresenceReport.persistenceLoadedSchemaVersion << "\n"
-            << "host_persistence_migrated_from_version=" << m_headlessHostPresenceReport.persistenceMigratedFromSchemaVersion << "\n"
-            << "host_persistence_save_count=" << m_headlessHostPresenceReport.persistenceSaveCount << "\n"
-            << "host_persistence_load_count=" << m_headlessHostPresenceReport.persistenceLoadCount << "\n"
-            << "host_persistence_last_save_succeeded=" << (m_headlessHostPresenceReport.persistenceLastSaveSucceeded ? "yes" : "no") << "\n"
-            << "host_persistence_last_load_succeeded=" << (m_headlessHostPresenceReport.persistenceLastLoadSucceeded ? "yes" : "no") << "\n"
-            << "host_persistence_last_save_epoch_ms=" << m_headlessHostPresenceReport.lastPersistenceSaveEpochMilliseconds << "\n"
-            << "host_persistence_last_load_epoch_ms=" << m_headlessHostPresenceReport.lastPersistenceLoadEpochMilliseconds << "\n"
-            << "player_health=" << diagnostics.playerHealth << "\n"
-            << "player_max_health=" << diagnostics.playerMaxHealth << "\n"
-            << "player_armor=" << diagnostics.playerArmor << "\n"
-            << "suit_integrity=" << diagnostics.suitIntegrity << "\n"
-            << "oxygen_seconds=" << diagnostics.oxygenSecondsRemaining << "\n"
-            << "radiation_dose=" << diagnostics.radiationDose << "\n"
-            << "toxic_exposure=" << diagnostics.toxicExposure << "\n"
-            << "current_hazard_label=" << sanitizeSingleLine(diagnostics.currentHazardLabel) << "\n"
-            << "current_terrain_consequence=" << sanitizeSingleLine(diagnostics.currentTerrainConsequence) << "\n"
-            << "inventory_stack_count=" << diagnostics.inventoryStackCount << "\n"
-            << "inventory_item_count=" << diagnostics.inventoryItemCount << "\n"
-            << "equipped_weapon=" << sanitizeSingleLine(diagnostics.equippedWeaponText) << "\n"
-            << "equipped_suit=" << sanitizeSingleLine(diagnostics.equippedSuitText) << "\n"
-            << "equipped_tool=" << sanitizeSingleLine(diagnostics.equippedToolText) << "\n"
-            << "loot_collections=" << diagnostics.lootCollections << "\n"
-            << "combat_active=" << (diagnostics.combatActive ? "yes" : "no") << "\n"
-            << "combat_label=" << sanitizeSingleLine(diagnostics.currentCombatLabel) << "\n"
-            << "combat_round=" << diagnostics.combatRoundNumber << "\n"
-            << "combat_ticks_remaining=" << diagnostics.combatTicksRemaining << "\n"
-            << "hostile_label=" << sanitizeSingleLine(diagnostics.hostileLabel) << "\n"
-            << "hostile_health=" << diagnostics.hostileHealth << "\n"
-            << "hostile_max_health=" << diagnostics.hostileMaxHealth << "\n"
-            << "combat_rounds_resolved=" << diagnostics.combatRoundsResolved << "\n"
-            << "encounter_wins=" << diagnostics.encounterWins << "\n"
-            << "encounters_survived=" << diagnostics.encountersSurvived << "\n"
-            << "mission_active=" << (diagnostics.missionActive ? "yes" : "no") << "\n"
-            << "mission_id=" << sanitizeSingleLine(diagnostics.activeMissionId) << "\n"
-            << "mission_phase=" << sanitizeSingleLine(diagnostics.missionPhaseText) << "\n"
-            << "mission_objective=" << sanitizeSingleLine(diagnostics.missionObjectiveText) << "\n"
-            << "mission_last_beat=" << sanitizeSingleLine(diagnostics.missionLastBeat) << "\n"
-            << "mission_advancement_count=" << diagnostics.missionAdvancementCount << "\n"
-            << "mission_complete=" << (diagnostics.missionComplete ? "yes" : "no") << "\n"
-            << "mission_gate_locked=" << (diagnostics.missionGateLocked ? "yes" : "no") << "\n"
-            << "ship_runtime_prep_ready=" << (diagnostics.shipRuntimePrepReady ? "yes" : "no") << "\n"
-            << "ship_active=" << (diagnostics.shipActive ? "yes" : "no") << "\n"
-            << "active_ship_id=" << sanitizeSingleLine(diagnostics.activeShipId) << "\n"
-            << "ship_name=" << sanitizeSingleLine(diagnostics.shipName) << "\n"
-            << "ship_boarded=" << (diagnostics.shipBoarded ? "yes" : "no") << "\n"
-            << "ship_docked=" << (diagnostics.shipDocked ? "yes" : "no") << "\n"
-            << "ship_power_online=" << (diagnostics.shipPowerOnline ? "yes" : "no") << "\n"
-            << "ship_airlock_pressurized=" << (diagnostics.shipAirlockPressurized ? "yes" : "no") << "\n"
-            << "ship_command_claimed=" << (diagnostics.shipCommandClaimed ? "yes" : "no") << "\n"
-            << "ship_launch_prep_ready=" << (diagnostics.shipLaunchPrepReady ? "yes" : "no") << "\n"
-            << "ship_ownership=" << sanitizeSingleLine(diagnostics.shipOwnershipText) << "\n"
-            << "ship_occupancy=" << sanitizeSingleLine(diagnostics.shipOccupancyText) << "\n"
-            << "ship_location=" << sanitizeSingleLine(diagnostics.shipLocationText) << "\n"
-            << "ship_last_beat=" << sanitizeSingleLine(diagnostics.shipLastBeat) << "\n"
-            << "ship_boarding_count=" << diagnostics.shipBoardingCount << "\n"
-            << "orbital_layer_active=" << (diagnostics.orbitalLayerActive ? "yes" : "no") << "\n"
-            << "orbital_departure_authorized=" << (diagnostics.orbitalDepartureAuthorized ? "yes" : "no") << "\n"
-            << "orbital_travel_in_progress=" << (diagnostics.orbitalTravelInProgress ? "yes" : "no") << "\n"
-            << "orbital_survey_orbit_reached=" << (diagnostics.orbitalSurveyOrbitReached ? "yes" : "no") << "\n"
-            << "orbital_relay_track_reached=" << (diagnostics.orbitalRelayTrackReached ? "yes" : "no") << "\n"
-            << "orbital_relay_platform_docked=" << (diagnostics.orbitalRelayPlatformDocked ? "yes" : "no") << "\n"
-            << "orbital_return_route_authorized=" << (diagnostics.orbitalReturnRouteAuthorized ? "yes" : "no") << "\n"
-            << "orbital_home_dock_reached=" << (diagnostics.orbitalHomeDockReached ? "yes" : "no") << "\n"
-            << "orbital_phase=" << sanitizeSingleLine(diagnostics.orbitalPhaseText) << "\n"
-            << "orbital_current_node=" << sanitizeSingleLine(diagnostics.orbitalCurrentNodeText) << "\n"
-            << "orbital_target_node=" << sanitizeSingleLine(diagnostics.orbitalTargetNodeText) << "\n"
-            << "orbital_rule=" << sanitizeSingleLine(diagnostics.orbitalRuleText) << "\n"
-            << "orbital_last_beat=" << sanitizeSingleLine(diagnostics.orbitalLastBeat) << "\n"
-            << "orbital_transfer_count=" << diagnostics.orbitalTransferCount << "\n"
-            << "orbital_travel_ticks_remaining=" << diagnostics.orbitalTravelTicksRemaining << "\n"
-            << "frontier_surface_active=" << (diagnostics.frontierSurfaceActive ? "yes" : "no") << "\n"
-            << "frontier_site=" << sanitizeSingleLine(diagnostics.frontierSiteText) << "\n"
-            << "player_runtime_context=" << sanitizeSingleLine(diagnostics.playerRuntimeContextText) << "\n";
+            << "room_title=" << sanitizeSingleLine(m_roomTitle) << "\n"
+            << "room_description=" << sanitizeSingleLine(m_roomDescription) << "\n"
+            << "prompt_line=" << sanitizeSingleLine(m_promptLine) << "\n"
+            << "command_bar=" << sanitizeSingleLine(buildCommandBarText()) << "\n"
+            << "command_echo=" << sanitizeSingleLine(m_commandEcho) << "\n"
+            << "client_prediction_enabled=" << (diagnostics.clientPredictionEnabled ? "yes" : "no") << "\n";
 
         const std::filesystem::path statusPath = m_runtimeBoundaryReport.logsDirectory / "client_replication_status.txt";
-        if (!writeTextFileAtomically(statusPath, output.str()))
+        writeTextFileAtomically(statusPath, output.str());
+    }
+
+    void GameLayer::updatePresentationRuntime()
+    {
+        m_roomTitle = buildRoomTitle();
+        m_roomDescription = buildRoomDescription();
+        m_promptLine = buildPromptLine();
+
+        const std::string newSignature = buildRoomSignature();
+        if (!newSignature.empty() && newSignature != m_roomSignature)
         {
-            appendClientTrace(m_runtimeBoundaryReport, "GameLayer::writeClientReplicationStatus failed to publish status file");
+            m_roomSignature = newSignature;
+            pushEvent(std::string("Room entry: ") + m_roomTitle);
+            pushEvent(m_roomDescription);
         }
+    }
+
+    void GameLayer::handleCommandBarInput()
+    {
+        if (consumeKeyEdge(VK_BACK))
+        {
+            if (!m_commandInput.empty())
+            {
+                m_commandInput.pop_back();
+            }
+        }
+
+        if (consumeKeyEdge(VK_SPACE))
+        {
+            appendTypedCharacter(' ');
+        }
+
+        for (int key = 'A'; key <= 'Z'; ++key)
+        {
+            if (consumeKeyEdge(key))
+            {
+                appendTypedCharacter(static_cast<char>(std::tolower(key)));
+            }
+        }
+
+        for (int key = '0'; key <= '9'; ++key)
+        {
+            if (consumeKeyEdge(key))
+            {
+                appendTypedCharacter(static_cast<char>(key));
+            }
+        }
+
+        if (consumeKeyEdge(VK_RETURN))
+        {
+            const std::string submitted = m_commandInput;
+            m_commandInput.clear();
+            executeCommandLine(submitted);
+        }
+    }
+
+    void GameLayer::executeCommandLine(const std::string& commandLine)
+    {
+        const std::string normalized = toLowerTrim(commandLine);
+        if (normalized.empty())
+        {
+            m_commandEcho = "No command entered.";
+            return;
+        }
+
+        if (normalized == "help")
+        {
+            m_commandEcho = "Commands: help, look, room, where, status, vitals, inspect, interact, move x y, clear.";
+            return;
+        }
+
+        if (normalized == "look" || normalized == "room" || normalized == "where")
+        {
+            m_commandEcho = std::string("Displayed room text for ") + m_roomTitle + ".";
+            pushEvent(std::string("Room: ") + m_roomTitle);
+            pushEvent(m_roomDescription);
+            return;
+        }
+
+        if (normalized == "status" || normalized == "vitals")
+        {
+            m_commandEcho = "Displayed vitals prompt.";
+            pushEvent(std::string("Vitals: ") + m_promptLine);
+            return;
+        }
+
+        if (normalized == "inspect")
+        {
+            const TileCoord target = m_hasSelectedTile
+                ? m_selectedTile
+                : m_simulationRuntime.worldState().world().worldToTile(m_simulationRuntime.authoritativePlayerPosition());
+            submitTypedIntent(SimulationIntentType::InspectTile, target, "Failed to queue inspect intent.");
+            m_commandEcho = "Inspect queued.";
+            return;
+        }
+
+        if (normalized == "interact")
+        {
+            const TileCoord target = m_hasSelectedTile
+                ? m_selectedTile
+                : m_simulationRuntime.worldState().world().worldToTile(m_simulationRuntime.authoritativePlayerPosition());
+            submitTypedIntent(SimulationIntentType::InteractTile, target, "Failed to queue interact intent.");
+            m_commandEcho = "Interact queued.";
+            return;
+        }
+
+        if (normalized == "clear")
+        {
+            m_commandEcho = "Command reply cleared.";
+            return;
+        }
+
+        if (normalized.rfind("move ", 0) == 0)
+        {
+            std::istringstream input(normalized.substr(5));
+            int x = 0;
+            int y = 0;
+            if (input >> x >> y)
+            {
+                TileCoord target{ x, y };
+                m_selectedTile = target;
+                m_hasSelectedTile = true;
+                m_actionTargetTile = target;
+                m_hasActionTargetTile = true;
+                submitTypedIntent(SimulationIntentType::MoveToTile, target, "Failed to queue move intent.");
+                m_commandEcho = "Move queued.";
+                return;
+            }
+            m_commandEcho = "Move syntax: move <x> <y>";
+            return;
+        }
+
+        m_commandEcho = std::string("Unknown command: ") + normalized + ". Type 'help'.";
+    }
+
+    void GameLayer::submitTypedIntent(SimulationIntentType type, TileCoord target, const std::string& queueFailureMessage)
+    {
+        const uint64_t queuedSequence = m_simulationRuntime.enqueueIntent(type, target);
+        if (queuedSequence == 0)
+        {
+            pushEvent(queueFailureMessage);
+            return;
+        }
+
+        if (!m_useHeadlessHostAuthority)
+        {
+            return;
+        }
+
+        SimulationIntent intent{};
+        intent.sequence = queuedSequence;
+        intent.type = type;
+        intent.target = target;
+
+        std::string protocolError;
+        if (AuthoritativeHostProtocol::writeIntentRequest(m_runtimeBoundaryReport, intent, protocolError))
+        {
+            return;
+        }
+
+        SimulationIntentAck rejection{};
+        rejection.sequence = queuedSequence;
+        rejection.type = type;
+        rejection.target = target;
+        rejection.result = SimulationIntentAckResult::Rejected;
+        rejection.reason = std::string("host queue write failed: ") + protocolError;
+        m_simulationRuntime.applyAcknowledgement(rejection);
+        pushEvent(std::string("Failed to submit intent to headless host: ") + protocolError);
+    }
+
+    bool GameLayer::consumeKeyEdge(int virtualKey)
+    {
+        if (virtualKey < 0 || virtualKey >= static_cast<int>(m_keyWasDown.size()))
+        {
+            return false;
+        }
+
+        const bool down = (GetAsyncKeyState(virtualKey) & 0x8000) != 0;
+        const bool pressed = down && !m_keyWasDown[static_cast<size_t>(virtualKey)];
+        m_keyWasDown[static_cast<size_t>(virtualKey)] = down;
+        return pressed;
+    }
+
+    void GameLayer::appendTypedCharacter(char character)
+    {
+        if (m_commandInput.size() < 64u)
+        {
+            m_commandInput.push_back(character);
+        }
+    }
+
+    std::string GameLayer::buildRoomSignature() const
+    {
+        const SharedSimulationDiagnostics& diagnostics = m_simulationRuntime.diagnostics();
+        const WorldState& worldState = m_simulationRuntime.worldState();
+        const TileCoord playerTile = worldState.world().worldToTile(m_simulationRuntime.authoritativePlayerPosition());
+        std::ostringstream signature;
+        signature << diagnostics.playerRuntimeContextText << '|' << diagnostics.missionPhaseText << '|' << playerTile.x << ',' << playerTile.y;
+        return signature.str();
+    }
+
+    std::string GameLayer::buildRoomTitle() const
+    {
+        const SharedSimulationDiagnostics& diagnostics = m_simulationRuntime.diagnostics();
+        const WorldState& worldState = m_simulationRuntime.worldState();
+        const TileCoord playerTile = worldState.world().worldToTile(m_simulationRuntime.authoritativePlayerPosition());
+
+        if (diagnostics.orbitalLayerActive)
+        {
+            return "Orbital Approach";
+        }
+
+        if (diagnostics.shipBoarded)
+        {
+            return diagnostics.shipCommandClaimed
+                ? "Responder Shuttle Khepri - Command Cabin"
+                : "Responder Shuttle Khepri - Docked Interior";
+        }
+
+        if (diagnostics.frontierSurfaceActive)
+        {
+            return "Dust Frontier Landing Pad";
+        }
+
+        if (const WorldAuthoringHotspot* hotspot = worldState.authoringHotspotAt(playerTile))
+        {
+            if (!hotspot->label.empty())
+            {
+                return hotspot->label;
+            }
+        }
+
+        return regionTitle(worldState.regionTag(playerTile));
+    }
+
+    std::string GameLayer::buildRoomDescription() const
+    {
+        const SharedSimulationDiagnostics& diagnostics = m_simulationRuntime.diagnostics();
+        const WorldState& worldState = m_simulationRuntime.worldState();
+        const TileCoord playerTile = worldState.world().worldToTile(m_simulationRuntime.authoritativePlayerPosition());
+
+        std::ostringstream description;
+        if (diagnostics.orbitalLayerActive)
+        {
+            description << "The shuttle sits inside an interim hosted-bootstrap orbital lane with route logic surfaced through the current navigation phase.";
+            if (!diagnostics.orbitalRuleText.empty())
+            {
+                description << ' ' << diagnostics.orbitalRuleText;
+            }
+            return description.str();
+        }
+
+        if (diagnostics.shipBoarded)
+        {
+            description << "A cramped responder-shuttle cabin wraps the player in steel, harness webbing, helm hardware, and a navigation console.";
+            return description.str();
+        }
+
+        if (diagnostics.frontierSurfaceActive)
+        {
+            description << "Dust Frontier's landing pad sits under hard vacuum glare and relay dust, with the return shuttle acting as the only credible way back.";
+            return description.str();
+        }
+
+        description << regionDescription(worldState.regionTag(playerTile));
+        if (const WorldAuthoringHotspot* hotspot = worldState.authoringHotspotAt(playerTile))
+        {
+            if (!hotspot->summary.empty())
+            {
+                description << ' ' << hotspot->summary;
+            }
+        }
+        description << " Current objective: " << diagnostics.missionObjectiveText;
+        return description.str();
+    }
+
+    std::string GameLayer::buildPromptLine() const
+    {
+        const SharedSimulationDiagnostics& diagnostics = m_simulationRuntime.diagnostics();
+        std::ostringstream prompt;
+        prompt
+            << "HP " << diagnostics.playerHealth << "/" << diagnostics.playerMaxHealth
+            << " | ARM " << diagnostics.playerArmor
+            << " | O2 " << static_cast<int>(diagnostics.oxygenSecondsRemaining) << "s"
+            << " | PHASE " << diagnostics.missionPhaseText;
+        return prompt.str();
+    }
+
+    std::string GameLayer::buildCommandBarText() const
+    {
+        return std::string("> ") + m_commandInput + '_';
     }
 
     RECT GameLayer::getClientRect() const

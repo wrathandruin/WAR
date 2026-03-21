@@ -3,6 +3,8 @@
 #include <exception>
 #include <string>
 
+#include <windows.h>
+
 #include "engine/core/LocalDemoDiagnostics.h"
 #include "engine/core/RuntimePaths.h"
 #include "engine/core/Timer.h"
@@ -11,6 +13,39 @@
 
 namespace war
 {
+    namespace
+    {
+        std::wstring readEnvironmentWide(const wchar_t* variableName)
+        {
+            const DWORD requiredLength = GetEnvironmentVariableW(variableName, nullptr, 0);
+            if (requiredLength == 0)
+            {
+                return {};
+            }
+
+            std::wstring buffer(static_cast<size_t>(requiredLength), L'\0');
+            const DWORD writtenLength = GetEnvironmentVariableW(variableName, buffer.data(), requiredLength);
+            if (writtenLength == 0)
+            {
+                return {};
+            }
+
+            buffer.resize(static_cast<size_t>(writtenLength));
+            return buffer;
+        }
+
+        std::wstring windowTitleText()
+        {
+            const std::wstring connectTargetName = readEnvironmentWide(L"WAR_CONNECT_TARGET_NAME");
+            if (connectTargetName.empty())
+            {
+                return L"WAR - Milestone 45";
+            }
+
+            return std::wstring(L"WAR - Milestone 45 [") + connectTargetName + L"]";
+        }
+    }
+
     int Application::run(const std::wstring& commandLine)
     {
         try
@@ -22,17 +57,14 @@ namespace war
             LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "client_runtime_trace.txt", "Application::run entered");
 
             Win32Window window;
-            if (!window.create(1600, 900, L"WAR - Milestone 44"))
+            if (!window.create(1600, 900, windowTitleText().c_str()))
             {
                 LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "client_runtime_trace.txt", "Application::run window.create failed");
                 return -1;
             }
 
-            LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "client_runtime_trace.txt", "Application::run window created");
-
             GameLayer game;
             game.initialize(window);
-            LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "client_runtime_trace.txt", "Application::run game initialized");
 
             Timer timer;
             timer.reset();
@@ -40,24 +72,19 @@ namespace war
             while (!window.shouldClose())
             {
                 window.pollEvents();
-
                 const float dt = timer.tick();
                 game.update(dt);
                 game.render();
             }
 
             game.shutdown();
-            LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "client_runtime_trace.txt", "Application::run completed cleanly");
             return 0;
         }
         catch (const std::exception& exception)
         {
             RuntimeBoundaryReport runtimeBoundaryReport = RuntimePaths::buildReport();
             RuntimePaths::ensureRuntimeDirectories(runtimeBoundaryReport);
-            LocalDemoDiagnostics::appendTraceLine(
-                runtimeBoundaryReport,
-                "client_runtime_trace.txt",
-                std::string("Application::run exception: ") + exception.what());
+            LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "client_runtime_trace.txt", std::string("Application::run exception: ") + exception.what());
             return -2;
         }
         catch (...)

@@ -197,7 +197,8 @@ This is for art that must drop into the current client immediately.
 
 Current hard constraint:
 
-- `assets/textures/world_atlas.bmp`
+- canonical active atlas: `assets/textures/runtime/active/world_atlas.bmp`
+- compatibility alias retained: `assets/textures/world_atlas.bmp`
 - size: `320 x 128`
 - grid: `5 x 2`
 - cell size: `64 x 64`
@@ -546,7 +547,8 @@ Purpose:
 
 Deliver exactly:
 
-- `world_atlas.bmp`
+- `runtime/active/world_atlas.bmp`
+- compatibility alias: `world_atlas.bmp`
 - size: `320 x 128`
 - grid: `5 x 2`
 - `64 x 64` cells

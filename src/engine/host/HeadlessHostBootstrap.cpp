@@ -30,10 +30,7 @@ namespace war
         {
             RuntimeBoundaryReport runtimeBoundaryReport = RuntimePaths::buildReport();
             RuntimePaths::ensureRuntimeDirectories(runtimeBoundaryReport);
-            LocalDemoDiagnostics::appendTraceLine(
-                runtimeBoundaryReport,
-                "headless_host_trace.txt",
-                std::string("HeadlessHostBootstrap exception: ") + exception.what());
+            LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "headless_host_trace.txt", std::string("HeadlessHostBootstrap exception: ") + exception.what());
             return 2;
         }
         catch (...)

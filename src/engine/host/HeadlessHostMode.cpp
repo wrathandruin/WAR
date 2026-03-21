@@ -11,10 +11,10 @@
 
 #include <windows.h>
 
+#include "engine/core/LocalDemoDiagnostics.h"
 #include "engine/host/AuthoritativeHostProtocol.h"
 #include "engine/host/HeadlessHostPresence.h"
 #include "engine/host/ReplicationHarness.h"
-#include "engine/core/LocalDemoDiagnostics.h"
 #include "engine/simulation/SimulationRuntime.h"
 
 namespace war
@@ -100,12 +100,11 @@ namespace war
         try
         {
             LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "headless_host_trace.txt", "HeadlessHostMode::run entered");
-
             SimulationRuntime simulationRuntime{};
             simulationRuntime.initializeForLocalAuthority();
+            LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "headless_host_trace.txt", "HeadlessHostMode initialized simulation");
             simulationRuntime.setAuthorityMode(false, true, false);
             simulationRuntime.setPersistenceState(true, "primary");
-            LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "headless_host_trace.txt", "HeadlessHostMode initialized simulation");
 
             const std::filesystem::path savePath = runtimeBoundaryReport.savesDirectory / "authoritative_world_primary.txt";
             std::string persistenceError;
@@ -120,33 +119,12 @@ namespace war
                         persistedSnapshot.persistenceLoadedSchemaVersion,
                         persistedSnapshot.persistenceMigratedFromSchemaVersion,
                         ReplicationHarness::currentEpochMilliseconds());
-                    simulationRuntime.appendEvent("Authoritative save restored on host boot.");
-                    if (persistedSnapshot.persistenceMigratedFromSchemaVersion > 0)
-                    {
-                        simulationRuntime.appendEvent(
-                            std::string("Persistence migration applied from schema ")
-                            + std::to_string(persistedSnapshot.persistenceMigratedFromSchemaVersion)
-                            + " into schema "
-                            + std::to_string(kCurrentPersistenceSchemaVersion));
-                    }
                 }
                 else
                 {
                     simulationRuntime.notePersistenceFailure(loadError, true);
-                    simulationRuntime.appendEvent(std::string("Persisted load failed: ") + loadError);
                 }
             }
-            else
-            {
-                if (!persistenceError.empty() && persistenceError != "Authoritative snapshot not present.")
-                {
-                    simulationRuntime.notePersistenceFailure(persistenceError, true);
-                }
-                simulationRuntime.appendEvent("No authoritative save restored on host boot.");
-            }
-
-            simulationRuntime.appendEvent("Headless host authoritative mission lane active");
-            simulationRuntime.appendEvent("Docking / landing / cross-layer transition persistence / return loop active for M44");
 
             AuthoritativeHostProtocolReport protocolReport = AuthoritativeHostProtocol::buildReport(runtimeBoundaryReport);
             AuthoritativeHostProtocol::ensureDirectories(protocolReport);
@@ -161,15 +139,12 @@ namespace war
             const uint32_t processId = GetCurrentProcessId();
 
             appendLogLine(logPath, "WARServer Headless Authoritative Host");
-            appendLogLine(logPath, std::string("PID: ") + std::to_string(processId));
-            appendLogLine(logPath, std::string("Tick ms: ") + std::to_string(options.tickMilliseconds));
+            appendLogLine(logPath, std::string("Build identity: ") + localDemoDiagnosticsReport.buildIdentity);
+            appendLogLine(logPath, std::string("Build channel: ") + localDemoDiagnosticsReport.buildChannel);
+            appendLogLine(logPath, std::string("Connect target: ") + localDemoDiagnosticsReport.connectTargetName);
+            appendLogLine(logPath, std::string("Transport: ") + localDemoDiagnosticsReport.connectTransport);
+            appendLogLine(logPath, std::string("Lane mode: ") + localDemoDiagnosticsReport.connectLaneMode);
             appendLogLine(logPath, std::string("Runtime root: ") + RuntimePaths::displayPath(runtimeBoundaryReport.runtimeRoot));
-            appendLogLine(logPath, std::string("Startup report: ") + RuntimePaths::displayPath(localDemoDiagnosticsReport.startupReportPath));
-            appendLogLine(logPath, std::string("Save path: ") + RuntimePaths::displayPath(savePath));
-            appendLogLine(logPath, std::string("Intent queue: ") + protocolReport.intentQueueDirectory.generic_string());
-            appendLogLine(logPath, std::string("Ack queue: ") + protocolReport.acknowledgementQueueDirectory.generic_string());
-            appendLogLine(logPath, std::string("Snapshot path: ") + protocolReport.snapshotPath.generic_string());
-            appendLogLine(logPath, "State: running");
             LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "headless_host_trace.txt", "HeadlessHostMode initial log lines written");
 
             std::deque<PendingIntentArrival> pendingIntentArrivals{};
@@ -247,10 +222,7 @@ namespace war
                     pendingAcknowledgementDeliveries.pop_front();
 
                     std::string ackError;
-                    if (!AuthoritativeHostProtocol::writeAcknowledgement(runtimeBoundaryReport, acknowledgement, ackError))
-                    {
-                        appendLogLine(logPath, std::string("Ack write failed: ") + ackError);
-                    }
+                    (void)AuthoritativeHostProtocol::writeAcknowledgement(runtimeBoundaryReport, acknowledgement, ackError);
                 }
 
                 if (!pendingSnapshotDelivery.has_value())
@@ -269,10 +241,7 @@ namespace war
                 if (pendingSnapshotDelivery.has_value() && pendingSnapshotDelivery->dueEpochMilliseconds <= nowEpochMilliseconds)
                 {
                     std::string snapshotError;
-                    if (!AuthoritativeHostProtocol::writeAuthoritativeSnapshot(runtimeBoundaryReport, pendingSnapshotDelivery->snapshot, snapshotError))
-                    {
-                        appendLogLine(logPath, std::string("Snapshot write failed: ") + snapshotError);
-                    }
+                    (void)AuthoritativeHostProtocol::writeAuthoritativeSnapshot(runtimeBoundaryReport, pendingSnapshotDelivery->snapshot, snapshotError);
                     pendingSnapshotDelivery.reset();
                 }
 
@@ -286,14 +255,13 @@ namespace war
                     saveSnapshot.persistenceEpochMilliseconds = nowEpochMilliseconds;
 
                     std::string saveError;
-                    if (!AuthoritativeHostProtocol::writeAuthoritativeSnapshotToPath(savePath, saveSnapshot, saveError))
+                    if (AuthoritativeHostProtocol::writeAuthoritativeSnapshotToPath(savePath, saveSnapshot, saveError))
                     {
-                        simulationRuntime.notePersistenceFailure(saveError, false);
-                        appendLogLine(logPath, std::string("Autosave failed: ") + saveError);
+                        simulationRuntime.notePersistenceSave(kCurrentPersistenceSchemaVersion, nowEpochMilliseconds);
                     }
                     else
                     {
-                        simulationRuntime.notePersistenceSave(kCurrentPersistenceSchemaVersion, nowEpochMilliseconds);
+                        simulationRuntime.notePersistenceFailure(saveError, false);
                     }
                     nextAutosave = nowSteady + autosaveDuration;
                 }
@@ -325,33 +293,6 @@ namespace war
                 0u,
                 0u);
 
-            AuthoritativeWorldSnapshot finalSnapshot =
-                simulationRuntime.buildAuthoritativeSnapshot(simulationRuntime.diagnostics().lastIntentSequence);
-            finalSnapshot.publishedEpochMilliseconds = ReplicationHarness::currentEpochMilliseconds();
-            finalSnapshot.persistenceSchemaVersion = kCurrentPersistenceSchemaVersion;
-            finalSnapshot.playerActorState.lastSaveEpochMilliseconds = finalSnapshot.publishedEpochMilliseconds;
-            finalSnapshot.persistenceEpochMilliseconds = finalSnapshot.publishedEpochMilliseconds;
-
-            std::string snapshotError;
-            (void)AuthoritativeHostProtocol::writeAuthoritativeSnapshot(runtimeBoundaryReport, finalSnapshot, snapshotError);
-            std::string saveError;
-            if (AuthoritativeHostProtocol::writeAuthoritativeSnapshotToPath(savePath, finalSnapshot, saveError))
-            {
-                simulationRuntime.notePersistenceSave(kCurrentPersistenceSchemaVersion, finalSnapshot.publishedEpochMilliseconds);
-            }
-            else
-            {
-                simulationRuntime.notePersistenceFailure(saveError, false);
-            }
-
-            appendLogLine(logPath, std::string("Simulation ticks: ") + std::to_string(simulationRuntime.diagnostics().simulationTicks));
-            appendLogLine(logPath, std::string("Mission phase: ") + simulationRuntime.diagnostics().missionPhaseText);
-            appendLogLine(logPath, std::string("Mission complete: ") + (simulationRuntime.diagnostics().missionComplete ? "yes" : "no"));
-            appendLogLine(logPath, std::string("Combat rounds resolved: ") + std::to_string(simulationRuntime.diagnostics().combatRoundsResolved));
-            appendLogLine(logPath, std::string("Persistence saves: ") + std::to_string(simulationRuntime.diagnostics().persistenceSaveCount));
-            appendLogLine(logPath, std::string("Persistence loads: ") + std::to_string(simulationRuntime.diagnostics().persistenceLoadCount));
-            appendLogLine(logPath, "State: stopped");
-            LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "headless_host_trace.txt", "HeadlessHostMode completed cleanly");
             return 0;
         }
         catch (const std::exception& exception)
@@ -365,7 +306,7 @@ namespace war
         catch (...)
         {
             LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "headless_host_trace.txt", "HeadlessHostMode unknown exception");
-            return 5;
+            return 4;
         }
     }
 }

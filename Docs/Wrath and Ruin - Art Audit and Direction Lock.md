@@ -107,7 +107,8 @@ The current runtime art lane is still limited:
 
 - texture loader only supports uncompressed Windows BMP
 - supported BMP bit depths are `24-bit` and `32-bit`
-- current atlas path is `assets/textures/world_atlas.bmp`
+- canonical active atlas path is `assets/textures/runtime/active/world_atlas.bmp`
+- compatibility alias is retained at `assets/textures/world_atlas.bmp`
 - current atlas size is `320 x 128`
 - current atlas layout is `5 x 2`
 - current atlas cell size is `64 x 64`

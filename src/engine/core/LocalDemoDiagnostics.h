@@ -1,8 +1,8 @@
 #pragma once
 
 #include <filesystem>
-#include <string_view>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "engine/core/RuntimePaths.h"
@@ -13,14 +13,22 @@ namespace war
     {
         std::string buildConfiguration;
         std::string buildTimestamp;
+        std::string buildIdentity = "unknown";
+        std::string buildChannel = "internal-alpha";
+        std::string connectTargetName = "localhost-fallback";
+        std::string connectTransport = "file-backed-localhost-fallback";
+        std::string connectLaneMode = "localhost-fallback";
+        std::string runtimeRootDisplay = "unresolved";
 
         bool repoPackagingScriptsReady = false;
         bool packageAssetsReady = false;
         bool packageRuntimeReady = false;
         bool launchScriptPresent = false;
         bool smokeScriptPresent = false;
+        bool m45ValidationScriptPresent = false;
         bool packagedLaneReady = false;
         bool startupReportWritten = false;
+        bool runtimeRootOverrideActive = false;
 
         std::filesystem::path startupReportPath;
         std::filesystem::path suggestedPackageRoot;

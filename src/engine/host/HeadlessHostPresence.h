@@ -25,6 +25,7 @@ namespace war
         bool persistenceLastSaveSucceeded = false;
         bool persistenceLastLoadSucceeded = false;
         bool persistenceMigrationApplied = false;
+        bool persistenceRestoreVisible = false;
 
         uint64_t heartbeatAgeMilliseconds = 0;
         uint64_t advertisedSimulationTicks = 0;
@@ -39,11 +40,23 @@ namespace war
         uint32_t persistenceSchemaVersion = 0;
         uint32_t persistenceLoadedSchemaVersion = 0;
         uint32_t persistenceMigratedFromSchemaVersion = 0;
+        uint32_t protocolVersion = 0;
 
         std::string hostMode = "offline";
         std::string hostState = "unseen";
         std::string hostPid = "none";
         std::string persistenceSlotName = "primary";
+        std::string transportKind = "unknown";
+        std::string connectTargetName = "unresolved";
+        std::string connectLaneMode = "unresolved";
+        std::string buildConfiguration = "unknown";
+        std::string buildTimestamp = "unknown";
+        std::string buildIdentity = "unknown";
+        std::string buildChannel = "unknown";
+        std::string hostInstanceId = "none";
+        std::string sessionId = "none";
+        std::string runtimeRootPath = "unresolved";
+        std::string restoreState = "unseen";
         std::filesystem::path statusFilePath;
         std::filesystem::path persistentSavePath;
         ReplicationHarnessConfig harnessConfig{};

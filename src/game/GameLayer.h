@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <memory>
 #include <string>
 
@@ -37,9 +38,25 @@ namespace war
         void applyAuthoringHotkeys();
         void refreshAuthorityMode();
         void pollAuthoritativeHostResponses();
+        void updateConnectionTelemetry();
+        [[nodiscard]] bool hostConnectionCompatible(std::string& outReason) const;
         void persistReplicationHarnessConfig();
         void updateReplicationDiagnostics();
         void writeClientReplicationStatus() const;
+        void updatePresentationRuntime();
+        void handleCommandBarInput();
+        void executeCommandLine(const std::string& commandLine);
+        void submitTypedIntent(
+            SimulationIntentType type,
+            TileCoord target,
+            const std::string& queueFailureMessage);
+        [[nodiscard]] bool consumeKeyEdge(int virtualKey);
+        void appendTypedCharacter(char character);
+        [[nodiscard]] std::string buildRoomSignature() const;
+        [[nodiscard]] std::string buildRoomTitle() const;
+        [[nodiscard]] std::string buildRoomDescription() const;
+        [[nodiscard]] std::string buildPromptLine() const;
+        [[nodiscard]] std::string buildCommandBarText() const;
 
         [[nodiscard]] RECT getClientRect() const;
 
@@ -71,8 +88,29 @@ namespace war
         uint64_t m_lastAppliedSnapshotPublishedEpochMilliseconds = 0;
         uint64_t m_lastAppliedSnapshotSimulationTicks = 0;
         uint64_t m_lastAppliedSnapshotSequence = 0;
+        uint64_t m_clientStartedEpochMilliseconds = 0;
+        uint32_t m_expectedProtocolVersion = 2;
         bool m_useHeadlessHostAuthority = false;
+        bool m_connectAttemptLogged = false;
+        bool m_connectionEstablished = false;
+        bool m_connectFailureLogged = false;
         std::string m_lastSnapshotReadError{};
+        std::string m_clientInstanceId = "uninitialized";
+        std::string m_clientSessionId = "uninitialized";
+        std::string m_connectState = "uninitialized";
+        std::string m_connectFailureReason = "none";
+        std::string m_lastConnectEvent = "none";
+        std::string m_lastDisconnectReason = "none";
+        std::string m_lastHostSessionId = "none";
+        std::string m_lastConnectedHostInstanceId = "none";
+
+        std::string m_roomSignature{};
+        std::string m_roomTitle{};
+        std::string m_roomDescription{};
+        std::string m_promptLine{};
+        std::string m_commandInput{};
+        std::string m_commandEcho = "Type 'help' and press Enter.";
+        std::array<bool, 256> m_keyWasDown{};
 
         bool m_overlayKeyWasDown = false;
         bool m_hotspotKeyWasDown = false;

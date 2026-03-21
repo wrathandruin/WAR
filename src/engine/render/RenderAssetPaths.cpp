@@ -1,6 +1,7 @@
 #include "engine/render/RenderAssetPaths.h"
 
 #include <filesystem>
+#include <initializer_list>
 
 #include "engine/core/RuntimePaths.h"
 
@@ -22,15 +23,47 @@ namespace war::RenderAssetPaths
 {
     namespace
     {
-        std::string assetPathString(const std::filesystem::path& relativePath)
+        std::filesystem::path resolvedAssetRoot()
         {
             const RuntimeBoundaryReport runtimeBoundaryReport = RuntimePaths::buildReport();
             if (runtimeBoundaryReport.assetRootResolved)
             {
-                return (runtimeBoundaryReport.assetRoot / relativePath).generic_string();
+                return runtimeBoundaryReport.assetRoot;
+            }
+
+            return std::filesystem::path("assets");
+        }
+
+        std::string assetPathString(const std::filesystem::path& relativePath)
+        {
+            const std::filesystem::path assetRoot = resolvedAssetRoot();
+            if (!assetRoot.empty())
+            {
+                return (assetRoot / relativePath).generic_string();
             }
 
             return (std::filesystem::path("assets") / relativePath).generic_string();
+        }
+
+        std::string firstExistingAssetPath(std::initializer_list<std::filesystem::path> relativePaths)
+        {
+            const std::filesystem::path assetRoot = resolvedAssetRoot();
+            for (const std::filesystem::path& relativePath : relativePaths)
+            {
+                const std::filesystem::path candidate = assetRoot / relativePath;
+                std::error_code error;
+                if (std::filesystem::exists(candidate, error) && std::filesystem::is_regular_file(candidate, error))
+                {
+                    return candidate.generic_string();
+                }
+            }
+
+            if (!relativePaths.size())
+            {
+                return {};
+            }
+
+            return assetPathString(*relativePaths.begin());
         }
     }
 
@@ -108,6 +141,9 @@ namespace war::RenderAssetPaths
 
     std::string spriteAtlasTexturePath()
     {
-        return textureAssetPath("world_atlas.bmp");
+        return firstExistingAssetPath({
+            std::filesystem::path("textures") / "runtime" / "active" / "world_atlas.bmp",
+            std::filesystem::path("textures") / "world_atlas.bmp",
+        });
     }
 }

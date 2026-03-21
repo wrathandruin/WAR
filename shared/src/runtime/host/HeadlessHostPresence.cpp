@@ -15,11 +15,12 @@ namespace war
     namespace
     {
         using StringMap = std::unordered_map<std::string, std::string>;
+        constexpr uint32_t kCurrentProtocolVersion = 2u;
 
         bool readTextFileForAtomicReplace(const std::filesystem::path& path, std::string& outContents)
         {
             outContents.clear();
-#if defined(_WIN32)
+        #if defined(_WIN32)
             HANDLE handle = CreateFileW(
                 path.c_str(),
                 GENERIC_READ,
@@ -54,7 +55,7 @@ namespace war
 
             outContents.assign(buffer.data(), buffer.data() + bytesRead);
             return true;
-#else
+        #else
             std::ifstream input(path, std::ios::in);
             if (!input.is_open())
             {
@@ -65,7 +66,7 @@ namespace war
             stream << input.rdbuf();
             outContents = stream.str();
             return static_cast<bool>(input) || input.eof();
-#endif
+        #endif
         }
 
         StringMap parseKeyValueText(const std::string& contents)
@@ -162,6 +163,118 @@ namespace war
 
             return false;
         }
+
+        std::wstring readEnvironmentWide(const wchar_t* variableName)
+        {
+            const DWORD requiredLength = GetEnvironmentVariableW(variableName, nullptr, 0);
+            if (requiredLength == 0)
+            {
+                return {};
+            }
+
+            std::wstring buffer(static_cast<size_t>(requiredLength), L'\0');
+            const DWORD writtenLength = GetEnvironmentVariableW(variableName, buffer.data(), requiredLength);
+            if (writtenLength == 0)
+            {
+                return {};
+            }
+
+            buffer.resize(static_cast<size_t>(writtenLength));
+            return buffer;
+        }
+
+        std::string narrowText(const std::wstring& value)
+        {
+            if (value.empty())
+            {
+                return {};
+            }
+
+            const int requiredBytes = WideCharToMultiByte(
+                CP_UTF8,
+                0,
+                value.c_str(),
+                static_cast<int>(value.size()),
+                nullptr,
+                0,
+                nullptr,
+                nullptr);
+            if (requiredBytes <= 0)
+            {
+                return {};
+            }
+
+            std::string result(static_cast<size_t>(requiredBytes), '\0');
+            const int writtenBytes = WideCharToMultiByte(
+                CP_UTF8,
+                0,
+                value.c_str(),
+                static_cast<int>(value.size()),
+                result.data(),
+                requiredBytes,
+                nullptr,
+                nullptr);
+            if (writtenBytes <= 0)
+            {
+                return {};
+            }
+
+            result.resize(static_cast<size_t>(writtenBytes));
+            return result;
+        }
+
+        std::string environmentText(const wchar_t* variableName)
+        {
+            return narrowText(readEnvironmentWide(variableName));
+        }
+
+        std::string buildConfigurationText()
+        {
+        #if defined(_DEBUG)
+            return "Debug";
+        #else
+            return "Release";
+        #endif
+        }
+
+        std::string buildTimestampText()
+        {
+            return std::string(__DATE__) + " " + std::string(__TIME__);
+        }
+
+        uint64_t currentSystemEpochMilliseconds()
+        {
+            using namespace std::chrono;
+            return static_cast<uint64_t>(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
+        }
+
+        std::string stableHostInstanceId(uint32_t processId)
+        {
+            static std::string cachedId{};
+            if (cachedId.empty())
+            {
+                cachedId = std::string("host-")
+                    + std::to_string(processId)
+                    + "-"
+                    + std::to_string(currentSystemEpochMilliseconds());
+            }
+
+            return cachedId;
+        }
+
+        std::string stableSessionId(uint32_t processId)
+        {
+            static std::string cachedId{};
+            if (cachedId.empty())
+            {
+                cachedId = std::string("session-")
+                    + std::to_string(processId)
+                    + "-"
+                    + std::to_string(currentSystemEpochMilliseconds());
+            }
+
+            return cachedId;
+        }
     }
 
     HeadlessHostPresenceReport HeadlessHostPresence::buildReport(const RuntimeBoundaryReport& runtimeBoundaryReport)
@@ -192,6 +305,7 @@ namespace war
         uint64_t pendingOutboundAcknowledgementCount = 0;
         uint64_t pendingSnapshotCount = 0;
         uint64_t heartbeatEpochMilliseconds = 0;
+        uint64_t protocolVersion = 0;
         bool authorityHostAdvertised = false;
         bool fixedStepEnabled = false;
         bool latencyHarnessEnabled = false;
@@ -205,6 +319,18 @@ namespace war
         uint64_t jitter = 0;
 
         malformed |= !tryParseUnsigned(values, "status_version", statusVersion);
+        malformed |= !tryParseUnsigned(values, "protocol_version", protocolVersion);
+        malformed |= !tryParseString(values, "transport_kind", report.transportKind);
+        malformed |= !tryParseString(values, "connect_target_name", report.connectTargetName);
+        malformed |= !tryParseString(values, "connect_lane_mode", report.connectLaneMode);
+        malformed |= !tryParseString(values, "build_configuration", report.buildConfiguration);
+        malformed |= !tryParseString(values, "build_timestamp", report.buildTimestamp);
+        malformed |= !tryParseString(values, "build_identity", report.buildIdentity);
+        malformed |= !tryParseString(values, "build_channel", report.buildChannel);
+        malformed |= !tryParseString(values, "host_instance_id", report.hostInstanceId);
+        malformed |= !tryParseString(values, "session_id", report.sessionId);
+        malformed |= !tryParseString(values, "runtime_root_path", report.runtimeRootPath);
+        malformed |= !tryParseString(values, "restore_state", report.restoreState);
         malformed |= !tryParseString(values, "mode", report.hostMode);
         malformed |= !tryParseString(values, "state", report.hostState);
         malformed |= !tryParseString(values, "pid", report.hostPid);
@@ -224,6 +350,7 @@ namespace war
         malformed |= !tryParseUnsigned(values, "pending_outbound_acks", pendingOutboundAcknowledgementCount);
         malformed |= !tryParseUnsigned(values, "pending_snapshots", pendingSnapshotCount);
 
+        report.protocolVersion = static_cast<uint32_t>(protocolVersion);
         report.hostTickMilliseconds = static_cast<uint32_t>(hostTickMilliseconds);
         report.advertisedSimulationTicks = advertisedSimulationTicks;
         report.authorityHostAdvertised = authorityHostAdvertised && fixedStepEnabled;
@@ -309,8 +436,13 @@ namespace war
         report.persistenceLastSaveSucceeded = persistenceLastSaveSucceeded;
         report.persistenceLastLoadSucceeded = persistenceLastLoadSucceeded;
         report.persistenceMigrationApplied = persistenceMigrationApplied;
+        report.persistenceRestoreVisible = persistenceLastLoadSucceeded || persistenceLoadCount > 0 || report.restoreState == "restored";
 
-        report.statusParseValid = !malformed && persistenceParseValid && statusVersion >= 2 && report.hostTickMilliseconds > 0;
+        report.statusParseValid = !malformed
+            && persistenceParseValid
+            && statusVersion >= 5
+            && report.hostTickMilliseconds > 0
+            && report.protocolVersion == kCurrentProtocolVersion;
 
         const uint64_t now = currentEpochMilliseconds();
         if (report.heartbeatFieldValid && heartbeatEpochMilliseconds > 0 && now >= heartbeatEpochMilliseconds)
@@ -329,19 +461,6 @@ namespace war
             && report.hostState == "running"
             && report.authorityHostAdvertised;
         report.localBootstrapLaneReady = report.statusParseValid && report.authorityHostAdvertised && persistenceActive;
-
-        if (!report.statusParseValid)
-        {
-            report.issues.push_back("Headless host status file is malformed or missing required fields.");
-        }
-        else if (!report.heartbeatFresh && report.hostState == "running")
-        {
-            report.issues.push_back("Headless host heartbeat is stale or missing.");
-        }
-        else if (!report.authorityHostAdvertised)
-        {
-            report.issues.push_back("Headless host status does not advertise authoritative fixed-step ownership.");
-        }
 
         return report;
     }
@@ -369,6 +488,27 @@ namespace war
         const std::filesystem::path persistentSavePath = runtimeBoundaryReport.savesDirectory / "authoritative_world_primary.txt";
         const bool persistenceSavePresent = fileExists(persistentSavePath);
 
+        const std::string buildConfiguration = buildConfigurationText();
+        const std::string buildTimestamp = buildTimestampText();
+        const std::string buildIdentity = buildConfiguration + "|" + buildTimestamp;
+        const std::string buildChannel = environmentText(L"WAR_BUILD_CHANNEL").empty()
+            ? std::string("internal-alpha")
+            : environmentText(L"WAR_BUILD_CHANNEL");
+        const std::string connectTargetName = environmentText(L"WAR_CONNECT_TARGET_NAME").empty()
+            ? std::string("localhost-fallback")
+            : environmentText(L"WAR_CONNECT_TARGET_NAME");
+        const std::string transportKind = environmentText(L"WAR_CONNECT_TRANSPORT").empty()
+            ? std::string("file-backed-localhost-fallback")
+            : environmentText(L"WAR_CONNECT_TRANSPORT");
+        const std::string connectLaneMode = environmentText(L"WAR_CONNECT_LANE_MODE").empty()
+            ? std::string("localhost-fallback")
+            : environmentText(L"WAR_CONNECT_LANE_MODE");
+        const std::string hostInstanceId = stableHostInstanceId(processId);
+        const std::string sessionId = stableSessionId(processId);
+        const std::string restoreState = simulationDiagnostics.lastPersistenceLoadSucceeded
+            ? std::string("restored")
+            : (simulationDiagnostics.persistenceLoadCount > 0 ? std::string("restore-failed") : std::string("cold-start"));
+
         std::ofstream output(tempPath, std::ios::out | std::ios::trunc);
         if (!output.is_open())
         {
@@ -376,7 +516,19 @@ namespace war
         }
 
         output
-            << "status_version=4\n"
+            << "status_version=5\n"
+            << "protocol_version=" << kCurrentProtocolVersion << "\n"
+            << "transport_kind=" << transportKind << "\n"
+            << "connect_target_name=" << connectTargetName << "\n"
+            << "connect_lane_mode=" << connectLaneMode << "\n"
+            << "build_configuration=" << buildConfiguration << "\n"
+            << "build_timestamp=" << buildTimestamp << "\n"
+            << "build_identity=" << buildIdentity << "\n"
+            << "build_channel=" << buildChannel << "\n"
+            << "host_instance_id=" << hostInstanceId << "\n"
+            << "session_id=" << sessionId << "\n"
+            << "runtime_root_path=" << runtimeBoundaryReport.runtimeRoot.generic_string() << "\n"
+            << "restore_state=" << restoreState << "\n"
             << "mode=headless-authoritative-host\n"
             << "state=" << hostState << "\n"
             << "pid=" << processId << "\n"
@@ -407,44 +559,7 @@ namespace war
             << "persistence_save_count=" << simulationDiagnostics.persistenceSaveCount << "\n"
             << "persistence_load_count=" << simulationDiagnostics.persistenceLoadCount << "\n"
             << "persistence_last_save_epoch_ms=" << simulationDiagnostics.lastPersistenceSaveEpochMilliseconds << "\n"
-            << "persistence_last_load_epoch_ms=" << simulationDiagnostics.lastPersistenceLoadEpochMilliseconds << "\n"
-            << "mission_active=" << (simulationDiagnostics.missionActive ? "yes" : "no") << "\n"
-            << "mission_phase=" << simulationDiagnostics.missionPhaseText << "\n"
-            << "mission_objective=" << simulationDiagnostics.missionObjectiveText << "\n"
-            << "mission_complete=" << (simulationDiagnostics.missionComplete ? "yes" : "no") << "\n"
-            << "mission_gate_locked=" << (simulationDiagnostics.missionGateLocked ? "yes" : "no") << "\n"
-            << "mission_advancement_count=" << simulationDiagnostics.missionAdvancementCount << "\n"
-            << "ship_runtime_prep_ready=" << (simulationDiagnostics.shipRuntimePrepReady ? "yes" : "no") << "\n"
-            << "ship_active=" << (simulationDiagnostics.shipActive ? "yes" : "no") << "\n"
-            << "active_ship_id=" << simulationDiagnostics.activeShipId << "\n"
-            << "ship_name=" << simulationDiagnostics.shipName << "\n"
-            << "ship_boarded=" << (simulationDiagnostics.shipBoarded ? "yes" : "no") << "\n"
-            << "ship_docked=" << (simulationDiagnostics.shipDocked ? "yes" : "no") << "\n"
-            << "ship_power_online=" << (simulationDiagnostics.shipPowerOnline ? "yes" : "no") << "\n"
-            << "ship_airlock_pressurized=" << (simulationDiagnostics.shipAirlockPressurized ? "yes" : "no") << "\n"
-            << "ship_command_claimed=" << (simulationDiagnostics.shipCommandClaimed ? "yes" : "no") << "\n"
-            << "ship_launch_prep_ready=" << (simulationDiagnostics.shipLaunchPrepReady ? "yes" : "no") << "\n"
-            << "ship_ownership=" << simulationDiagnostics.shipOwnershipText << "\n"
-            << "ship_occupancy=" << simulationDiagnostics.shipOccupancyText << "\n"
-            << "ship_location=" << simulationDiagnostics.shipLocationText << "\n"
-            << "ship_boarding_count=" << simulationDiagnostics.shipBoardingCount << "\n"
-            << "orbital_layer_active=" << (simulationDiagnostics.orbitalLayerActive ? "yes" : "no") << "\n"
-            << "orbital_departure_authorized=" << (simulationDiagnostics.orbitalDepartureAuthorized ? "yes" : "no") << "\n"
-            << "orbital_travel_in_progress=" << (simulationDiagnostics.orbitalTravelInProgress ? "yes" : "no") << "\n"
-            << "orbital_survey_orbit_reached=" << (simulationDiagnostics.orbitalSurveyOrbitReached ? "yes" : "no") << "\n"
-            << "orbital_relay_track_reached=" << (simulationDiagnostics.orbitalRelayTrackReached ? "yes" : "no") << "\n"
-            << "orbital_relay_platform_docked=" << (simulationDiagnostics.orbitalRelayPlatformDocked ? "yes" : "no") << "\n"
-            << "orbital_return_route_authorized=" << (simulationDiagnostics.orbitalReturnRouteAuthorized ? "yes" : "no") << "\n"
-            << "orbital_home_dock_reached=" << (simulationDiagnostics.orbitalHomeDockReached ? "yes" : "no") << "\n"
-            << "orbital_phase=" << simulationDiagnostics.orbitalPhaseText << "\n"
-            << "orbital_current_node=" << simulationDiagnostics.orbitalCurrentNodeText << "\n"
-            << "orbital_target_node=" << simulationDiagnostics.orbitalTargetNodeText << "\n"
-            << "orbital_rule=" << simulationDiagnostics.orbitalRuleText << "\n"
-            << "orbital_transfer_count=" << simulationDiagnostics.orbitalTransferCount << "\n"
-            << "orbital_travel_ticks_remaining=" << simulationDiagnostics.orbitalTravelTicksRemaining << "\n"
-            << "frontier_surface_active=" << (simulationDiagnostics.frontierSurfaceActive ? "yes" : "no") << "\n"
-            << "frontier_site=" << simulationDiagnostics.frontierSiteText << "\n"
-            << "player_runtime_context=" << simulationDiagnostics.playerRuntimeContextText << "\n";
+            << "persistence_last_load_epoch_ms=" << simulationDiagnostics.lastPersistenceLoadEpochMilliseconds << "\n";
 
         output.close();
         if (!output)
@@ -463,7 +578,6 @@ namespace war
 
     uint64_t HeadlessHostPresence::currentEpochMilliseconds()
     {
-        using namespace std::chrono;
-        return static_cast<uint64_t>(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
+        return currentSystemEpochMilliseconds();
     }
 }

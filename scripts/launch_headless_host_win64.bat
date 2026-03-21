@@ -13,17 +13,44 @@ if not exist "%HOST_EXE_PATH%" (
     set "HOST_EXE_PATH=%DEMO_ROOT%\WAR.exe"
     set "HOST_ARGS=--headless-host"
 )
-set "RUNTIME_ROOT=%DEMO_ROOT%\runtime"
-if not exist "%RUNTIME_ROOT%" set "RUNTIME_ROOT=%DEMO_ROOT%\Runtime"
-set "LOG_DIR=%RUNTIME_ROOT%\Logs"
+
+set "LOCAL_RUNTIME_ROOT=%DEMO_ROOT%\runtime"
+if not exist "%LOCAL_RUNTIME_ROOT%" set "LOCAL_RUNTIME_ROOT=%DEMO_ROOT%\Runtime"
+set "TARGET_RUNTIME_ROOT=%~1"
+if "%TARGET_RUNTIME_ROOT%"=="" set "TARGET_RUNTIME_ROOT=%LOCAL_RUNTIME_ROOT%"
+set "TARGET_NAME=%~2"
+if "%TARGET_NAME%"=="" set "TARGET_NAME=localhost-fallback"
+set "LANE_MODE=%~3"
+if "%LANE_MODE%"=="" (
+    if /I "%TARGET_RUNTIME_ROOT%"=="%LOCAL_RUNTIME_ROOT%" (
+        set "LANE_MODE=localhost-fallback"
+    ) else (
+        set "LANE_MODE=hosted-bootstrap"
+    )
+)
+
+set "TRANSPORT_KIND=file-backed-localhost-fallback"
+if /I "%LANE_MODE%"=="hosted-bootstrap" set "TRANSPORT_KIND=file-backed-hosted-bootstrap"
+
+set "LOG_DIR=%TARGET_RUNTIME_ROOT%\Logs"
 
 if not exist "%HOST_EXE_PATH%" (
-    echo [M44] ERROR: no host executable found next to the host launch script.
+    echo [M45] ERROR: no host executable found next to the host launch script.
     exit /b 1
 )
 
-if not exist "%LOG_DIR%" mkdir "%LOG_DIR%" >nul 2>nul
+if not exist "%TARGET_RUNTIME_ROOT%\Config" mkdir "%TARGET_RUNTIME_ROOT%\Config" >nul 2>nul
+if not exist "%TARGET_RUNTIME_ROOT%\Logs" mkdir "%TARGET_RUNTIME_ROOT%\Logs" >nul 2>nul
+if not exist "%TARGET_RUNTIME_ROOT%\Saves" mkdir "%TARGET_RUNTIME_ROOT%\Saves" >nul 2>nul
+if not exist "%TARGET_RUNTIME_ROOT%\CrashDumps" mkdir "%TARGET_RUNTIME_ROOT%\CrashDumps" >nul 2>nul
+if not exist "%TARGET_RUNTIME_ROOT%\Host" mkdir "%TARGET_RUNTIME_ROOT%\Host" >nul 2>nul
 
-echo [%DATE% %TIME%] launching headless host %HOST_EXE_PATH% %HOST_ARGS% >> "%LOG_DIR%\headless_host_launch.txt"
+set "WAR_RUNTIME_ROOT=%TARGET_RUNTIME_ROOT%"
+set "WAR_CONNECT_TARGET_NAME=%TARGET_NAME%"
+set "WAR_CONNECT_TRANSPORT=%TRANSPORT_KIND%"
+set "WAR_CONNECT_LANE_MODE=%LANE_MODE%"
+set "WAR_BUILD_CHANNEL=internal-alpha"
+
+echo [%DATE% %TIME%] launching headless host %HOST_EXE_PATH% %HOST_ARGS% target=%TARGET_NAME% lane=%LANE_MODE% transport=%TRANSPORT_KIND% runtime_root=%TARGET_RUNTIME_ROOT% >> "%LOG_DIR%\headless_host_launch.txt"
 start "WAR Headless Host" /min "%HOST_EXE_PATH%" %HOST_ARGS%
 exit /b 0

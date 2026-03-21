@@ -18,6 +18,9 @@ namespace war
             const std::vector<std::string>& eventLog,
             float lastDeltaTime,
             const std::string& statusMessage,
-            const SharedSimulationDiagnostics& simulationDiagnostics) const;
+            const SharedSimulationDiagnostics& simulationDiagnostics,
+            const std::string& roomTitle,
+            const std::string& promptLine,
+            const std::string& commandBarText) const;
     };
 }

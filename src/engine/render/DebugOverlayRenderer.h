@@ -39,7 +39,12 @@ namespace war
             const LocalDemoDiagnosticsReport& localDemoDiagnosticsReport,
             const SharedSimulationDiagnostics& simulationDiagnostics,
             const HeadlessHostPresenceReport& headlessHostPresenceReport,
-            const AuthoritativeHostProtocolReport& authoritativeHostProtocolReport) const;
+            const AuthoritativeHostProtocolReport& authoritativeHostProtocolReport,
+            const std::string& roomTitle,
+            const std::string& roomDescription,
+            const std::string& promptLine,
+            const std::string& commandBarText,
+            const std::string& commandEcho) const;
 
     private:
         [[nodiscard]] const char* entityTypeToText(EntityType type) const;

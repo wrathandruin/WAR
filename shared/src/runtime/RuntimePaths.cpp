@@ -55,6 +55,42 @@ namespace war
                 report.issues.push_back(std::string("Failed to create runtime directory: ") + RuntimePaths::displayPath(path));
             }
         }
+
+        std::wstring readEnvironmentWide(const wchar_t* variableName)
+        {
+            const DWORD requiredLength = GetEnvironmentVariableW(variableName, nullptr, 0);
+            if (requiredLength == 0)
+            {
+                return {};
+            }
+
+            std::wstring buffer(static_cast<size_t>(requiredLength), L'\0');
+            const DWORD writtenLength = GetEnvironmentVariableW(variableName, buffer.data(), requiredLength);
+            if (writtenLength == 0)
+            {
+                return {};
+            }
+
+            buffer.resize(static_cast<size_t>(writtenLength));
+            return buffer;
+        }
+
+        std::filesystem::path resolveRuntimeRootOverride(const std::filesystem::path& executableDirectory)
+        {
+            const std::wstring overrideText = readEnvironmentWide(L"WAR_RUNTIME_ROOT");
+            if (overrideText.empty())
+            {
+                return {};
+            }
+
+            std::filesystem::path overridePath = std::filesystem::path(overrideText);
+            if (overridePath.is_relative())
+            {
+                overridePath = executableDirectory / overridePath;
+            }
+
+            return overridePath.lexically_normal();
+        }
     }
 
     RuntimeBoundaryReport RuntimePaths::buildReport()
@@ -72,15 +108,18 @@ namespace war
             directoryExists(packagedRuntimeRootLower)
                 ? packagedRuntimeRootLower
                 : (directoryExists(packagedRuntimeRootUpper) ? packagedRuntimeRootUpper : std::filesystem::path{});
+        const std::filesystem::path runtimeRootOverride = resolveRuntimeRootOverride(report.executableDirectory);
+        report.runtimeRootOverrideActive = !runtimeRootOverride.empty();
         const bool packagedMarkersPresent =
             fileExists(report.executableDirectory / "demo_manifest.txt")
+            || fileExists(report.executableDirectory / "internal_alpha_manifest.txt")
             || fileExists(report.executableDirectory / "launch_local_demo_win64.bat")
             || fileExists(report.executableDirectory / "launch_headless_host_win64.bat");
         report.repoRoot = findRepoRoot(report.executableDirectory);
         report.repoRootResolved = !report.repoRoot.empty();
         const bool packagedLayoutDetected =
             directoryExists(packagedAssetRoot)
-            && !packagedRuntimeRoot.empty()
+            && (!packagedRuntimeRoot.empty() || report.runtimeRootOverrideActive)
             && (packagedMarkersPresent || !report.repoRootResolved);
         report.runningFromSourceTree = report.repoRootResolved && !packagedLayoutDetected;
         const std::filesystem::path sourceAssetRoot = report.repoRootResolved
@@ -102,9 +141,17 @@ namespace war
             report.issues.push_back("Asset root could not be resolved from packaged or source-tree layout.");
         }
 
-        report.runtimeRoot = packagedLayoutDetected
-            ? packagedRuntimeRoot
-            : (report.repoRootResolved ? report.repoRoot / "Runtime" : report.executableDirectory / "runtime");
+        if (report.runtimeRootOverrideActive)
+        {
+            report.runtimeRoot = runtimeRootOverride;
+        }
+        else
+        {
+            report.runtimeRoot = packagedLayoutDetected
+                ? packagedRuntimeRoot
+                : (report.repoRootResolved ? report.repoRoot / "Runtime" : report.executableDirectory / "runtime");
+        }
+
         report.configDirectory = report.runtimeRoot / "Config";
         report.logsDirectory = report.runtimeRoot / "Logs";
         report.savesDirectory = report.runtimeRoot / "Saves";
@@ -138,7 +185,6 @@ namespace war
         ensureDirectory(report.savesDirectory, report);
         ensureDirectory(report.crashDirectory, report);
         ensureDirectory(report.hostDirectory, report);
-
         report.runtimeDirectoriesReady = true;
     }
 

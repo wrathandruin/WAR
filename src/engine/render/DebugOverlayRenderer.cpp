@@ -7,46 +7,6 @@ namespace war
 {
     namespace
     {
-        const char* entityStateText(const Entity& entity)
-        {
-            switch (entity.type)
-            {
-            case EntityType::Crate:
-                return entity.isOpen ? "open" : "closed";
-            case EntityType::Terminal:
-                return entity.isPowered ? "powered" : "offline";
-            case EntityType::Locker:
-                if (entity.isLocked)
-                {
-                    return "locked";
-                }
-                return entity.isOpen ? "open" : "closed";
-            case EntityType::Ship:
-                return entity.isPowered ? "powered, docked" : "cold-docked";
-            default:
-                return "unknown";
-            }
-        }
-
-        const char* hotspotStateText(const WorldAuthoringHotspot& hotspot)
-        {
-            switch (hotspot.type)
-            {
-            case WorldAuthoringHotspotType::Encounter:
-                return hotspot.encounterReady ? "encounter-ready" : "inactive";
-            case WorldAuthoringHotspotType::Control:
-                return hotspot.encounterReady ? "ready" : "gated";
-            case WorldAuthoringHotspotType::Transit:
-                return hotspot.encounterReady ? "open" : "gated";
-            case WorldAuthoringHotspotType::Loot:
-                return hotspot.encounterReady ? "available" : "cleared";
-            case WorldAuthoringHotspotType::Hazard:
-                return hotspot.encounterReady ? "active" : "stabilized";
-            default:
-                return "unknown";
-            }
-        }
-
         std::string tileText(bool hasTile, TileCoord tile)
         {
             if (!hasTile)
@@ -55,66 +15,6 @@ namespace war
             }
 
             return "(" + std::to_string(tile.x) + ", " + std::to_string(tile.y) + ")";
-        }
-
-        std::string hoverAffordance(
-            const WorldState& worldState,
-            bool hasHoveredTile,
-            TileCoord hoveredTile,
-            const Entity* hoveredEntity,
-            const WorldAuthoringHotspot* hoveredHotspot)
-        {
-            if (!hasHoveredTile || !worldState.world().isInBounds(hoveredTile))
-            {
-                return "none";
-            }
-
-            if (worldState.world().isBlocked(hoveredTile))
-            {
-                return "blocked terrain";
-            }
-
-            if (hoveredEntity != nullptr)
-            {
-                return std::string("interactable ") + hoveredEntity->name;
-            }
-
-            if (hoveredHotspot != nullptr)
-            {
-                return std::string("authored hotspot ") + hoveredHotspot->label;
-            }
-
-            return "walkable terrain";
-        }
-
-        std::string hoverPrompt(
-            const WorldState& worldState,
-            bool hasHoveredTile,
-            TileCoord hoveredTile,
-            const Entity* hoveredEntity,
-            const WorldAuthoringHotspot* hoveredHotspot)
-        {
-            if (!hasHoveredTile || !worldState.world().isInBounds(hoveredTile))
-            {
-                return "Move the cursor onto the world to preview actions.";
-            }
-
-            if (worldState.world().isBlocked(hoveredTile))
-            {
-                return "Blocked tile. Shift+RMB inspect for detail.";
-            }
-
-            if (hoveredEntity != nullptr)
-            {
-                return std::string("RMB interact with ") + hoveredEntity->name + " | Shift+RMB inspect";
-            }
-
-            if (hoveredHotspot != nullptr)
-            {
-                return std::string("RMB use ") + hoveredHotspot->label + " | Shift+RMB inspect hotspot";
-            }
-
-            return "LMB move | Shift+RMB inspect terrain";
         }
     }
 
@@ -163,7 +63,12 @@ namespace war
         const LocalDemoDiagnosticsReport& localDemoDiagnosticsReport,
         const SharedSimulationDiagnostics& simulationDiagnostics,
         const HeadlessHostPresenceReport& headlessHostPresenceReport,
-        const AuthoritativeHostProtocolReport& authoritativeHostProtocolReport) const
+        const AuthoritativeHostProtocolReport& authoritativeHostProtocolReport,
+        const std::string& roomTitle,
+        const std::string& roomDescription,
+        const std::string& promptLine,
+        const std::string& commandBarText,
+        const std::string& commandEcho) const
     {
         SetBkMode(dc, TRANSPARENT);
         SetTextColor(dc, RGB(225, 225, 225));
@@ -171,17 +76,7 @@ namespace war
         const Vec2 mouseWorld = camera.screenToWorld(mousePosition.x, mousePosition.y);
         const TileCoord mouseTile = worldState.world().worldToTile(mouseWorld);
         const TileCoord playerTile = worldState.world().worldToTile(playerPosition);
-        const Entity* hoveredEntity =
-            hasHoveredTile && worldState.world().isInBounds(hoveredTile)
-                ? worldState.entities().getAt(hoveredTile)
-                : nullptr;
-        const WorldAuthoringHotspot* hoveredHotspot =
-            hasHoveredTile && worldState.world().isInBounds(hoveredTile)
-                ? worldState.authoringHotspotAt(hoveredTile)
-                : nullptr;
-
-        const std::string affordance = hoverAffordance(worldState, hasHoveredTile, hoveredTile, hoveredEntity, hoveredHotspot);
-        const std::string prompt = hoverPrompt(worldState, hasHoveredTile, hoveredTile, hoveredEntity, hoveredHotspot);
+        const std::string hovered = tileText(hasHoveredTile, hoveredTile);
         const std::string selected = tileText(hasSelectedTile, selectedTile);
         const std::string actionTarget = tileText(hasActionTargetTile, actionTargetTile);
         const std::string pathDestination =
@@ -191,63 +86,49 @@ namespace war
 
         std::ostringstream info;
         info
-            << "WAR Milestone 44\n"
-            << "LMB: move    RMB: interact    Shift+RMB: inspect    MMB drag: pan    Wheel: zoom\n"
+            << "WAR Milestone 45\n"
+            << "Connect target: " << localDemoDiagnosticsReport.connectTargetName << "\n"
+            << "Transport: " << localDemoDiagnosticsReport.connectTransport << "\n"
+            << "Lane mode: " << localDemoDiagnosticsReport.connectLaneMode << "\n"
+            << "Runtime root: " << localDemoDiagnosticsReport.runtimeRootDisplay << "\n"
             << "Authoritative lane: " << (simulationDiagnostics.hostAuthorityActive ? "headless host" : "local") << "\n"
+            << "Host instance: " << headlessHostPresenceReport.hostInstanceId << "\n"
+            << "Host session: " << headlessHostPresenceReport.sessionId << "\n"
+            << "Protocol lane ready: " << (authoritativeHostProtocolReport.authorityLaneReady ? "yes" : "no") << "\n"
+            << "Snapshot present: " << (authoritativeHostProtocolReport.snapshotPresent ? "yes" : "no") << "\n"
             << "Objective: " << simulationDiagnostics.missionObjectiveText << "\n"
             << "Mission phase: " << simulationDiagnostics.missionPhaseText << "\n"
-            << "Mission beat: " << simulationDiagnostics.missionLastBeat << "\n"
-            << "Mission complete: " << (simulationDiagnostics.missionComplete ? "yes" : "no") << "\n"
-            << "Gate locked: " << (simulationDiagnostics.missionGateLocked ? "yes" : "no") << "\n"
-            << "Ship runtime prep: " << (simulationDiagnostics.shipRuntimePrepReady ? "yes" : "no") << "\n"
-            << "Active ship: " << simulationDiagnostics.shipName << " [" << simulationDiagnostics.activeShipId << "]\n"
-            << "Ship ownership / occupancy: " << simulationDiagnostics.shipOwnershipText << " / " << simulationDiagnostics.shipOccupancyText << "\n"
-            << "Ship docked / boarded: " << (simulationDiagnostics.shipDocked ? "yes" : "no") << " / " << (simulationDiagnostics.shipBoarded ? "yes" : "no") << "\n"
-            << "Ship power / airlock / command: " << (simulationDiagnostics.shipPowerOnline ? "yes" : "no") << " / " << (simulationDiagnostics.shipAirlockPressurized ? "yes" : "no") << " / " << (simulationDiagnostics.shipCommandClaimed ? "yes" : "no") << "\n"
-            << "Ship launch prep: " << (simulationDiagnostics.shipLaunchPrepReady ? "yes" : "no") << "\n"
-            << "Ship beat: " << simulationDiagnostics.shipLastBeat << "\n"
-            << "Orbital active / departure auth: " << (simulationDiagnostics.orbitalLayerActive ? "yes" : "no") << " / " << (simulationDiagnostics.orbitalDepartureAuthorized ? "yes" : "no") << "\n"
-            << "Orbital phase: " << simulationDiagnostics.orbitalPhaseText << "\n"
-            << "Orbital node / target: " << simulationDiagnostics.orbitalCurrentNodeText << " / " << simulationDiagnostics.orbitalTargetNodeText << "\n"
-            << "Orbital travel / ticks: " << (simulationDiagnostics.orbitalTravelInProgress ? "yes" : "no") << " / " << simulationDiagnostics.orbitalTravelTicksRemaining << "\n"
-            << "Orbital rule: " << simulationDiagnostics.orbitalRuleText << "\n"
-            << "Orbital beat: " << simulationDiagnostics.orbitalLastBeat << "\n"
-            << "Runtime context: " << simulationDiagnostics.playerRuntimeContextText << "\n"
-            << "Player world: (" << playerPosition.x << ", " << playerPosition.y << ")\n"
             << "Player tile: (" << playerTile.x << ", " << playerTile.y << ")\n"
             << "Mouse tile: (" << mouseTile.x << ", " << mouseTile.y << ")\n"
-            << "Hovered affordance: " << affordance << "\n"
-            << "Prompt: " << prompt << "\n"
+            << "Hovered tile: " << hovered << "\n"
             << "Selected tile: " << selected << "\n"
             << "Move target: " << actionTarget << "\n"
             << "Path destination: " << pathDestination << "\n"
-            << "Combat active: " << (simulationDiagnostics.combatActive ? "yes" : "no") << "\n"
-            << "Combat label: " << simulationDiagnostics.currentCombatLabel << "\n"
-            << "Combat round / ticks: " << simulationDiagnostics.combatRoundNumber << " / " << simulationDiagnostics.combatTicksRemaining << "\n"
-            << "Hostile: " << simulationDiagnostics.hostileLabel << " " << simulationDiagnostics.hostileHealth << "/" << simulationDiagnostics.hostileMaxHealth << "\n"
-            << "Health / armor / suit: " << simulationDiagnostics.playerHealth << "/" << simulationDiagnostics.playerArmor << "/" << simulationDiagnostics.suitIntegrity << "\n"
-            << "Oxygen / radiation / toxic: " << simulationDiagnostics.oxygenSecondsRemaining << " / " << simulationDiagnostics.radiationDose << " / " << simulationDiagnostics.toxicExposure << "\n"
-            << "Hazard: " << simulationDiagnostics.currentHazardLabel << "\n"
-            << "Terrain consequence: " << simulationDiagnostics.currentTerrainConsequence << "\n"
-            << "Inventory stacks/items: " << simulationDiagnostics.inventoryStackCount << "/" << simulationDiagnostics.inventoryItemCount << "\n"
-            << "Equipped weapon: " << simulationDiagnostics.equippedWeaponText << "\n"
-            << "Equipped suit: " << simulationDiagnostics.equippedSuitText << "\n"
-            << "Equipped tool: " << simulationDiagnostics.equippedToolText << "\n"
-            << "Loot collections: " << simulationDiagnostics.lootCollections << "\n"
-            << "Encounter wins / survived: " << simulationDiagnostics.encounterWins << " / " << simulationDiagnostics.encountersSurvived << "\n"
-            << "Combat rounds resolved: " << simulationDiagnostics.combatRoundsResolved << "\n"
-            << "Snapshot age ms: " << simulationDiagnostics.lastSnapshotAgeMilliseconds << "\n"
-            << "Host online: " << (headlessHostPresenceReport.hostOnline ? "yes" : "no") << "\n"
-            << "Protocol lane ready: " << (authoritativeHostProtocolReport.authorityLaneReady ? "yes" : "no") << "\n"
-            << "Build: " << localDemoDiagnosticsReport.buildConfiguration << " | " << localDemoDiagnosticsReport.buildTimestamp << "\n"
+            << "Restore state: " << headlessHostPresenceReport.restoreState << "\n"
             << "Runtime mode: " << (runtimeBoundaryReport.runningFromSourceTree ? "source-tree" : "packaged") << "\n"
             << "Frame dt: " << lastDeltaTime;
 
         const std::string infoText = info.str();
-        RECT infoRect{ 16, 16, 1540, 760 };
+        RECT infoRect{ 16, 16, 760, 760 };
         RECT measureRect = infoRect;
         DrawTextA(dc, infoText.c_str(), -1, &measureRect, DT_LEFT | DT_TOP | DT_NOPREFIX | DT_CALCRECT);
         DrawTextA(dc, infoText.c_str(), -1, &infoRect, DT_LEFT | DT_TOP | DT_NOPREFIX);
+
+        std::ostringstream presentation;
+        presentation
+            << "Room\n"
+            << roomTitle << "\n\n"
+            << roomDescription << "\n\n"
+            << "Prompt / Vitals\n"
+            << promptLine << "\n\n"
+            << "Typed Command Bar\n"
+            << commandBarText << "\n\n"
+            << "Reply\n"
+            << commandEcho;
+
+        const std::string presentationText = presentation.str();
+        RECT presentationRect{ 800, 16, 1560, 860 };
+        DrawTextA(dc, presentationText.c_str(), -1, &presentationRect, DT_LEFT | DT_TOP | DT_NOPREFIX | DT_WORDBREAK);
 
         int y = measureRect.bottom + 24;
         TextOutA(dc, 16, y, "Event Log:", 10);
