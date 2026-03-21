@@ -11,6 +11,21 @@
 /assets/textures/**
 !/assets/textures/.gitkeep
 
+# Owner-only / confidential materials
+/owners/
+/secrets/
+/private/
+
+# Secret-bearing local files
+/.env
+/.env.*
+*.pem
+*.key
+*.p12
+*.crt
+*.cer
+*.ovpn
+
 # Runtime-only mutable state
 /Runtime/**
 !/Runtime/

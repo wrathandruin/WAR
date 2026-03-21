@@ -81,3 +81,14 @@ Important operator note:
 M44 is the first point where the project proves a complete directed continuity lane instead of a stack of disconnected milestones.
 
 The player can now move from planet-side mission beats into ship runtime, into orbit, into a second destination, and back again with persistent authoritative state.
+
+## License and IP
+
+This repository is source-available, not open source.
+
+Except for third-party components that carry their own licenses, the original code,
+design material, writing, and game-specific content in this repository are all
+rights reserved. See [LICENSE.md](LICENSE.md).
+
+Owner-only planning, financial materials, secrets, private operations documents, and
+production-source art should remain outside the public repository.
