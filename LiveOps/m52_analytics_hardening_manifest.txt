@@ -1,0 +1,8 @@
+version=1
+analytics_track=analytics_hardening
+analytics_tier=market-candidate
+counter_model=runtime-file-backed
+required_counters=client_launches,host_bootstrap_launches,returning_launches,first_session_launches,release_state_writes
+session_summary_fields=build_identity,build_channel,environment_name,connect_target_name,session_entry_state,returning_player_detected
+privacy_baseline=no_secrets_logged,no_raw_secret_values,no_external_endpoint_required
+support_goal=runtime analytics should be inspectable from packaged output without guesswork

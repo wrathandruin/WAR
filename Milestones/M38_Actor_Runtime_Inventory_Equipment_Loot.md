@@ -19,8 +19,8 @@ Milestones/M38_Actor_Runtime_Inventory_Equipment_Loot.md
 Included
 
 - README.md
-- Docs/Wrath and Ruin - Actor Runtime Inventory Equipment Loot.md
-- Docs/Wrath and Ruin - Persistence Schema and Migration Contract.md
+- Docs/Technical/Wrath and Ruin - Actor Runtime Inventory Equipment Loot.md
+- Docs/Technical/Wrath and Ruin - Persistence Schema and Migration Contract.md
 - Milestones/M38_Actor_Runtime_Inventory_Equipment_Loot.md
 - src/engine/core/Application.cpp
 - src/engine/gameplay/Entity.h

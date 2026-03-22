@@ -1,0 +1,8 @@
+version=1
+messaging_track=player_messaging
+messaging_tier=market-candidate
+message_style=grounded_directive
+first_session_message=Read the room text, trust the prompt strip, and type help if you lose the thread.
+returning_session_message=Resume from the retained state, read the current room text, and use session or status before escalating.
+support_message=If the session state looks wrong, preserve the packaged logs and share the support handoff summary.
+incident_message=If a host or bootstrap lane fails, preserve the failure bundle and the incident-response summary.

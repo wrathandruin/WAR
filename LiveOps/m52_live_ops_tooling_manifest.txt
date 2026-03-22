@@ -1,0 +1,10 @@
+version=1
+tooling_track=live_ops_tooling
+tooling_tier=market-candidate
+runtime_log_root=runtime/Logs/LiveOps
+operator_brief_file=runtime/Logs/LiveOps/live_ops_operator_brief.txt
+runtime_manifest_file=runtime/Logs/LiveOps/live_ops_runtime_manifest.txt
+latest_pointer_file=runtime/Logs/LiveOps/live_ops_latest_pointer.txt
+counters_file=runtime/Logs/LiveOps/live_ops_counters.txt
+required_inputs=runtime/Logs/Retention,beta_release_candidate_manifest.txt,market_candidate_manifest.txt,client_replication_status.txt,headless_host_status.txt
+primary_operator_questions=who_launched,what_build,what_target,what_environment,is_the_session_first_use,is_the_runtime_returning,what_release_gate_state_exists

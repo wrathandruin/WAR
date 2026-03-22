@@ -32,6 +32,7 @@ namespace war
         m_regionOverlayEnabled = true;
         m_paletteMode = BgfxThemePaletteMode::Default;
         m_authoringHotspotsVisible = true;
+        clearRegionDescriptions();
         clearAuthoringHotspots();
         clearTerrainHazards();
 
@@ -118,6 +119,97 @@ namespace war
     BgfxThemePaletteMode WorldState::paletteMode() const
     {
         return m_paletteMode;
+    }
+
+    void WorldState::clearRegionDescriptions()
+    {
+        m_regionDescriptions.clear();
+    }
+
+    void WorldState::setRegionDescription(
+        WorldRegionTagId region,
+        const std::string& key,
+        const std::string& title,
+        const std::string& entryDescription)
+    {
+        for (WorldRegionDescription& existing : m_regionDescriptions)
+        {
+            if (existing.region == region)
+            {
+                existing.key = key;
+                existing.title = title;
+                existing.entryDescription = entryDescription;
+                return;
+            }
+        }
+
+        WorldRegionDescription description{};
+        description.region = region;
+        description.key = key;
+        description.title = title;
+        description.entryDescription = entryDescription;
+        m_regionDescriptions.push_back(description);
+    }
+
+    const WorldRegionDescription* WorldState::regionDescription(WorldRegionTagId region) const
+    {
+        for (const WorldRegionDescription& description : m_regionDescriptions)
+        {
+            if (description.region == region)
+            {
+                return &description;
+            }
+        }
+
+        return nullptr;
+    }
+
+    ResolvedLocationContext WorldState::resolveInteriorLocation(TileCoord tile) const
+    {
+        ResolvedLocationContext context{};
+
+        if (!m_world.isInBounds(tile))
+        {
+            return context;
+        }
+
+        if (const WorldAuthoringHotspot* hotspot = authoringHotspotAt(tile))
+        {
+            const bool authoredLocationAvailable =
+                !hotspot->locationTitle.empty()
+                || !hotspot->locationDescription.empty()
+                || !hotspot->locationKey.empty();
+
+            if (authoredLocationAvailable)
+            {
+                context.valid = true;
+                context.key = hotspot->locationKey.empty()
+                    ? std::string("hotspot.") + std::to_string(hotspot->id)
+                    : hotspot->locationKey;
+                context.title = hotspot->locationTitle.empty()
+                    ? hotspot->label
+                    : hotspot->locationTitle;
+                context.entryDescription = hotspot->locationDescription.empty()
+                    ? hotspot->summary
+                    : hotspot->locationDescription;
+                return context;
+            }
+        }
+
+        if (const WorldRegionDescription* description = regionDescription(regionTag(tile)))
+        {
+            context.valid = true;
+            context.key = description->key;
+            context.title = description->title;
+            context.entryDescription = description->entryDescription;
+            return context;
+        }
+
+        context.valid = true;
+        context.key = "region.unknown";
+        context.title = "Unknown Interior";
+        context.entryDescription = "The current interior has not been formally authored yet.";
+        return context;
     }
 
     void WorldState::clearAuthoringHotspots()

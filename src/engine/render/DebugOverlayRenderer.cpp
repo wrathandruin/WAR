@@ -1,12 +1,31 @@
 #include "engine/render/DebugOverlayRenderer.h"
 
+#include <algorithm>
+#include <array>
+#include <cctype>
 #include <sstream>
 #include <string>
+#include <string_view>
+#include <vector>
 
 namespace war
 {
     namespace
     {
+        enum class SessionFeedPartition
+        {
+            Room,
+            Mission,
+            System
+        };
+
+        struct PartitionedSessionFeed
+        {
+            std::vector<std::string> roomEntries;
+            std::vector<std::string> missionEntries;
+            std::vector<std::string> systemEntries;
+        };
+
         std::string tileText(bool hasTile, TileCoord tile)
         {
             if (!hasTile)
@@ -15,6 +34,128 @@ namespace war
             }
 
             return "(" + std::to_string(tile.x) + ", " + std::to_string(tile.y) + ")";
+        }
+
+        std::string toLowerCopy(std::string_view value)
+        {
+            std::string lowered(value.begin(), value.end());
+            std::transform(lowered.begin(), lowered.end(), lowered.begin(), [](unsigned char ch)
+            {
+                return static_cast<char>(std::tolower(ch));
+            });
+            return lowered;
+        }
+
+        bool containsToken(const std::string& haystack, const std::string& needle)
+        {
+            return haystack.find(needle) != std::string::npos;
+        }
+
+        SessionFeedPartition classifyEntry(
+            const std::string& entry,
+            const std::string& roomTitle,
+            const std::string& roomDescription)
+        {
+            const std::string lowered = toLowerCopy(entry);
+            const std::string loweredRoomTitle = toLowerCopy(roomTitle);
+            const std::string loweredRoomDescription = toLowerCopy(roomDescription);
+
+            if (!loweredRoomTitle.empty() && containsToken(lowered, loweredRoomTitle))
+            {
+                return SessionFeedPartition::Room;
+            }
+
+            if (!loweredRoomDescription.empty() && lowered == loweredRoomDescription)
+            {
+                return SessionFeedPartition::Room;
+            }
+
+            if (containsToken(lowered, "room entry:")
+                || containsToken(lowered, "location:"))
+            {
+                return SessionFeedPartition::Room;
+            }
+
+            if (containsToken(lowered, "mission")
+                || containsToken(lowered, "objective")
+                || containsToken(lowered, "phase")
+                || containsToken(lowered, "encounter")
+                || containsToken(lowered, "combat")
+                || containsToken(lowered, "hazard")
+                || containsToken(lowered, "quarantine")
+                || containsToken(lowered, "relay")
+                || containsToken(lowered, "orbit")
+                || containsToken(lowered, "frontier"))
+            {
+                return SessionFeedPartition::Mission;
+            }
+
+            return SessionFeedPartition::System;
+        }
+
+        PartitionedSessionFeed partitionFeed(
+            const std::vector<std::string>& eventLog,
+            const std::string& roomTitle,
+            const std::string& roomDescription,
+            size_t maxEntriesPerPartition)
+        {
+            PartitionedSessionFeed feed{};
+
+            for (auto it = eventLog.rbegin(); it != eventLog.rend(); ++it)
+            {
+                const SessionFeedPartition partition = classifyEntry(*it, roomTitle, roomDescription);
+                std::vector<std::string>* target = nullptr;
+                switch (partition)
+                {
+                case SessionFeedPartition::Room:
+                    target = &feed.roomEntries;
+                    break;
+                case SessionFeedPartition::Mission:
+                    target = &feed.missionEntries;
+                    break;
+                case SessionFeedPartition::System:
+                    target = &feed.systemEntries;
+                    break;
+                }
+
+                if (target != nullptr && target->size() < maxEntriesPerPartition)
+                {
+                    target->push_back(*it);
+                }
+
+                if (feed.roomEntries.size() >= maxEntriesPerPartition
+                    && feed.missionEntries.size() >= maxEntriesPerPartition
+                    && feed.systemEntries.size() >= maxEntriesPerPartition)
+                {
+                    break;
+                }
+            }
+
+            std::reverse(feed.roomEntries.begin(), feed.roomEntries.end());
+            std::reverse(feed.missionEntries.begin(), feed.missionEntries.end());
+            std::reverse(feed.systemEntries.begin(), feed.systemEntries.end());
+            return feed;
+        }
+
+        std::string buildFeedBlock(
+            std::string_view title,
+            std::string_view subtitle,
+            const std::vector<std::string>& entries,
+            std::string_view emptyText)
+        {
+            std::ostringstream output;
+            output << title << "\n" << subtitle << "\n";
+            if (entries.empty())
+            {
+                output << emptyText;
+                return output.str();
+            }
+
+            for (const std::string& entry : entries)
+            {
+                output << "- " << entry << "\n";
+            }
+            return output.str();
         }
     }
 
@@ -86,17 +227,13 @@ namespace war
 
         std::ostringstream info;
         info
-            << "WAR Milestone 45\n"
+            << "WAR Milestone 53\n"
+            << "Session shell: typed command bar / core routing / help\n"
             << "Connect target: " << localDemoDiagnosticsReport.connectTargetName << "\n"
             << "Transport: " << localDemoDiagnosticsReport.connectTransport << "\n"
-            << "Lane mode: " << localDemoDiagnosticsReport.connectLaneMode << "\n"
-            << "Runtime root: " << localDemoDiagnosticsReport.runtimeRootDisplay << "\n"
-            << "Authoritative lane: " << (simulationDiagnostics.hostAuthorityActive ? "headless host" : "local") << "\n"
-            << "Host instance: " << headlessHostPresenceReport.hostInstanceId << "\n"
+            << "Authority lane: " << (simulationDiagnostics.hostAuthorityActive ? "headless host" : "local") << "\n"
             << "Host session: " << headlessHostPresenceReport.sessionId << "\n"
             << "Protocol lane ready: " << (authoritativeHostProtocolReport.authorityLaneReady ? "yes" : "no") << "\n"
-            << "Snapshot present: " << (authoritativeHostProtocolReport.snapshotPresent ? "yes" : "no") << "\n"
-            << "Objective: " << simulationDiagnostics.missionObjectiveText << "\n"
             << "Mission phase: " << simulationDiagnostics.missionPhaseText << "\n"
             << "Player tile: (" << playerTile.x << ", " << playerTile.y << ")\n"
             << "Mouse tile: (" << mouseTile.x << ", " << mouseTile.y << ")\n"
@@ -104,25 +241,31 @@ namespace war
             << "Selected tile: " << selected << "\n"
             << "Move target: " << actionTarget << "\n"
             << "Path destination: " << pathDestination << "\n"
-            << "Restore state: " << headlessHostPresenceReport.restoreState << "\n"
             << "Runtime mode: " << (runtimeBoundaryReport.runningFromSourceTree ? "source-tree" : "packaged") << "\n"
             << "Frame dt: " << lastDeltaTime;
 
         const std::string infoText = info.str();
-        RECT infoRect{ 16, 16, 760, 760 };
+        RECT infoRect{ 16, 16, 760, 420 };
         RECT measureRect = infoRect;
         DrawTextA(dc, infoText.c_str(), -1, &measureRect, DT_LEFT | DT_TOP | DT_NOPREFIX | DT_CALCRECT);
-        DrawTextA(dc, infoText.c_str(), -1, &infoRect, DT_LEFT | DT_TOP | DT_NOPREFIX);
+        DrawTextA(dc, infoText.c_str(), -1, &infoRect, DT_LEFT | DT_TOP | DT_NOPREFIX | DT_WORDBREAK);
 
         std::ostringstream presentation;
         presentation
-            << "Room\n"
+            << "Session HUD\n"
+            << "Location\n"
             << roomTitle << "\n\n"
             << roomDescription << "\n\n"
+            << "Mission\n"
+            << "Phase: " << simulationDiagnostics.missionPhaseText << "\n"
+            << "Objective: " << simulationDiagnostics.missionObjectiveText << "\n"
+            << "Last beat: " << simulationDiagnostics.missionLastBeat << "\n\n"
             << "Prompt / Vitals\n"
             << promptLine << "\n\n"
-            << "Typed Command Bar\n"
+            << "Command Bar\n"
             << commandBarText << "\n\n"
+            << "Command Help\n"
+            << "help | look | say <text> | emote <text> | inv\n\n"
             << "Reply\n"
             << commandEcho;
 
@@ -130,14 +273,20 @@ namespace war
         RECT presentationRect{ 800, 16, 1560, 860 };
         DrawTextA(dc, presentationText.c_str(), -1, &presentationRect, DT_LEFT | DT_TOP | DT_NOPREFIX | DT_WORDBREAK);
 
-        int y = measureRect.bottom + 24;
-        TextOutA(dc, 16, y, "Event Log:", 10);
-        y += 22;
+        const PartitionedSessionFeed feed = partitionFeed(eventLog, roomTitle, roomDescription, 4u);
 
-        for (const std::string& entry : eventLog)
+        int sectionTop = measureRect.bottom + 24;
+        const std::array<std::string, 3> blocks{
+            buildFeedBlock("Room Feed", "authored location and room text", feed.roomEntries, "No room feed entries captured yet."),
+            buildFeedBlock("Mission Feed", "objective, hazard, encounter, and progress text", feed.missionEntries, "No mission feed entries captured yet."),
+            buildFeedBlock("System Feed", "session, authority, command, and runtime text", feed.systemEntries, "No system feed entries captured yet.")
+        };
+
+        for (const std::string& block : blocks)
         {
-            TextOutA(dc, 16, y, entry.c_str(), static_cast<int>(entry.size()));
-            y += 18;
+            RECT blockRect{ 16, sectionTop, 760, sectionTop + 150 };
+            DrawTextA(dc, block.c_str(), -1, &blockRect, DT_LEFT | DT_TOP | DT_NOPREFIX | DT_WORDBREAK);
+            sectionTop += 160;
         }
     }
 }

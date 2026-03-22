@@ -1,0 +1,9 @@
+version=1
+incident_track=incident_response_baseline
+incident_tier=market-candidate
+runtime_log_root=runtime/Logs/IncidentResponse
+runtime_manifest_file=runtime/Logs/IncidentResponse/incident_runtime_manifest.txt
+operator_brief_file=runtime/Logs/IncidentResponse/incident_operator_brief.txt
+latest_pointer_file=runtime/Logs/IncidentResponse/incident_latest_pointer.txt
+required_inputs=Runtime/CrashDumps/FailureBundles,Runtime/Logs/LiveOps,Runtime/Logs/ReleaseManagement
+incident_question=can_an_operator_identify_the_current_incident_surface_and_preserve_the_right_artifacts_without_guesswork

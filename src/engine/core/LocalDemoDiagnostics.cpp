@@ -157,7 +157,7 @@ namespace war
         report.runtimeRootDisplay = RuntimePaths::displayPath(runtimeBoundaryReport.runtimeRoot);
         report.startupReportPath = runtimeBoundaryReport.logsDirectory / "local_demo_startup_report.txt";
         report.suggestedPackageRoot = runtimeBoundaryReport.repoRootResolved
-            ? runtimeBoundaryReport.repoRoot / "out" / "internal_alpha"
+            ? runtimeBoundaryReport.repoRoot / "out"
             : runtimeBoundaryReport.executableDirectory;
 
         const std::filesystem::path executableDirectory = runtimeBoundaryReport.executableDirectory;
@@ -221,7 +221,12 @@ namespace war
         const EnvironmentConfigReport* environmentConfigReport,
         const RuntimeOwnershipReport* runtimeOwnershipReport,
         const SessionEntryProtocolReport* sessionEntryProtocolReport,
-        const FailureBundleProtocolReport* failureBundleProtocolReport)
+        const FailureBundleProtocolReport* failureBundleProtocolReport,
+        const MarketOnboardingReport* marketOnboardingReport,
+        const LiveOpsReport* liveOpsReport,
+        const ReleaseManagementReport* releaseManagementReport,
+        const SupportWorkflowReport* supportWorkflowReport,
+        const IncidentResponseReport* incidentResponseReport)
     {
         std::error_code error;
         std::filesystem::create_directories(localDemoDiagnosticsReport.startupReportPath.parent_path(), error);
@@ -238,7 +243,7 @@ namespace war
 
         output
             << "WAR Startup Report\n"
-            << "Milestone: M48 - Crash Capture / Failure Bundles / Operator Triage Baseline\n"
+            << "Milestone: working tree / validation pending\n"
             << "Build configuration: " << localDemoDiagnosticsReport.buildConfiguration << "\n"
             << "Build timestamp: " << localDemoDiagnosticsReport.buildTimestamp << "\n"
             << "Build identity: " << localDemoDiagnosticsReport.buildIdentity << "\n"
@@ -317,6 +322,68 @@ namespace war
                 << "Runtime failure bundle directory: " << RuntimePaths::displayPath(failureBundleProtocolReport->runtimeBundleDirectory) << "\n"
                 << "Bootstrap failure bundle directory: " << RuntimePaths::displayPath(failureBundleProtocolReport->bootstrapBundleDirectory) << "\n"
                 << "Operator triage directory: " << RuntimePaths::displayPath(failureBundleProtocolReport->operatorTriageDirectory) << "\n";
+        }
+
+        if (marketOnboardingReport != nullptr)
+        {
+            output
+                << "Onboarding lane ready: " << (marketOnboardingReport->onboardingLaneReady ? "yes" : "no") << "\n"
+                << "Onboarding manifest path: " << RuntimePaths::displayPath(marketOnboardingReport->onboardingManifestPath) << "\n"
+                << "First-session polish manifest path: " << RuntimePaths::displayPath(marketOnboardingReport->firstSessionManifestPath) << "\n"
+                << "Onboarding state path: " << RuntimePaths::displayPath(marketOnboardingReport->onboardingStatePath) << "\n"
+                << "Onboarding summary path: " << RuntimePaths::displayPath(marketOnboardingReport->onboardingSummaryPath) << "\n"
+                << "Onboarding brief path: " << RuntimePaths::displayPath(marketOnboardingReport->onboardingBriefPath) << "\n"
+                << "Onboarding pointer path: " << RuntimePaths::displayPath(marketOnboardingReport->onboardingPointerPath) << "\n"
+                << "First session detected: " << (marketOnboardingReport->firstSessionDetected ? "yes" : "no") << "\n";
+        }
+
+        if (liveOpsReport != nullptr)
+        {
+            output
+                << "Live-ops lane ready: " << (liveOpsReport->liveOpsLaneReady ? "yes" : "no") << "\n"
+                << "Live-ops manifest path: " << RuntimePaths::displayPath(liveOpsReport->liveOpsManifestPath) << "\n"
+                << "Analytics manifest path: " << RuntimePaths::displayPath(liveOpsReport->analyticsManifestPath) << "\n"
+                << "Live-ops runtime manifest path: " << RuntimePaths::displayPath(liveOpsReport->runtimeManifestPath) << "\n"
+                << "Live-ops operator brief path: " << RuntimePaths::displayPath(liveOpsReport->operatorBriefPath) << "\n"
+                << "Live-ops latest pointer path: " << RuntimePaths::displayPath(liveOpsReport->latestPointerPath) << "\n"
+                << "Live-ops counters path: " << RuntimePaths::displayPath(liveOpsReport->countersPath) << "\n"
+                << "Client launches: " << liveOpsReport->clientLaunches << "\n"
+                << "Host bootstrap launches: " << liveOpsReport->hostBootstrapLaunches << "\n"
+                << "Returning launches: " << liveOpsReport->returningLaunches << "\n"
+                << "First-session launches: " << liveOpsReport->firstSessionLaunches << "\n"
+                << "Release-state writes: " << liveOpsReport->releaseStateWrites << "\n";
+        }
+
+        if (releaseManagementReport != nullptr)
+        {
+            output
+                << "Release-management lane ready: " << (releaseManagementReport->releaseLaneReady ? "yes" : "no") << "\n"
+                << "Release-management source manifest path: " << RuntimePaths::displayPath(releaseManagementReport->releaseManifestSourcePath) << "\n"
+                << "Release-management runtime manifest path: " << RuntimePaths::displayPath(releaseManagementReport->releaseManagementManifestPath) << "\n"
+                << "Release gate summary path: " << RuntimePaths::displayPath(releaseManagementReport->releaseGateSummaryPath) << "\n"
+                << "Release latest pointer path: " << RuntimePaths::displayPath(releaseManagementReport->latestReleasePointerPath) << "\n";
+        }
+
+        if (supportWorkflowReport != nullptr)
+        {
+            output
+                << "Support lane ready: " << (supportWorkflowReport->supportLaneReady ? "yes" : "no") << "\n"
+                << "Support manifest path: " << RuntimePaths::displayPath(supportWorkflowReport->supportManifestPath) << "\n"
+                << "Player-messaging manifest path: " << RuntimePaths::displayPath(supportWorkflowReport->playerMessagingManifestPath) << "\n"
+                << "Support runtime manifest path: " << RuntimePaths::displayPath(supportWorkflowReport->runtimeManifestPath) << "\n"
+                << "Player-message path: " << RuntimePaths::displayPath(supportWorkflowReport->playerMessagePath) << "\n"
+                << "Support handoff path: " << RuntimePaths::displayPath(supportWorkflowReport->operatorHandoffPath) << "\n"
+                << "Support latest pointer path: " << RuntimePaths::displayPath(supportWorkflowReport->latestPointerPath) << "\n";
+        }
+
+        if (incidentResponseReport != nullptr)
+        {
+            output
+                << "Incident lane ready: " << (incidentResponseReport->incidentLaneReady ? "yes" : "no") << "\n"
+                << "Incident source manifest path: " << RuntimePaths::displayPath(incidentResponseReport->incidentManifestSourcePath) << "\n"
+                << "Incident runtime manifest path: " << RuntimePaths::displayPath(incidentResponseReport->runtimeManifestPath) << "\n"
+                << "Incident operator brief path: " << RuntimePaths::displayPath(incidentResponseReport->operatorBriefPath) << "\n"
+                << "Incident latest pointer path: " << RuntimePaths::displayPath(incidentResponseReport->latestPointerPath) << "\n";
         }
 
         output

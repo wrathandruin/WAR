@@ -35,7 +35,7 @@ Included
 - README.md
 - Milestones/WAR_Strategic_Roadmap.md
 - Milestones/M44_Docking_Landing_Cross_Layer_Transition_Persistence_Return_Loop.md
-- Docs/Wrath and Ruin - M44 Validation and Acceptance Checklist.md
+- Docs/Reports/Wrath and Ruin - M44 Validation and Acceptance Checklist.md
 - scripts/build_local_demo_package_win64.bat
 - scripts/acceptance_m44_return_loop_win64.bat
 - scripts/acceptance_m44_return_loop_win64.ps1

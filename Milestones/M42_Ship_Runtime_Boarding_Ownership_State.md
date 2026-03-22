@@ -34,7 +34,7 @@ Included
 - README.md
 - Milestones/WAR_Strategic_Roadmap.md
 - Milestones/M42_Ship_Runtime_Boarding_Ownership_State.md
-- Docs/Wrath and Ruin - M42 Validation and Acceptance Checklist.md
+- Docs/Reports/Wrath and Ruin - M42 Validation and Acceptance Checklist.md
 - scripts/build_local_demo_package_win64.bat
 - scripts/acceptance_m42_ship_runtime_boarding_win64.bat
 - scripts/acceptance_m42_ship_runtime_boarding_win64.ps1

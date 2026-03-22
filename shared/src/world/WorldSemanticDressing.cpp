@@ -130,6 +130,9 @@ namespace war
             WorldAuthoringHotspotType type,
             const char* label,
             const char* summary,
+            const char* locationKey,
+            const char* locationTitle,
+            const char* locationDescription,
             bool encounterReady)
         {
             TileCoord resolved{};
@@ -143,8 +146,11 @@ namespace war
             hotspot.tile = resolved;
             hotspot.region = expectedRegion;
             hotspot.type = type;
-            hotspot.label = label;
-            hotspot.summary = summary;
+            hotspot.label = label != nullptr ? label : "";
+            hotspot.summary = summary != nullptr ? summary : "";
+            hotspot.locationKey = locationKey != nullptr ? locationKey : "";
+            hotspot.locationTitle = locationTitle != nullptr ? locationTitle : "";
+            hotspot.locationDescription = locationDescription != nullptr ? locationDescription : "";
             hotspot.encounterReady = encounterReady;
             worldState.addAuthoringHotspot(hotspot);
         }
@@ -180,8 +186,35 @@ namespace war
     {
         appendSemanticTrace("WorldSemanticDressing::populateAuthoredTestWorld entered");
         worldState.entities().clear();
+        worldState.clearRegionDescriptions();
         worldState.clearAuthoringHotspots();
         worldState.clearTerrainHazards();
+
+        worldState.setRegionDescription(
+            WorldRegionTagId::CargoBay,
+            "region.khepri-cargo-bay",
+            "Khepri Dock Cargo Bay",
+            "Floodlit pallet lanes, dock clamps, and stacked freight mark this bay as Khepri Dock's working intake floor.");
+        worldState.setRegionDescription(
+            WorldRegionTagId::TransitSpine,
+            "region.transit-spine",
+            "Transit Spine",
+            "Narrow conduit lighting and maintenance striping pull personnel and freight through the station's hardened central spine.");
+        worldState.setRegionDescription(
+            WorldRegionTagId::MedLab,
+            "region.medlab-diagnostics",
+            "MedLab Diagnostics",
+            "Sterile light, diagnostic trays, and sealed med stations give the lab a clinical chill that the rest of the dock never quite loses.");
+        worldState.setRegionDescription(
+            WorldRegionTagId::CommandDeck,
+            "region.command-deck-approach",
+            "Command Deck Approach",
+            "Armored bulkheads, hardened consoles, and restricted sightlines tighten the command approach into a guarded operational lane.");
+        worldState.setRegionDescription(
+            WorldRegionTagId::HazardContainment,
+            "region.hazard-containment",
+            "Hazard Containment",
+            "Scored containment walls, emergency foam stains, and patchwork sealant make this sector feel recently fought over.");
 
         int nextEntityId = 1;
         int nextHotspotId = 1;
@@ -200,12 +233,18 @@ namespace war
             WorldAuthoringHotspotType::Loot,
             "Cargo Staging Pocket",
             "A serviceable loot pocket that feeds the early inventory loop.",
+            "hotspot.cargo-staging-pocket",
+            "Cargo Staging Pocket",
+            "Cargo netting, forklift scars, and tagged supply stacks turn this recess into a compact staging pocket for scavenged supplies.",
             true);
         addHotspot(
             worldState, nextHotspotId, WorldRegionTagId::CargoBay, { 7, 21 },
             WorldAuthoringHotspotType::Transit,
             "Docked Boarding Collar",
             "A pressurized shuttle collar that becomes the first ship-runtime boarding lane.",
+            "hotspot.docked-boarding-collar",
+            "Docked Boarding Collar",
+            "The shuttle collar hisses under pressure equalization, narrowing the world to one steel throat between dock and responder craft.",
             false);
         appendSemanticTrace("WorldSemanticDressing cargo bay hotspots placed");
 
@@ -218,6 +257,9 @@ namespace war
             WorldAuthoringHotspotType::Transit,
             "Spine Junction",
             "A routing anchor that later feeds mission and traversal flow.",
+            "hotspot.spine-junction",
+            "Spine Junction",
+            "Maintenance arrows, scuffed deck plating, and overlapping service lines make the junction feel like the station's circulatory knot.",
             true);
         appendSemanticTrace("WorldSemanticDressing transit spine hotspot placed");
 
@@ -230,6 +272,9 @@ namespace war
             WorldAuthoringHotspotType::Control,
             "Triage Convergence",
             "A controlled medical access point suited to mission and survival beats.",
+            "hotspot.triage-convergence",
+            "Triage Convergence",
+            "Med trolleys, sealable partitions, and clipped diagnostic readouts crowd this triage convergence with controlled urgency.",
             true);
         appendSemanticTrace("WorldSemanticDressing medlab hotspot placed");
 
@@ -242,6 +287,9 @@ namespace war
             WorldAuthoringHotspotType::Encounter,
             "Bridge Access Chokepoint",
             "A narrow, hostile crossing suited to the first six-second combat encounter.",
+            "hotspot.bridge-access-chokepoint",
+            "Bridge Access Chokepoint",
+            "A disciplined chokepoint of armored shutters and control posts forces any approach into the command lane to feel deliberate and exposed.",
             true);
         appendSemanticTrace("WorldSemanticDressing command deck hotspot placed");
 
@@ -255,6 +303,9 @@ namespace war
             WorldAuthoringHotspotType::Hazard,
             "Containment Breach Lane",
             "A dangerous lane where suit, oxygen, and health pressure become visible.",
+            "hotspot.containment-breach-lane",
+            "Containment Breach Lane",
+            "Emergency patches, scorched sealant, and warning strobes mark this lane as the heart of the current containment failure.",
             true);
         appendSemanticTrace("WorldSemanticDressing hazard hotspot placed");
 
@@ -263,6 +314,9 @@ namespace war
             WorldAuthoringHotspotType::Encounter,
             "Quarantine Access Gate",
             "A close-range hostile contact point for the first authoritative encounter loop.",
+            "hotspot.quarantine-access-gate",
+            "Quarantine Access Gate",
+            "The quarantine gate stands half-reset, with hard-lock brackets and emergency overrides still bearing signs of forced access.",
             true);
         appendSemanticTrace("WorldSemanticDressing quarantine gate hotspot placed");
 
@@ -272,6 +326,9 @@ namespace war
             WorldAuthoringHotspotType::Transit,
             "Dust Frontier Landing Pad",
             "An isolated frontier pad that becomes the second-destination landing and return-loop proof for M44.",
+            "frontier.dust-frontier-landing-pad",
+            "Dust Frontier Landing Pad",
+            "Dust-scoured plating and relay scaffold shadows make the frontier pad feel temporary, exposed, and very far from home.",
             false);
         appendSemanticTrace("WorldSemanticDressing frontier destination anchors placed");
 

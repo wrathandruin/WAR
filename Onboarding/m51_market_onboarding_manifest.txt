@@ -1,0 +1,28 @@
+version=1
+experience_name=market_onboarding
+experience_tier=market-candidate
+first_session_manifest=Onboarding/m51_first_session_polish_manifest.txt
+step_count=5
+
+step_01_id=enter_world
+step_01_title=Enter The World
+step_01_summary=Connect cleanly, read the room-entry text, and confirm the prompt strip appears.
+
+step_02_id=move_and_orient
+step_02_title=Move And Orient
+step_02_summary=Left click to move, confirm room text changes, and use the prompt strip to stay grounded.
+
+step_03_id=inspect_and_interact
+step_03_title=Inspect And Interact
+step_03_summary=Use right click to interact or Shift+right click to inspect and confirm the typed shell matches the world action.
+
+step_04_id=session_continuity
+step_04_title=Session Continuity
+step_04_summary=Use session-aware guidance and resume identity where applicable so a returning player is not dropped into ambiguity.
+
+step_05_id=continue_to_objective
+step_05_title=Continue To Objective
+step_05_summary=Use the typed shell to request help, look, objective, and onboarding guidance before moving deeper into the slice.
+
+recommended_shell_commands=help,onboarding,intro,controls,objective,look,status,session,resume
+first_session_success_standard=the player should know how to move, inspect, read the text layer, and continue to the next objective without guesswork

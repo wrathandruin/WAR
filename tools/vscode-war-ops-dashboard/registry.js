@@ -314,7 +314,7 @@ const ACTIONS = {
     "Runtime Boundary",
     "Open the runtime boundary contract.",
     {
-      relativePath: "Docs/Wrath and Ruin - Runtime Boundary Contract.md"
+      relativePath: "Docs/Technical/Wrath and Ruin - Runtime Boundary Contract.md"
     }
   ),
   openRunway: openFileAction(
@@ -322,7 +322,7 @@ const ACTIONS = {
     "M45-M70 Runway",
     "Open the current alpha playtest runway.",
     {
-      relativePath: "Docs/Wrath and Ruin - M45-M70 Alpha Playtest Runway.md"
+      relativePath: "Docs/Planning/Wrath and Ruin - M45-M70 Alpha Playtest Runway.md"
     }
   ),
   openM48Milestone: openFileAction(
@@ -354,7 +354,7 @@ const ACTIONS = {
     "M48 Evidence",
     "Open the M48 validation evidence file.",
     {
-      relativePath: "VALIDATION_EVIDENCE_M48.txt"
+      relativePath: "Docs/Validation/Docs/Validation/VALIDATION_EVIDENCE_M48.txt"
     }
   ),
   openM49Evidence: openFileAction(
@@ -362,7 +362,7 @@ const ACTIONS = {
     "M49 Evidence",
     "Open the M49 validation evidence file.",
     {
-      relativePath: "VALIDATION_EVIDENCE_M49.txt"
+      relativePath: "Docs/Validation/Docs/Validation/VALIDATION_EVIDENCE_M49.txt"
     }
   ),
   openM50Evidence: openFileAction(
@@ -370,7 +370,7 @@ const ACTIONS = {
     "M50 Evidence",
     "Open the M50 validation evidence file.",
     {
-      relativePath: "VALIDATION_EVIDENCE_M50.txt"
+      relativePath: "Docs/Validation/Docs/Validation/VALIDATION_EVIDENCE_M50.txt"
     }
   ),
   openRoadmap: openFileAction(

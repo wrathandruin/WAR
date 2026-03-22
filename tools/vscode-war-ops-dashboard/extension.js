@@ -2,7 +2,7 @@ const vscode = require("vscode");
 const path = require("path");
 const fs = require("fs");
 const crypto = require("crypto");
-const { execFile, execFileSync, spawn } = require("child_process");
+const { execFileSync, spawn } = require("child_process");
 
 const {
   ACTIONS,
@@ -13,6 +13,9 @@ const {
 
 const VIEW_TYPE = "warOps.panel";
 const POLL_INTERVAL_MS = 30000;
+const ACTION_OUTPUT_FLUSH_INTERVAL_MS = 100;
+const LAST_ACTION_MAX_CHARS = 60000;
+const LAST_ACTION_TRUNCATION_PREFIX = "[earlier output truncated]\n";
 const ACTION_COMMAND_PREFIX = "warOps.action.";
 const ACTION_COMMAND_EXCLUSIONS = new Set(["refreshDashboard", "openOutput"]);
 const REQUIRED_STAGE_FILES = [
@@ -43,6 +46,8 @@ class WarOperationsDashboardProvider {
     this.timer = null;
     this.refreshInFlight = false;
     this.actionInFlight = false;
+    this.actionOutputFlushTimer = null;
+    this.pendingActionOutput = "";
     this.state = this.createInitialState();
   }
 
@@ -78,6 +83,7 @@ class WarOperationsDashboardProvider {
       this.timer = null;
     }
 
+    this.clearActionOutputFlush();
     this.statusBarItem.dispose();
     this.output.dispose();
   }
@@ -213,6 +219,8 @@ class WarOperationsDashboardProvider {
   async runAction(action, inputValue) {
     this.actionInFlight = true;
     this.state.busy = action.label;
+    this.beginActionResult(action.label);
+    this.output.appendLine(`\n=== ${action.label} ===`);
     this.postState();
 
     try {
@@ -222,17 +230,22 @@ class WarOperationsDashboardProvider {
           title: `WAR Ops - ${action.label}`,
           cancellable: false
         },
-        async () => this.execAction(action, inputValue)
+        async () => this.execAction(action, inputValue, chunk => this.pushActionOutput(chunk))
       );
 
-      const output = this.combineOutput(result.stdout, result.stderr);
-      this.output.appendLine(`\n=== ${action.label} ===`);
-      this.output.appendLine(output || "(no output)");
+      const output = this.normalizeActionOutput(result.output);
+      if (!output) {
+        this.output.appendLine("(no output)");
+      }
       this.recordActionResult(action.label, true, output || "Completed without output.");
     } catch (error) {
       const message = this.formatError(error);
+      this.flushActionOutput();
       this.output.appendLine(`\n=== ${action.label} FAILED ===`);
-      this.output.appendLine(message);
+      const streamedOutput = this.normalizeActionOutput(this.state.lastAction?.output || "");
+      if (message && message !== streamedOutput) {
+        this.output.appendLine(message);
+      }
       this.recordActionResult(action.label, false, message);
       void vscode.window.showErrorMessage(`${action.label} failed. See the WAR Ops output for details.`);
     } finally {
@@ -811,28 +824,50 @@ class WarOperationsDashboardProvider {
     };
   }
 
-  execAction(action, inputValue) {
+  execAction(action, inputValue, onOutput) {
     const invocation = this.buildExecInvocation(action, inputValue);
 
     return new Promise((resolve, reject) => {
-      execFile(
-        invocation.command,
-        invocation.args,
-        {
-          cwd: invocation.cwd,
-          maxBuffer: 16 * 1024 * 1024
-        },
-        (error, stdout, stderr) => {
-          if (error) {
-            const wrapped = new Error(this.combineOutput(stdout, stderr) || error.message);
-            wrapped.code = error.code;
-            reject(wrapped);
-            return;
-          }
+      const child = spawn(invocation.command, invocation.args, {
+        cwd: invocation.cwd
+      });
+      let stdout = "";
+      let stderr = "";
+      let output = "";
 
-          resolve({ stdout, stderr });
+      const handleChunk = (chunk, stream) => {
+        const text = this.toOutputText(chunk);
+        if (!text) {
+          return;
         }
-      );
+
+        if (stream === "stderr") {
+          stderr += text;
+        } else {
+          stdout += text;
+        }
+
+        output += text;
+        if (typeof onOutput === "function") {
+          onOutput(text, stream);
+        }
+      };
+
+      child.stdout?.on("data", chunk => handleChunk(chunk, "stdout"));
+      child.stderr?.on("data", chunk => handleChunk(chunk, "stderr"));
+      child.once("error", reject);
+      child.once("close", (code, signal) => {
+        if (code && code !== 0) {
+          const details = this.normalizeActionOutput(output);
+          const summary = details || `Process exited with code ${code}${signal ? ` (${signal})` : ""}.`;
+          const wrapped = new Error(summary);
+          wrapped.code = code;
+          reject(wrapped);
+          return;
+        }
+
+        resolve({ stdout, stderr, output });
+      });
     });
   }
 
@@ -990,14 +1025,111 @@ class WarOperationsDashboardProvider {
     return `"${String(value).replace(/"/g, '""')}"`;
   }
 
+  beginActionResult(label) {
+    this.clearActionOutputFlush();
+    this.pendingActionOutput = "";
+    this.state.lastAction = {
+      label,
+      success: null,
+      status: "running",
+      output: "",
+      time: new Date().toLocaleTimeString()
+    };
+  }
+
+  pushActionOutput(chunk) {
+    const text = this.toOutputText(chunk);
+    if (!text) {
+      return;
+    }
+
+    this.output.append(text);
+    this.pendingActionOutput += text;
+    this.scheduleActionOutputFlush();
+  }
+
+  scheduleActionOutputFlush() {
+    if (this.actionOutputFlushTimer) {
+      return;
+    }
+
+    this.actionOutputFlushTimer = setTimeout(() => {
+      this.flushActionOutput();
+    }, ACTION_OUTPUT_FLUSH_INTERVAL_MS);
+  }
+
+  clearActionOutputFlush() {
+    if (this.actionOutputFlushTimer) {
+      clearTimeout(this.actionOutputFlushTimer);
+      this.actionOutputFlushTimer = null;
+    }
+  }
+
+  flushActionOutput() {
+    this.clearActionOutputFlush();
+
+    if (!this.pendingActionOutput || !this.state.lastAction) {
+      this.pendingActionOutput = "";
+      return;
+    }
+
+    this.state.lastAction.output = this.clampActionOutput(
+      `${this.state.lastAction.output}${this.pendingActionOutput}`
+    );
+    this.pendingActionOutput = "";
+    this.postState();
+  }
+
   recordActionResult(label, success, output) {
+    this.flushActionOutput();
+    this.clearActionOutputFlush();
+    this.pendingActionOutput = "";
     this.state.lastAction = {
       label,
       success,
-      output: (output || "").trim() || "(no output)",
+      status: success ? "success" : "failed",
+      output: this.finalizeActionOutput(output),
       time: new Date().toLocaleTimeString()
     };
     this.postState();
+  }
+
+  finalizeActionOutput(output) {
+    const normalized = this.normalizeActionOutput(output);
+    return this.clampActionOutput(normalized || "(no output)");
+  }
+
+  clampActionOutput(output) {
+    const text = String(output || "");
+    if (text.length <= LAST_ACTION_MAX_CHARS) {
+      return text;
+    }
+
+    const budget = Math.max(0, LAST_ACTION_MAX_CHARS - LAST_ACTION_TRUNCATION_PREFIX.length);
+    return `${LAST_ACTION_TRUNCATION_PREFIX}${text.slice(-budget)}`;
+  }
+
+  normalizeActionOutput(output) {
+    if (typeof output !== "string") {
+      return "";
+    }
+
+    return output
+      .replace(/\r\n/g, "\n")
+      .replace(/\r/g, "\n")
+      .replace(/\s+$/u, "");
+  }
+
+  toOutputText(chunk) {
+    if (typeof chunk === "string") {
+      return chunk;
+    }
+
+    if (Buffer.isBuffer(chunk)) {
+      return chunk.toString("utf8");
+    }
+
+    return chunk ? String(chunk) : "";
   }
 
   combineOutput(stdout, stderr) {
@@ -1500,13 +1632,23 @@ class WarOperationsDashboardProvider {
         return;
       }
 
-      const marker = state.lastAction.success ? "OK" : "FAILED";
+      const marker = state.lastAction.status === "running"
+        ? "RUNNING"
+        : (state.lastAction.success ? "OK" : "FAILED");
+      const output = state.lastAction.output || (state.lastAction.status === "running"
+        ? "(waiting for output)"
+        : "(no output)");
       container.innerHTML = \`
         <div class="last-action-summary">
           <span class="pill"><strong>\${escapeHtml(state.lastAction.label)}</strong>&nbsp;\${escapeHtml(marker)} at \${escapeHtml(state.lastAction.time)}</span>
         </div>
-        <pre class="last-action-output">\${escapeHtml(state.lastAction.output)}</pre>
+        <pre class="last-action-output">\${escapeHtml(output)}</pre>
       \`;
+
+      const outputNode = container.querySelector(".last-action-output");
+      if (outputNode) {
+        outputNode.scrollTop = outputNode.scrollHeight;
+      }
     }
 
     function persistUiState() {

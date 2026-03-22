@@ -128,7 +128,7 @@ if not exist "%STAGE_ROOT%\BetaContent\m49_retention_journey_cards.txt" (
 
 for %%F in (
     "README.md"
-    "VALIDATION_EVIDENCE_M49.txt"
+    "Docs/Validation/VALIDATION_EVIDENCE_M49.txt"
     "Milestones\M49_Beta_Content_Scale_Retention_Expansion_Release_Candidate_Discipline.md"
     "scripts\launch_headless_host_win64.bat"
     "scripts\launch_local_demo_win64.bat"

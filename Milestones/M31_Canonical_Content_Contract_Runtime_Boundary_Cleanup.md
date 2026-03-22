@@ -25,7 +25,7 @@ It is not a gameplay-expansion milestone.
 - `CMakeLists.txt`
 - `WAR.vcxproj`
 - `README.md`
-- `Docs/Wrath and Ruin - Runtime Boundary Contract.md`
+- `Docs/Technical/Wrath and Ruin - Runtime Boundary Contract.md`
 - `src/engine/core/RuntimePaths.h`
 - `src/engine/core/RuntimePaths.cpp`
 - `src/game/GameLayer.h`

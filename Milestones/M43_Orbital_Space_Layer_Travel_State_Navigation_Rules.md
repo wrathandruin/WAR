@@ -34,7 +34,7 @@ Included
 - README.md
 - Milestones/WAR_Strategic_Roadmap.md
 - Milestones/M43_Orbital_Space_Layer_Travel_State_Navigation_Rules.md
-- Docs/Wrath and Ruin - M43 Validation and Acceptance Checklist.md
+- Docs/Reports/Wrath and Ruin - M43 Validation and Acceptance Checklist.md
 - scripts/build_local_demo_package_win64.bat
 - scripts/acceptance_m43_orbital_space_layer_win64.bat
 - scripts/acceptance_m43_orbital_space_layer_win64.ps1

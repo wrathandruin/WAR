@@ -27,7 +27,26 @@ namespace war
         WorldAuthoringHotspotType type = WorldAuthoringHotspotType::Encounter;
         std::string label;
         std::string summary;
+        std::string locationKey;
+        std::string locationTitle;
+        std::string locationDescription;
         bool encounterReady = false;
+    };
+
+    struct WorldRegionDescription
+    {
+        WorldRegionTagId region = WorldRegionTagId::CargoBay;
+        std::string key;
+        std::string title;
+        std::string entryDescription;
+    };
+
+    struct ResolvedLocationContext
+    {
+        bool valid = false;
+        std::string key;
+        std::string title;
+        std::string entryDescription;
     };
 
     enum class TerrainHazardType
@@ -73,6 +92,15 @@ namespace war
         void setPaletteMode(BgfxThemePaletteMode paletteMode);
         [[nodiscard]] BgfxThemePaletteMode paletteMode() const;
 
+        void clearRegionDescriptions();
+        void setRegionDescription(
+            WorldRegionTagId region,
+            const std::string& key,
+            const std::string& title,
+            const std::string& entryDescription);
+        [[nodiscard]] const WorldRegionDescription* regionDescription(WorldRegionTagId region) const;
+        [[nodiscard]] ResolvedLocationContext resolveInteriorLocation(TileCoord tile) const;
+
         void clearAuthoringHotspots();
         void addAuthoringHotspot(const WorldAuthoringHotspot& hotspot);
         [[nodiscard]] const std::vector<WorldAuthoringHotspot>& authoringHotspots() const;
@@ -96,6 +124,7 @@ namespace war
         std::vector<WorldRegionTagId> m_regionTags;
         bool m_regionOverlayEnabled = true;
         BgfxThemePaletteMode m_paletteMode = BgfxThemePaletteMode::Default;
+        std::vector<WorldRegionDescription> m_regionDescriptions;
         std::vector<WorldAuthoringHotspot> m_authoringHotspots;
         bool m_authoringHotspotsVisible = true;
         std::vector<TerrainHazardTile> m_terrainHazards;

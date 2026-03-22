@@ -78,4 +78,4 @@ Market-candidate credibility requires that launcher entry, installation, and pat
 
 ## What should be coming up in the next milestone
 
-M51 - Market Onboarding / First-Session Polish
+M51 - Room And Interior Description Runtime / Location Titles

@@ -127,42 +127,46 @@ namespace war
                 + std::to_string(ReplicationHarness::currentEpochMilliseconds());
         }
 
-
-std::filesystem::path clientResumeIdentityPath(const RuntimeBoundaryReport& runtimeBoundaryReport)
-{
-    return runtimeBoundaryReport.configDirectory / "client_resume_identity.txt";
-}
-
-bool parseSimpleKeyValueFile(const std::filesystem::path& path, std::unordered_map<std::string, std::string>& outValues)
-{
-    outValues.clear();
-    std::ifstream input(path, std::ios::in);
-    if (!input.is_open())
-    {
-        return false;
-    }
-
-    std::string line;
-    while (std::getline(input, line))
-    {
-        if (!line.empty() && line.back() == '\r')
+        std::filesystem::path clientResumeIdentityPath(const RuntimeBoundaryReport& runtimeBoundaryReport)
         {
-            line.pop_back();
+            return runtimeBoundaryReport.configDirectory / "client_resume_identity.txt";
         }
 
-        const size_t split = line.find('=');
-        if (split == std::string::npos)
+        std::filesystem::path clientLocationContextPath(const RuntimeBoundaryReport& runtimeBoundaryReport)
         {
-            continue;
+            return runtimeBoundaryReport.configDirectory / "client_location_context.txt";
         }
 
-        outValues.emplace(line.substr(0, split), line.substr(split + 1));
-    }
+        bool parseSimpleKeyValueFile(const std::filesystem::path& path, std::unordered_map<std::string, std::string>& outValues)
+        {
+            outValues.clear();
+            std::ifstream input(path, std::ios::in);
+            if (!input.is_open())
+            {
+                return false;
+            }
 
-    return true;
-}
+            std::string line;
+            while (std::getline(input, line))
+            {
+                if (!line.empty() && line.back() == '\r')
+                {
+                    line.pop_back();
+                }
 
-        std::string toLowerTrim(std::string value)
+                const size_t split = line.find('=');
+                if (split == std::string::npos)
+                {
+                    continue;
+                }
+
+                outValues.emplace(line.substr(0, split), line.substr(split + 1));
+            }
+
+            return true;
+        }
+
+        std::string trimCopy(std::string value)
         {
             value.erase(value.begin(), std::find_if(value.begin(), value.end(), [](unsigned char ch)
             {
@@ -172,7 +176,12 @@ bool parseSimpleKeyValueFile(const std::filesystem::path& path, std::unordered_m
             {
                 return !std::isspace(ch);
             }).base(), value.end());
+            return value;
+        }
 
+        std::string toLowerTrim(std::string value)
+        {
+            value = trimCopy(std::move(value));
             std::transform(value.begin(), value.end(), value.begin(), [](unsigned char ch)
             {
                 return static_cast<char>(std::tolower(ch));
@@ -181,36 +190,297 @@ bool parseSimpleKeyValueFile(const std::filesystem::path& path, std::unordered_m
             return value;
         }
 
-        const char* regionTitle(WorldRegionTagId tag)
+        enum class RoutedCommandType
         {
-            switch (tag)
+            None,
+            Help,
+            Look,
+            Say,
+            Emote,
+            Inventory,
+            Status,
+            Session,
+            Entry,
+            Resume,
+            Inspect,
+            Interact,
+            Move,
+            Clear,
+            Unknown
+        };
+
+        struct RoutedCommand
+        {
+            RoutedCommandType type = RoutedCommandType::None;
+            std::string rawText;
+            std::string verb;
+            std::string argumentText;
+            int moveX = 0;
+            int moveY = 0;
+            bool syntaxValid = false;
+        };
+
+        RoutedCommand parseRoutedCommand(const std::string& commandLine)
+        {
+            RoutedCommand command{};
+            command.rawText = trimCopy(commandLine);
+            if (command.rawText.empty())
             {
-            case WorldRegionTagId::CargoBay: return "Khepri Dock Cargo Bay";
-            case WorldRegionTagId::TransitSpine: return "Transit Spine";
-            case WorldRegionTagId::MedLab: return "MedLab Diagnostics";
-            case WorldRegionTagId::CommandDeck: return "Command Deck Approach";
-            case WorldRegionTagId::HazardContainment: return "Hazard Containment";
-            default: return "Unknown Interior";
+                return command;
             }
+
+            const size_t split = command.rawText.find_first_of(" 	");
+            const std::string rawVerb = split == std::string::npos
+                ? command.rawText
+                : command.rawText.substr(0, split);
+            command.verb = toLowerTrim(rawVerb);
+            command.argumentText = split == std::string::npos
+                ? std::string()
+                : trimCopy(command.rawText.substr(split + 1));
+
+            if (command.verb == "help" || command.verb == "?")
+            {
+                command.type = RoutedCommandType::Help;
+                command.syntaxValid = true;
+                return command;
+            }
+
+            if (command.verb == "look" || command.verb == "room" || command.verb == "where" || command.verb == "l")
+            {
+                command.type = RoutedCommandType::Look;
+                command.syntaxValid = true;
+                return command;
+            }
+
+            if (command.verb == "say")
+            {
+                command.type = RoutedCommandType::Say;
+                command.syntaxValid = !command.argumentText.empty();
+                return command;
+            }
+
+            if (command.verb == "emote" || command.verb == "me")
+            {
+                command.type = RoutedCommandType::Emote;
+                command.syntaxValid = !command.argumentText.empty();
+                return command;
+            }
+
+            if (command.verb == "inv" || command.verb == "inventory" || command.verb == "i")
+            {
+                command.type = RoutedCommandType::Inventory;
+                command.syntaxValid = true;
+                return command;
+            }
+
+            if (command.verb == "status" || command.verb == "vitals")
+            {
+                command.type = RoutedCommandType::Status;
+                command.syntaxValid = true;
+                return command;
+            }
+
+            if (command.verb == "session")
+            {
+                command.type = RoutedCommandType::Session;
+                command.syntaxValid = true;
+                return command;
+            }
+
+            if (command.verb == "entry")
+            {
+                command.type = RoutedCommandType::Entry;
+                command.syntaxValid = true;
+                return command;
+            }
+
+            if (command.verb == "resume")
+            {
+                command.type = RoutedCommandType::Resume;
+                command.syntaxValid = true;
+                return command;
+            }
+
+            if (command.verb == "inspect")
+            {
+                command.type = RoutedCommandType::Inspect;
+                command.syntaxValid = true;
+                return command;
+            }
+
+            if (command.verb == "interact")
+            {
+                command.type = RoutedCommandType::Interact;
+                command.syntaxValid = true;
+                return command;
+            }
+
+            if (command.verb == "move")
+            {
+                command.type = RoutedCommandType::Move;
+                std::istringstream input(command.argumentText);
+                int x = 0;
+                int y = 0;
+                char trailing = '\0';
+                if ((input >> x >> y) && !(input >> trailing))
+                {
+                    command.moveX = x;
+                    command.moveY = y;
+                    command.syntaxValid = true;
+                }
+                return command;
+            }
+
+            if (command.verb == "clear")
+            {
+                command.type = RoutedCommandType::Clear;
+                command.syntaxValid = true;
+                return command;
+            }
+
+            command.type = RoutedCommandType::Unknown;
+            return command;
         }
 
-        const char* regionDescription(WorldRegionTagId tag)
+        std::string buildCommandHelpText()
         {
-            switch (tag)
+            return "Commands: help, look, say <text>, emote <text>, inv. Support: status, session, entry, resume, inspect, interact, move <x> <y>, clear.";
+        }
+
+        std::string buildInventoryShellText(const SharedSimulationDiagnostics& diagnostics)
+        {
+            std::ostringstream inventory;
+            inventory
+                << "Inventory: " << diagnostics.inventorySummary
+                << " | Weapon: " << diagnostics.equippedWeaponText
+                << " | Suit: " << diagnostics.equippedSuitText
+                << " | Tool: " << diagnostics.equippedToolText;
+            return inventory.str();
+        }
+
+        ResolvedLocationContext makeLocationContext(
+            const std::string& key,
+            const std::string& title,
+            const std::string& description)
+        {
+            ResolvedLocationContext context{};
+            context.valid = true;
+            context.key = key;
+            context.title = title;
+            context.entryDescription = description;
+            return context;
+        }
+
+        ResolvedLocationContext resolveOrbitalLocationContext(const SharedSimulationDiagnostics& diagnostics)
+        {
+            if (diagnostics.orbitalCurrentNodeText == "traffic-separation-lane")
             {
-            case WorldRegionTagId::CargoBay:
-                return "Cargo lifters sit dark under pressure lamps while the docked responder shuttle waits in its collar.";
-            case WorldRegionTagId::TransitSpine:
-                return "A narrow industrial transit corridor channels personnel and freight through the station's central spine.";
-            case WorldRegionTagId::MedLab:
-                return "Sterile light, diagnostic trays, and sealed med stations make this bay feel colder than the rest of the dock.";
-            case WorldRegionTagId::CommandDeck:
-                return "The command lane narrows into a defended choke where control authority and quarantine routing become decisive.";
-            case WorldRegionTagId::HazardContainment:
-                return "Containment walls are scarred by leak alarms and emergency patches; the air here feels recently fought over.";
-            default:
-                return "The current interior has not been formally authored yet.";
+                return makeLocationContext(
+                    "orbital.traffic-separation-lane",
+                    "Traffic Separation Lane",
+                    "The shuttle holds inside Khepri traffic separation, bracketed by traffic-control windows and collision-avoidance protocol.");
             }
+
+            if (diagnostics.orbitalCurrentNodeText == "debris-survey-orbit")
+            {
+                return makeLocationContext(
+                    "orbital.debris-survey-orbit",
+                    "Debris Survey Orbit",
+                    "Broken survey debris, sparse traffic telemetry, and broad orbital sightlines turn this orbit into a cold operational watchpoint.");
+            }
+
+            if (diagnostics.orbitalCurrentNodeText == "relay-holding-track")
+            {
+                return makeLocationContext(
+                    "orbital.relay-holding-track",
+                    "Relay Holding Track",
+                    "The shuttle paces a narrow relay holding track where approach timing and platform clearance are more important than comfort.");
+            }
+
+            if (diagnostics.orbitalCurrentNodeText == "relay-platform-dock"
+                || diagnostics.orbitalPhaseText == "relay-platform-docked")
+            {
+                return makeLocationContext(
+                    "orbital.relay-platform-dock",
+                    "Relay Platform Dock",
+                    "Docking clamps, relay trusswork, and hard-vacuum service lanes crowd the shuttle against the survey platform.");
+            }
+
+            if (diagnostics.orbitalCurrentNodeText == "return-traffic-lane")
+            {
+                return makeLocationContext(
+                    "orbital.return-traffic-lane",
+                    "Return Traffic Lane",
+                    "Return traffic narrows into a controlled recovery lane where every approach window points the shuttle back toward Khepri.");
+            }
+
+            if (diagnostics.orbitalCurrentNodeText == "home-dock-anchor"
+                || diagnostics.orbitalPhaseText == "home-docked")
+            {
+                return makeLocationContext(
+                    "orbital.home-dock-anchor",
+                    "Home Dock Anchor",
+                    "Khepri's home-dock anchor feels controlled and procedural, with docking geometry and return vectors replacing the uncertainty of open transfer.");
+            }
+
+            std::ostringstream description;
+            description << "The shuttle hangs in Khepri's controlled orbital anchor while departure windows are metered through the local traffic shell.";
+            if (!diagnostics.orbitalRuleText.empty())
+            {
+                description << ' ' << diagnostics.orbitalRuleText;
+            }
+
+            return makeLocationContext(
+                "orbital.khepri-anchor",
+                "Khepri Orbital Anchor",
+                description.str());
+        }
+
+        ResolvedLocationContext resolveShipboardLocationContext(const SharedSimulationDiagnostics& diagnostics)
+        {
+            if (diagnostics.shipCommandClaimed)
+            {
+                return makeLocationContext(
+                    "ship.responder-shuttle-khepri.command-cabin",
+                    "Responder Shuttle Khepri - Command Cabin",
+                    "Harness webbing, helm glass, and route controls crowd the shuttle's command cabin into a compact operational nerve center.");
+            }
+
+            return makeLocationContext(
+                "ship.responder-shuttle-khepri.docked-interior",
+                "Responder Shuttle Khepri - Docked Interior",
+                "The responder shuttle feels tight, metallic, and mission-worn, with fold-down seating and sealed bulkheads built for short hard transfers.");
+        }
+
+        ResolvedLocationContext resolveFrontierLocationContext()
+        {
+            return makeLocationContext(
+                "frontier.dust-frontier-landing-pad",
+                "Dust Frontier Landing Pad",
+                "Dust-scoured plating, relay scaffold shadows, and a waiting return corridor make the frontier pad feel exposed, temporary, and very far from home.");
+        }
+
+        ResolvedLocationContext resolveRuntimeLocationContext(
+            const WorldState& worldState,
+            const SharedSimulationDiagnostics& diagnostics,
+            TileCoord playerTile)
+        {
+            if (diagnostics.orbitalLayerActive)
+            {
+                return resolveOrbitalLocationContext(diagnostics);
+            }
+
+            if (diagnostics.shipBoarded)
+            {
+                return resolveShipboardLocationContext(diagnostics);
+            }
+
+            if (diagnostics.frontierSurfaceActive)
+            {
+                return resolveFrontierLocationContext();
+            }
+
+            return worldState.resolveInteriorLocation(playerTile);
         }
     }
 
@@ -242,16 +512,17 @@ bool parseSimpleKeyValueFile(const std::filesystem::path& path, std::unordered_m
         m_connectState = "connect-pending";
         m_connectFailureReason = "none";
         loadPersistedResumeIdentity();
+        loadPersistedLocationContext();
         updateSessionEntryFlow();
 
         refreshAuthorityMode();
         updateConnectionTelemetry();
         updateReplicationDiagnostics();
         updatePresentationRuntime();
+        m_commandEcho = "Command shell ready. Type 'help' for look, say, emote, and inv.";
         writeClientReplicationStatus();
 
-        pushEvent("Milestone 47 initialized");
-        pushEvent("account session ticket handoff / authenticated entry active");
+        pushEvent("Milestone 53 initialized");
         pushEvent(std::string("Client instance: ") + m_clientInstanceId);
         pushEvent(std::string("Client session: ") + m_clientSessionId);
         pushEvent(std::string("Connect target: ") + m_localDemoDiagnosticsReport.connectTargetName);
@@ -259,12 +530,17 @@ bool parseSimpleKeyValueFile(const std::filesystem::path& path, std::unordered_m
         pushEvent(std::string("Lane mode: ") + m_localDemoDiagnosticsReport.connectLaneMode);
         pushEvent(std::string("Session account: ") + m_accountId);
         pushEvent(std::string("Session identity: ") + m_playerIdentity);
-        pushEvent("MUD surfaces live: room descriptions, prompt strip, and typed command shell are active.");
+        pushEvent("Room and interior description runtime active for authored spaces.");
+        pushEvent("Typed command routing active: help, look, say <text>, emote <text>, inv.");
         if (m_resumeSessionId != "none")
         {
             pushEvent(std::string("Resume identity detected: ") + m_resumeSessionId);
         }
-        pushEvent("Type 'help' and press Enter for MVP shell commands.");
+        if (!m_roomTitle.empty())
+        {
+            pushEvent(std::string("Restored location context: ") + m_roomTitle);
+        }
+        pushEvent("Type 'help' and press Enter for shell commands and examples.");
 
         auto preferred = std::make_unique<BgfxRenderDevice>();
         if (preferred->initialize(m_window->getHandle()))
@@ -405,6 +681,7 @@ bool parseSimpleKeyValueFile(const std::filesystem::path& path, std::unordered_m
 
     void GameLayer::shutdown()
     {
+        persistLocationContext();
         m_bgfxWorldRenderer.shutdown();
         if (m_renderDevice)
         {
@@ -709,7 +986,6 @@ bool parseSimpleKeyValueFile(const std::filesystem::path& path, std::unordered_m
         }
     }
 
-
     void GameLayer::updateSessionEntryFlow()
     {
         m_sessionEntryProtocolReport = SessionEntryProtocol::buildReport(m_runtimeBoundaryReport);
@@ -863,6 +1139,50 @@ bool parseSimpleKeyValueFile(const std::filesystem::path& path, std::unordered_m
         writeTextFileAtomically(clientResumeIdentityPath(m_runtimeBoundaryReport), output.str());
     }
 
+    void GameLayer::loadPersistedLocationContext()
+    {
+        std::unordered_map<std::string, std::string> values{};
+        if (!parseSimpleKeyValueFile(clientLocationContextPath(m_runtimeBoundaryReport), values))
+        {
+            return;
+        }
+
+        const auto keyIt = values.find("location_key");
+        if (keyIt == values.end() || keyIt->second.empty())
+        {
+            return;
+        }
+
+        m_roomSignature = keyIt->second;
+
+        const auto titleIt = values.find("location_title");
+        if (titleIt != values.end() && !titleIt->second.empty())
+        {
+            m_roomTitle = titleIt->second;
+        }
+
+        const auto descriptionIt = values.find("location_description");
+        if (descriptionIt != values.end() && !descriptionIt->second.empty())
+        {
+            m_roomDescription = descriptionIt->second;
+        }
+    }
+
+    void GameLayer::persistLocationContext() const
+    {
+        if (m_roomSignature.empty() || m_roomTitle.empty() || m_roomDescription.empty())
+        {
+            return;
+        }
+
+        std::ostringstream output;
+        output
+            << "location_key=" << sanitizeSingleLine(m_roomSignature) << "\n"
+            << "location_title=" << sanitizeSingleLine(m_roomTitle) << "\n"
+            << "location_description=" << sanitizeSingleLine(m_roomDescription) << "\n";
+        writeTextFileAtomically(clientLocationContextPath(m_runtimeBoundaryReport), output.str());
+    }
+
     bool GameLayer::tryResolveIssuedTicket(SessionTicket& outTicket) const
     {
         const std::vector<SessionTicket> tickets = SessionEntryProtocol::collectIssuedTickets(m_runtimeBoundaryReport);
@@ -894,7 +1214,6 @@ bool parseSimpleKeyValueFile(const std::filesystem::path& path, std::unordered_m
 
         return false;
     }
-
 
     void GameLayer::updateConnectionTelemetry()
     {
@@ -1093,7 +1412,7 @@ bool parseSimpleKeyValueFile(const std::filesystem::path& path, std::unordered_m
         const SharedSimulationDiagnostics& diagnostics = m_simulationRuntime.diagnostics();
         std::ostringstream output;
         output
-            << "version=6\n"
+            << "version=8\n"
             << "build_identity=" << sanitizeSingleLine(m_localDemoDiagnosticsReport.buildIdentity) << "\n"
             << "build_channel=" << sanitizeSingleLine(m_localDemoDiagnosticsReport.buildChannel) << "\n"
             << "client_instance_id=" << sanitizeSingleLine(m_clientInstanceId) << "\n"
@@ -1130,10 +1449,15 @@ bool parseSimpleKeyValueFile(const std::filesystem::path& path, std::unordered_m
             << "host_persistence_last_load_succeeded=" << (m_headlessHostPresenceReport.persistenceLastLoadSucceeded ? "yes" : "no") << "\n"
             << "protocol_lane_ready=" << (m_authoritativeHostProtocolReport.authorityLaneReady ? "yes" : "no") << "\n"
             << "snapshot_present=" << (m_authoritativeHostProtocolReport.snapshotPresent ? "yes" : "no") << "\n"
+            << "room_context_key=" << sanitizeSingleLine(m_roomSignature) << "\n"
             << "room_title=" << sanitizeSingleLine(m_roomTitle) << "\n"
             << "room_description=" << sanitizeSingleLine(m_roomDescription) << "\n"
+            << "mission_phase=" << sanitizeSingleLine(diagnostics.missionPhaseText) << "\n"
+            << "mission_objective=" << sanitizeSingleLine(diagnostics.missionObjectiveText) << "\n"
+            << "mission_last_beat=" << sanitizeSingleLine(diagnostics.missionLastBeat) << "\n"
             << "prompt_line=" << sanitizeSingleLine(m_promptLine) << "\n"
             << "command_bar=" << sanitizeSingleLine(buildCommandBarText()) << "\n"
+            << "command_discoverability=" << sanitizeSingleLine(buildCommandHelpText()) << "\n"
             << "command_echo=" << sanitizeSingleLine(m_commandEcho) << "\n"
             << "client_prediction_enabled=" << (diagnostics.clientPredictionEnabled ? "yes" : "no") << "\n";
 
@@ -1143,14 +1467,25 @@ bool parseSimpleKeyValueFile(const std::filesystem::path& path, std::unordered_m
 
     void GameLayer::updatePresentationRuntime()
     {
-        m_roomTitle = buildRoomTitle();
-        m_roomDescription = buildRoomDescription();
+        const std::string newSignature = buildRoomSignature();
+        const std::string newTitle = buildRoomTitle();
+        const std::string newDescription = buildRoomDescription();
+
+        const bool signatureChanged = !newSignature.empty() && newSignature != m_roomSignature;
+        const bool presentationChanged = newTitle != m_roomTitle || newDescription != m_roomDescription;
+
+        m_roomTitle = newTitle;
+        m_roomDescription = newDescription;
         m_promptLine = buildPromptLine();
 
-        const std::string newSignature = buildRoomSignature();
-        if (!newSignature.empty() && newSignature != m_roomSignature)
+        if (!newSignature.empty() && (signatureChanged || presentationChanged || m_roomSignature.empty()))
         {
             m_roomSignature = newSignature;
+            persistLocationContext();
+        }
+
+        if (signatureChanged)
+        {
             pushEvent(std::string("Room entry: ") + m_roomTitle);
             pushEvent(m_roomDescription);
         }
@@ -1158,6 +1493,15 @@ bool parseSimpleKeyValueFile(const std::filesystem::path& path, std::unordered_m
 
     void GameLayer::handleCommandBarInput()
     {
+        const bool shiftDown = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+        auto appendOemCharacter = [this, shiftDown](int virtualKey, char normalCharacter, char shiftedCharacter)
+        {
+            if (consumeKeyEdge(virtualKey))
+            {
+                appendTypedCharacter(shiftDown ? shiftedCharacter : normalCharacter);
+            }
+        };
+
         if (consumeKeyEdge(VK_BACK))
         {
             if (!m_commandInput.empty())
@@ -1187,6 +1531,16 @@ bool parseSimpleKeyValueFile(const std::filesystem::path& path, std::unordered_m
             }
         }
 
+        appendOemCharacter(VK_OEM_PERIOD, '.', '>');
+        appendOemCharacter(VK_OEM_COMMA, ',', '<');
+        appendOemCharacter(VK_OEM_MINUS, '-', '_');
+        appendOemCharacter(VK_OEM_PLUS, '=', '+');
+        appendOemCharacter(VK_OEM_1, ';', ':');
+        appendOemCharacter(VK_OEM_2, '/', '?');
+        appendOemCharacter(VK_OEM_4, '[', '{');
+        appendOemCharacter(VK_OEM_6, ']', '}');
+        appendOemCharacter(VK_OEM_7, '\'', '"');
+
         if (consumeKeyEdge(VK_RETURN))
         {
             const std::string submitted = m_commandInput;
@@ -1197,53 +1551,70 @@ bool parseSimpleKeyValueFile(const std::filesystem::path& path, std::unordered_m
 
     void GameLayer::executeCommandLine(const std::string& commandLine)
     {
-        const std::string normalized = toLowerTrim(commandLine);
-        if (normalized.empty())
+        const RoutedCommand command = parseRoutedCommand(commandLine);
+        if (command.type == RoutedCommandType::None)
         {
             m_commandEcho = "No command entered.";
             return;
         }
 
-        if (normalized == "help")
+        switch (command.type)
         {
-            m_commandEcho = "Commands: help, look, room, where, status, vitals, session, entry, resume, inspect, interact, move x y, clear.";
+        case RoutedCommandType::Help:
+            m_commandEcho = buildCommandHelpText();
+            pushEvent("Help opened for typed command shell.");
             return;
-        }
 
-        if (normalized == "look" || normalized == "room" || normalized == "where")
-        {
-            m_commandEcho = std::string("Displayed room text for ") + m_roomTitle + ".";
-            pushEvent(std::string("Room: ") + m_roomTitle);
+        case RoutedCommandType::Look:
+            m_commandEcho = std::string("Displayed location text for ") + m_roomTitle + ".";
+            pushEvent(std::string("Location: ") + m_roomTitle);
             pushEvent(m_roomDescription);
             return;
-        }
 
-        if (normalized == "status" || normalized == "vitals")
-        {
+        case RoutedCommandType::Say:
+            if (!command.syntaxValid)
+            {
+                m_commandEcho = "Say syntax: say <text>";
+                return;
+            }
+            pushEvent(std::string("You say: \"") + command.argumentText + "\"");
+            m_commandEcho = "Local speech routed to the session shell.";
+            return;
+
+        case RoutedCommandType::Emote:
+            if (!command.syntaxValid)
+            {
+                m_commandEcho = "Emote syntax: emote <text>";
+                return;
+            }
+            pushEvent(std::string("You ") + command.argumentText);
+            m_commandEcho = "Local emote routed to the session shell.";
+            return;
+
+        case RoutedCommandType::Inventory:
+            m_commandEcho = buildInventoryShellText(m_simulationRuntime.diagnostics());
+            pushEvent(m_commandEcho);
+            return;
+
+        case RoutedCommandType::Status:
             m_commandEcho = "Displayed vitals prompt.";
             pushEvent(std::string("Vitals: ") + m_promptLine);
             return;
-        }
 
-        if (normalized == "session")
-        {
+        case RoutedCommandType::Session:
             m_commandEcho = std::string("Entry state: ") + m_sessionEntryState + ", granted session: " + m_grantedSessionId + ", resume identity: " + m_resumeSessionId + ".";
             pushEvent(std::string("Session entry: ") + m_sessionEntryState + " | granted=" + m_grantedSessionId + " | resume=" + m_resumeSessionId);
             return;
-        }
 
-        if (normalized == "entry")
-        {
+        case RoutedCommandType::Entry:
             m_sessionEntryRequestWritten = false;
             m_sessionTicketIssued = false;
             m_reconnectRequested = false;
             submitSessionEntryRequest(false);
             m_commandEcho = "Fresh session entry requested.";
             return;
-        }
 
-        if (normalized == "resume")
-        {
+        case RoutedCommandType::Resume:
             if (m_resumeSessionId == "none")
             {
                 m_commandEcho = "No persisted resume session is available yet.";
@@ -1256,9 +1627,8 @@ bool parseSimpleKeyValueFile(const std::filesystem::path& path, std::unordered_m
             submitSessionEntryRequest(true);
             m_commandEcho = std::string("Reconnect requested for resume session ") + m_resumeSessionId + ".";
             return;
-        }
 
-        if (normalized == "inspect")
+        case RoutedCommandType::Inspect:
         {
             const TileCoord target = m_hasSelectedTile
                 ? m_selectedTile
@@ -1268,7 +1638,7 @@ bool parseSimpleKeyValueFile(const std::filesystem::path& path, std::unordered_m
             return;
         }
 
-        if (normalized == "interact")
+        case RoutedCommandType::Interact:
         {
             const TileCoord target = m_hasSelectedTile
                 ? m_selectedTile
@@ -1278,33 +1648,33 @@ bool parseSimpleKeyValueFile(const std::filesystem::path& path, std::unordered_m
             return;
         }
 
-        if (normalized == "clear")
-        {
-            m_commandEcho = "Command reply cleared.";
-            return;
-        }
-
-        if (normalized.rfind("move ", 0) == 0)
-        {
-            std::istringstream input(normalized.substr(5));
-            int x = 0;
-            int y = 0;
-            if (input >> x >> y)
+        case RoutedCommandType::Move:
+            if (!command.syntaxValid)
             {
-                TileCoord target{ x, y };
-                m_selectedTile = target;
-                m_hasSelectedTile = true;
-                m_actionTargetTile = target;
-                m_hasActionTargetTile = true;
-                submitTypedIntent(SimulationIntentType::MoveToTile, target, "Failed to queue move intent.");
-                m_commandEcho = "Move queued.";
+                m_commandEcho = "Move syntax: move <x> <y>";
                 return;
             }
-            m_commandEcho = "Move syntax: move <x> <y>";
+            m_selectedTile = { command.moveX, command.moveY };
+            m_hasSelectedTile = true;
+            m_actionTargetTile = m_selectedTile;
+            m_hasActionTargetTile = true;
+            submitTypedIntent(SimulationIntentType::MoveToTile, m_selectedTile, "Failed to queue move intent.");
+            m_commandEcho = "Move queued.";
+            return;
+
+        case RoutedCommandType::Clear:
+            m_commandEcho = "Command reply cleared.";
+            return;
+
+        case RoutedCommandType::Unknown:
+            m_commandEcho = std::string("Unknown command: ") + command.verb + ". Type 'help'.";
+            return;
+
+        case RoutedCommandType::None:
+        default:
+            m_commandEcho = "No command entered.";
             return;
         }
-
-        m_commandEcho = std::string("Unknown command: ") + normalized + ". Type 'help'.";
     }
 
     void GameLayer::submitTypedIntent(SimulationIntentType type, TileCoord target, const std::string& queueFailureMessage)
@@ -1357,7 +1727,7 @@ bool parseSimpleKeyValueFile(const std::filesystem::path& path, std::unordered_m
 
     void GameLayer::appendTypedCharacter(char character)
     {
-        if (m_commandInput.size() < 64u)
+        if (m_commandInput.size() < 96u)
         {
             m_commandInput.push_back(character);
         }
@@ -1368,9 +1738,8 @@ bool parseSimpleKeyValueFile(const std::filesystem::path& path, std::unordered_m
         const SharedSimulationDiagnostics& diagnostics = m_simulationRuntime.diagnostics();
         const WorldState& worldState = m_simulationRuntime.worldState();
         const TileCoord playerTile = worldState.world().worldToTile(m_simulationRuntime.authoritativePlayerPosition());
-        std::ostringstream signature;
-        signature << diagnostics.playerRuntimeContextText << '|' << diagnostics.missionPhaseText << '|' << playerTile.x << ',' << playerTile.y;
-        return signature.str();
+        const ResolvedLocationContext context = resolveRuntimeLocationContext(worldState, diagnostics, playerTile);
+        return context.valid ? context.key : std::string();
     }
 
     std::string GameLayer::buildRoomTitle() const
@@ -1378,33 +1747,14 @@ bool parseSimpleKeyValueFile(const std::filesystem::path& path, std::unordered_m
         const SharedSimulationDiagnostics& diagnostics = m_simulationRuntime.diagnostics();
         const WorldState& worldState = m_simulationRuntime.worldState();
         const TileCoord playerTile = worldState.world().worldToTile(m_simulationRuntime.authoritativePlayerPosition());
+        const ResolvedLocationContext context = resolveRuntimeLocationContext(worldState, diagnostics, playerTile);
 
-        if (diagnostics.orbitalLayerActive)
+        if (context.valid && !context.title.empty())
         {
-            return "Orbital Approach";
+            return context.title;
         }
 
-        if (diagnostics.shipBoarded)
-        {
-            return diagnostics.shipCommandClaimed
-                ? "Responder Shuttle Khepri - Command Cabin"
-                : "Responder Shuttle Khepri - Docked Interior";
-        }
-
-        if (diagnostics.frontierSurfaceActive)
-        {
-            return "Dust Frontier Landing Pad";
-        }
-
-        if (const WorldAuthoringHotspot* hotspot = worldState.authoringHotspotAt(playerTile))
-        {
-            if (!hotspot->label.empty())
-            {
-                return hotspot->label;
-            }
-        }
-
-        return regionTitle(worldState.regionTag(playerTile));
+        return m_roomTitle.empty() ? std::string("Unknown Interior") : m_roomTitle;
     }
 
     std::string GameLayer::buildRoomDescription() const
@@ -1412,39 +1762,22 @@ bool parseSimpleKeyValueFile(const std::filesystem::path& path, std::unordered_m
         const SharedSimulationDiagnostics& diagnostics = m_simulationRuntime.diagnostics();
         const WorldState& worldState = m_simulationRuntime.worldState();
         const TileCoord playerTile = worldState.world().worldToTile(m_simulationRuntime.authoritativePlayerPosition());
+        const ResolvedLocationContext context = resolveRuntimeLocationContext(worldState, diagnostics, playerTile);
 
         std::ostringstream description;
-        if (diagnostics.orbitalLayerActive)
+        if (context.valid && !context.entryDescription.empty())
         {
-            description << "The shuttle sits inside an interim hosted-bootstrap orbital lane with route logic surfaced through the current navigation phase.";
-            if (!diagnostics.orbitalRuleText.empty())
-            {
-                description << ' ' << diagnostics.orbitalRuleText;
-            }
-            return description.str();
+            description << context.entryDescription;
+        }
+        else if (!m_roomDescription.empty())
+        {
+            description << m_roomDescription;
+        }
+        else
+        {
+            description << "The current interior has not been formally authored yet.";
         }
 
-        if (diagnostics.shipBoarded)
-        {
-            description << "A cramped responder-shuttle cabin wraps the player in steel, harness webbing, helm hardware, and a navigation console.";
-            return description.str();
-        }
-
-        if (diagnostics.frontierSurfaceActive)
-        {
-            description << "Dust Frontier's landing pad sits under hard vacuum glare and relay dust, with the return shuttle acting as the only credible way back.";
-            return description.str();
-        }
-
-        description << regionDescription(worldState.regionTag(playerTile));
-        if (const WorldAuthoringHotspot* hotspot = worldState.authoringHotspotAt(playerTile))
-        {
-            if (!hotspot->summary.empty())
-            {
-                description << ' ' << hotspot->summary;
-            }
-        }
-        description << " Current objective: " << diagnostics.missionObjectiveText;
         return description.str();
     }
 
@@ -1456,7 +1789,8 @@ bool parseSimpleKeyValueFile(const std::filesystem::path& path, std::unordered_m
             << "HP " << diagnostics.playerHealth << "/" << diagnostics.playerMaxHealth
             << " | ARM " << diagnostics.playerArmor
             << " | O2 " << static_cast<int>(diagnostics.oxygenSecondsRemaining) << "s"
-            << " | PHASE " << diagnostics.missionPhaseText
+            << " | RAD " << diagnostics.radiationDose
+            << " | TOX " << diagnostics.toxicExposure
             << " | ENTRY " << m_sessionEntryState;
         return prompt.str();
     }

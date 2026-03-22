@@ -1,0 +1,10 @@
+version=1
+release_management_track=release_management
+release_tier=market-candidate
+release_log_root=runtime/Logs/ReleaseManagement
+release_manifest_file=runtime/Logs/ReleaseManagement/release_management_manifest.txt
+release_gate_file=runtime/Logs/ReleaseManagement/release_gate_summary.txt
+latest_pointer_file=runtime/Logs/ReleaseManagement/latest_release_management_pointer.txt
+required_preserved_gates=M45,M46,M47,M48,M49,M50,M51
+required_runtime_surfaces=failure_bundles,operator_triage,retention,release_candidate,launcher,installer,updater,onboarding,live_ops
+release_question=can_this_package_be_operated_supported_and_promoted_without_losing_truth_surfaces

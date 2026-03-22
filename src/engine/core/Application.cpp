@@ -10,11 +10,16 @@
 #include "engine/core/EnvironmentConfig.h"
 #include "engine/core/FailureBundleProtocol.h"
 #include "engine/core/FailureBundleWriter.h"
+#include "engine/core/IncidentResponseProtocol.h"
 #include "engine/core/LauncherDistributionProtocol.h"
+#include "engine/core/LiveOpsProtocol.h"
 #include "engine/core/LocalDemoDiagnostics.h"
+#include "engine/core/MarketOnboardingProtocol.h"
+#include "engine/core/ReleaseManagementProtocol.h"
 #include "engine/core/ReleaseCandidateProtocol.h"
 #include "engine/core/RuntimeOwnership.h"
 #include "engine/core/RuntimePaths.h"
+#include "engine/core/SupportWorkflowProtocol.h"
 #include "engine/core/Timer.h"
 #include "engine/host/SessionEntryProtocol.h"
 #include "game/GameLayer.h"
@@ -48,10 +53,10 @@ namespace war
             const std::wstring connectTargetName = readEnvironmentWide(L"WAR_CONNECT_TARGET_NAME");
             if (connectTargetName.empty())
             {
-                return L"WAR - Milestone 50";
+                return L"WAR";
             }
 
-            return std::wstring(L"WAR - Milestone 50 [") + connectTargetName + L"]";
+            return std::wstring(L"WAR [") + connectTargetName + L"]";
         }
     }
 
@@ -98,13 +103,70 @@ namespace war
                 localDemoDiagnosticsReport.connectTargetName,
                 returningPlayerDetected);
 
+            const MarketOnboardingReport marketOnboardingReport =
+                MarketOnboardingProtocol::recordSession(
+                    runtimeBoundaryReport,
+                    localDemoDiagnosticsReport.buildIdentity,
+                    localDemoDiagnosticsReport.buildChannel,
+                    localDemoDiagnosticsReport.environmentName,
+                    localDemoDiagnosticsReport.connectTargetName,
+                    returningPlayerDetected);
+
+            const LiveOpsReport liveOpsReport =
+                LiveOpsProtocol::recordClientLaunch(
+                    runtimeBoundaryReport,
+                    localDemoDiagnosticsReport.buildIdentity,
+                    localDemoDiagnosticsReport.buildChannel,
+                    localDemoDiagnosticsReport.environmentName,
+                    localDemoDiagnosticsReport.connectTargetName,
+                    "client-startup",
+                    returningPlayerDetected,
+                    marketOnboardingReport.firstSessionDetected);
+
+            const ReleaseManagementReport releaseManagementReport =
+                ReleaseManagementProtocol::recordReleaseState(
+                    runtimeBoundaryReport,
+                    "client",
+                    localDemoDiagnosticsReport.buildIdentity,
+                    localDemoDiagnosticsReport.buildChannel,
+                    localDemoDiagnosticsReport.environmentName,
+                    localDemoDiagnosticsReport.connectTargetName);
+
+            const SupportWorkflowReport supportWorkflowReport =
+                SupportWorkflowProtocol::recordClientSession(
+                    runtimeBoundaryReport,
+                    localDemoDiagnosticsReport.buildIdentity,
+                    localDemoDiagnosticsReport.buildChannel,
+                    localDemoDiagnosticsReport.environmentName,
+                    localDemoDiagnosticsReport.connectTargetName,
+                    "client-startup",
+                    returningPlayerDetected,
+                    marketOnboardingReport.firstSessionDetected);
+
+            const IncidentResponseReport incidentResponseReport =
+                IncidentResponseProtocol::recordIncidentState(
+                    runtimeBoundaryReport,
+                    "client",
+                    localDemoDiagnosticsReport.buildIdentity,
+                    localDemoDiagnosticsReport.buildChannel,
+                    localDemoDiagnosticsReport.environmentName,
+                    localDemoDiagnosticsReport.connectTargetName,
+                    "nominal");
+
+            LiveOpsProtocol::noteReleaseStateWrite(runtimeBoundaryReport);
+
             LocalDemoDiagnostics::writeStartupReport(
                 runtimeBoundaryReport,
                 localDemoDiagnosticsReport,
                 &environmentConfigReport,
                 &runtimeOwnershipReport,
                 &sessionEntryProtocolReport,
-                &failureBundleProtocolReport);
+                &failureBundleProtocolReport,
+                &marketOnboardingReport,
+                &liveOpsReport,
+                &releaseManagementReport,
+                &supportWorkflowReport,
+                &incidentResponseReport);
 
             if (!environmentConfigReport.configurationValid)
             {
@@ -117,6 +179,15 @@ namespace war
                     "client_runtime_trace.txt",
                     std::string("Application::run fail-fast config: ")
                         + EnvironmentConfig::diagnosticsSummary(environmentConfigReport));
+
+                (void)IncidentResponseProtocol::recordIncidentState(
+                    runtimeBoundaryReport,
+                    "client",
+                    localDemoDiagnosticsReport.buildIdentity,
+                    localDemoDiagnosticsReport.buildChannel,
+                    localDemoDiagnosticsReport.environmentName,
+                    localDemoDiagnosticsReport.connectTargetName,
+                    "config-invalid");
 
                 std::string bundleDirectory;
                 std::string bundleError;
@@ -151,6 +222,15 @@ namespace war
                     std::string("Application::run fail-fast ownership: ")
                         + RuntimeOwnership::diagnosticsSummary(runtimeOwnershipReport));
 
+                (void)IncidentResponseProtocol::recordIncidentState(
+                    runtimeBoundaryReport,
+                    "client",
+                    localDemoDiagnosticsReport.buildIdentity,
+                    localDemoDiagnosticsReport.buildChannel,
+                    localDemoDiagnosticsReport.environmentName,
+                    localDemoDiagnosticsReport.connectTargetName,
+                    "runtime-ownership-invalid");
+
                 std::string bundleDirectory;
                 std::string bundleError;
                 FailureBundleWriter::capture(
@@ -176,6 +256,15 @@ namespace war
             if (!window.create(1600, 900, windowTitleText().c_str()))
             {
                 LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "client_runtime_trace.txt", "Application::run window.create failed");
+
+                (void)IncidentResponseProtocol::recordIncidentState(
+                    runtimeBoundaryReport,
+                    "client",
+                    localDemoDiagnosticsReport.buildIdentity,
+                    localDemoDiagnosticsReport.buildChannel,
+                    localDemoDiagnosticsReport.environmentName,
+                    localDemoDiagnosticsReport.connectTargetName,
+                    "window-create-failed");
 
                 std::string bundleDirectory;
                 std::string bundleError;
@@ -250,6 +339,54 @@ namespace war
                 localDemoDiagnosticsReport.connectTargetName,
                 returningPlayerDetected);
 
+            const MarketOnboardingReport marketOnboardingReport =
+                MarketOnboardingProtocol::recordSession(
+                    runtimeBoundaryReport,
+                    localDemoDiagnosticsReport.buildIdentity,
+                    localDemoDiagnosticsReport.buildChannel,
+                    localDemoDiagnosticsReport.environmentName,
+                    localDemoDiagnosticsReport.connectTargetName,
+                    returningPlayerDetected);
+
+            (void)LiveOpsProtocol::recordClientLaunch(
+                runtimeBoundaryReport,
+                localDemoDiagnosticsReport.buildIdentity,
+                localDemoDiagnosticsReport.buildChannel,
+                localDemoDiagnosticsReport.environmentName,
+                localDemoDiagnosticsReport.connectTargetName,
+                "client-exception",
+                returningPlayerDetected,
+                marketOnboardingReport.firstSessionDetected);
+
+            (void)ReleaseManagementProtocol::recordReleaseState(
+                runtimeBoundaryReport,
+                "client-exception",
+                localDemoDiagnosticsReport.buildIdentity,
+                localDemoDiagnosticsReport.buildChannel,
+                localDemoDiagnosticsReport.environmentName,
+                localDemoDiagnosticsReport.connectTargetName);
+
+            (void)SupportWorkflowProtocol::recordClientSession(
+                runtimeBoundaryReport,
+                localDemoDiagnosticsReport.buildIdentity,
+                localDemoDiagnosticsReport.buildChannel,
+                localDemoDiagnosticsReport.environmentName,
+                localDemoDiagnosticsReport.connectTargetName,
+                "client-exception",
+                returningPlayerDetected,
+                marketOnboardingReport.firstSessionDetected);
+
+            (void)IncidentResponseProtocol::recordIncidentState(
+                runtimeBoundaryReport,
+                "client-exception",
+                localDemoDiagnosticsReport.buildIdentity,
+                localDemoDiagnosticsReport.buildChannel,
+                localDemoDiagnosticsReport.environmentName,
+                localDemoDiagnosticsReport.connectTargetName,
+                "exception");
+
+            LiveOpsProtocol::noteReleaseStateWrite(runtimeBoundaryReport);
+
             LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "client_runtime_trace.txt", std::string("Application::run exception: ") + exception.what());
 
             std::string bundleDirectory;
@@ -306,6 +443,54 @@ namespace war
                 localDemoDiagnosticsReport.environmentName,
                 localDemoDiagnosticsReport.connectTargetName,
                 returningPlayerDetected);
+
+            const MarketOnboardingReport marketOnboardingReport =
+                MarketOnboardingProtocol::recordSession(
+                    runtimeBoundaryReport,
+                    localDemoDiagnosticsReport.buildIdentity,
+                    localDemoDiagnosticsReport.buildChannel,
+                    localDemoDiagnosticsReport.environmentName,
+                    localDemoDiagnosticsReport.connectTargetName,
+                    returningPlayerDetected);
+
+            (void)LiveOpsProtocol::recordClientLaunch(
+                runtimeBoundaryReport,
+                localDemoDiagnosticsReport.buildIdentity,
+                localDemoDiagnosticsReport.buildChannel,
+                localDemoDiagnosticsReport.environmentName,
+                localDemoDiagnosticsReport.connectTargetName,
+                "client-unknown-exception",
+                returningPlayerDetected,
+                marketOnboardingReport.firstSessionDetected);
+
+            (void)ReleaseManagementProtocol::recordReleaseState(
+                runtimeBoundaryReport,
+                "client-unknown-exception",
+                localDemoDiagnosticsReport.buildIdentity,
+                localDemoDiagnosticsReport.buildChannel,
+                localDemoDiagnosticsReport.environmentName,
+                localDemoDiagnosticsReport.connectTargetName);
+
+            (void)SupportWorkflowProtocol::recordClientSession(
+                runtimeBoundaryReport,
+                localDemoDiagnosticsReport.buildIdentity,
+                localDemoDiagnosticsReport.buildChannel,
+                localDemoDiagnosticsReport.environmentName,
+                localDemoDiagnosticsReport.connectTargetName,
+                "client-unknown-exception",
+                returningPlayerDetected,
+                marketOnboardingReport.firstSessionDetected);
+
+            (void)IncidentResponseProtocol::recordIncidentState(
+                runtimeBoundaryReport,
+                "client-unknown-exception",
+                localDemoDiagnosticsReport.buildIdentity,
+                localDemoDiagnosticsReport.buildChannel,
+                localDemoDiagnosticsReport.environmentName,
+                localDemoDiagnosticsReport.connectTargetName,
+                "unknown-exception");
+
+            LiveOpsProtocol::noteReleaseStateWrite(runtimeBoundaryReport);
 
             LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "client_runtime_trace.txt", "Application::run unknown exception");
 

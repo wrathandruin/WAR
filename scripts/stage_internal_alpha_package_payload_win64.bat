@@ -95,7 +95,7 @@ if not exist "%STAGE_ROOT%\assets\textures\world_atlas.bmp" (
 
 for %%F in (
     "README.md"
-    "VALIDATION_EVIDENCE_M48.txt"
+    "Docs/Validation/VALIDATION_EVIDENCE_M48.txt"
     "Milestones\M48_Crash_Capture_Failure_Bundles_Operator_Triage_Baseline.md"
     "scripts\launch_headless_host_win64.bat"
     "scripts\launch_local_demo_win64.bat"

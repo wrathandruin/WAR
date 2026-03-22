@@ -150,7 +150,7 @@ if not exist "%STAGE_ROOT%\Installer\m50_update_channel_manifest.txt" (
 
 for %%F in (
     "README.md"
-    "VALIDATION_EVIDENCE_M50.txt"
+    "Docs/Validation/VALIDATION_EVIDENCE_M50.txt"
     "Milestones\M50_Launcher_Installer_Update_Productionization.md"
     "scripts\launch_headless_host_win64.bat"
     "scripts\launch_local_demo_win64.bat"

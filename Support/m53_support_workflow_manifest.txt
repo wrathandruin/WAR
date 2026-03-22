@@ -1,0 +1,10 @@
+version=1
+support_track=support_workflow
+support_tier=market-candidate
+runtime_log_root=runtime/Logs/Support
+runtime_manifest_file=runtime/Logs/Support/support_runtime_manifest.txt
+player_message_file=runtime/Logs/Support/player_message_brief.txt
+operator_handoff_file=runtime/Logs/Support/support_operator_handoff.txt
+latest_pointer_file=runtime/Logs/Support/support_latest_pointer.txt
+required_inputs=runtime/Logs/LiveOps,Runtime/CrashDumps/FailureBundles,runtime/Logs/ReleaseManagement,local_demo_startup_report.txt
+primary_support_questions=what_happened,what_should_the_player_be_told,what_should_the_operator_check_next,what_is_the_current_support_state

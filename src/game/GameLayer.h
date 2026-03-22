@@ -44,6 +44,8 @@ namespace war
         void submitSessionEntryRequest(bool reconnectRequested);
         void loadPersistedResumeIdentity();
         void persistResumeIdentity() const;
+        void loadPersistedLocationContext();
+        void persistLocationContext() const;
         [[nodiscard]] bool tryResolveIssuedTicket(SessionTicket& outTicket) const;
         [[nodiscard]] bool tryResolveDeniedTicket(SessionTicket& outTicket) const;
         [[nodiscard]] bool hostConnectionCompatible(std::string& outReason) const;

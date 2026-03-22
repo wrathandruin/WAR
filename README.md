@@ -1,15 +1,15 @@
-# WAR — M50 Single Package
+# WAR — M53 Single Package
 
-> Current milestone: M50 — Launcher / Installer / Update Productionization
+Current milestone: M53 — Typed Command Bar / Core Command Routing / Help
 
-This package delivers the M50 implementation set in one handoff package.
+This package delivers the corrected M53 implementation set in one handoff package.
 
-M50 follows directly from the documented post-M48 continuation, where the likely next milestone is
-launcher, installer, and update productionization.
+M53 follows the active Phase 5B runway and focuses on:
 
-This package focuses on:
+- a typed command bar that remains stable in the main client loop
+- a core command parsing and dispatch seam
+- help and discoverability for the command shell
+- the minimum command set required for the runway: `look`, `say`, `emote`, `help`, and `inv`
+- clear syntax, failure, and unknown-command messaging
 
-- launcher entry manifesting and runtime launcher-session surfaces
-- installer and update productionization manifests
-- beta-to-market candidate package discipline
-- preservation of the existing M45, M46, M47, M48, and M49 validation lanes inside the new package validation flow
+Copy the contents of this package over the WAR repo root, preserving folders.

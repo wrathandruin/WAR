@@ -7,8 +7,13 @@
 
 #include "engine/core/EnvironmentConfig.h"
 #include "engine/core/FailureBundleProtocol.h"
+#include "engine/core/LiveOpsProtocol.h"
+#include "engine/core/MarketOnboardingProtocol.h"
+#include "engine/core/ReleaseManagementProtocol.h"
 #include "engine/core/RuntimeOwnership.h"
 #include "engine/core/RuntimePaths.h"
+#include "engine/core/SupportWorkflowProtocol.h"
+#include "engine/core/IncidentResponseProtocol.h"
 #include "engine/host/SessionEntryProtocol.h"
 
 namespace war
@@ -57,7 +62,12 @@ namespace war
             const EnvironmentConfigReport* environmentConfigReport = nullptr,
             const RuntimeOwnershipReport* runtimeOwnershipReport = nullptr,
             const SessionEntryProtocolReport* sessionEntryProtocolReport = nullptr,
-            const FailureBundleProtocolReport* failureBundleProtocolReport = nullptr);
+            const FailureBundleProtocolReport* failureBundleProtocolReport = nullptr,
+            const MarketOnboardingReport* marketOnboardingReport = nullptr,
+            const LiveOpsReport* liveOpsReport = nullptr,
+            const ReleaseManagementReport* releaseManagementReport = nullptr,
+            const SupportWorkflowReport* supportWorkflowReport = nullptr,
+            const IncidentResponseReport* incidentResponseReport = nullptr);
         static void appendTraceLine(
             const RuntimeBoundaryReport& runtimeBoundaryReport,
             const std::string& filename,

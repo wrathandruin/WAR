@@ -116,8 +116,8 @@ The repo should stop evolving as a single-executable prototype tree and move tow
 
 This direction is defined in:
 
-- `Docs/Wrath and Ruin - Workspace Structure Realignment Plan.md`
-- `Docs/Wrath and Ruin - Workspace Realignment Implementation Brief.md`
+- `Docs/Planning/Wrath and Ruin - Workspace Structure Realignment Plan.md`
+- `Docs/Planning/Wrath and Ruin - Workspace Realignment Implementation Brief.md`
 
 Execution rule:
 - perform the non-destructive split during the M37-M38 window while persistence and actor runtime boundaries are still forming
@@ -130,9 +130,9 @@ The implemented milestone train is treated as current through M28.
 
 The active tactical roadmap for the next lead developer is now M29 through M70 and is detailed in:
 
-- `Docs/Wrath and Ruin - M29-M48 Lead Developer Milestone Plan.md`
-- `Docs/Wrath and Ruin - M45-M70 Alpha Playtest Runway.md`
-- `Docs/Wrath and Ruin - Milestone Delivery Standard.md`
+- `Docs/Planning/Wrath and Ruin - M29-M48 Lead Developer Milestone Plan.md`
+- `Docs/Planning/Wrath and Ruin - M45-M70 Alpha Playtest Runway.md`
+- `Docs/Standards/Wrath and Ruin - Milestone Delivery Standard.md`
 
 ### Phase 1 - Visual Closure And Production Contract
 
@@ -227,9 +227,9 @@ The current objective is to move from a strong localhost vertical slice to the f
 
 Reference audits and planning:
 
-- `Docs/Wrath and Ruin - M44 Roadmap Audit and Phase 5 Amendments.md`
-- `Docs/Wrath and Ruin - Art Production and Asset Planning Track.md`
-- `Docs/Wrath and Ruin - M45-M70 Alpha Playtest Runway.md`
+- `Docs/Planning/Wrath and Ruin - M44 Roadmap Audit and Phase 5 Amendments.md`
+- `Docs/Art/Wrath and Ruin - Art Production and Asset Planning Track.md`
+- `Docs/Planning/Wrath and Ruin - M45-M70 Alpha Playtest Runway.md`
 
 ## Nominal Weekly Sprint View
 

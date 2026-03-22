@@ -7,11 +7,16 @@
 #include "engine/core/EnvironmentConfig.h"
 #include "engine/core/FailureBundleProtocol.h"
 #include "engine/core/FailureBundleWriter.h"
+#include "engine/core/IncidentResponseProtocol.h"
 #include "engine/core/LauncherDistributionProtocol.h"
+#include "engine/core/LiveOpsProtocol.h"
 #include "engine/core/LocalDemoDiagnostics.h"
+#include "engine/core/MarketOnboardingProtocol.h"
 #include "engine/core/ReleaseCandidateProtocol.h"
+#include "engine/core/ReleaseManagementProtocol.h"
 #include "engine/core/RuntimeOwnership.h"
 #include "engine/core/RuntimePaths.h"
+#include "engine/core/SupportWorkflowProtocol.h"
 #include "engine/host/HeadlessHostMode.h"
 #include "engine/host/SessionEntryProtocol.h"
 
@@ -60,6 +65,45 @@ namespace war
                 localDemoDiagnosticsReport.environmentName,
                 localDemoDiagnosticsReport.connectTargetName);
 
+            const MarketOnboardingReport marketOnboardingReport = MarketOnboardingProtocol::buildReport(runtimeBoundaryReport);
+
+            const LiveOpsReport liveOpsReport =
+                LiveOpsProtocol::recordHostBootstrap(
+                    runtimeBoundaryReport,
+                    localDemoDiagnosticsReport.buildIdentity,
+                    localDemoDiagnosticsReport.buildChannel,
+                    localDemoDiagnosticsReport.environmentName,
+                    localDemoDiagnosticsReport.connectTargetName);
+
+            const ReleaseManagementReport releaseManagementReport =
+                ReleaseManagementProtocol::recordReleaseState(
+                    runtimeBoundaryReport,
+                    "host-bootstrap",
+                    localDemoDiagnosticsReport.buildIdentity,
+                    localDemoDiagnosticsReport.buildChannel,
+                    localDemoDiagnosticsReport.environmentName,
+                    localDemoDiagnosticsReport.connectTargetName);
+
+            const SupportWorkflowReport supportWorkflowReport =
+                SupportWorkflowProtocol::recordHostBootstrap(
+                    runtimeBoundaryReport,
+                    localDemoDiagnosticsReport.buildIdentity,
+                    localDemoDiagnosticsReport.buildChannel,
+                    localDemoDiagnosticsReport.environmentName,
+                    localDemoDiagnosticsReport.connectTargetName);
+
+            const IncidentResponseReport incidentResponseReport =
+                IncidentResponseProtocol::recordIncidentState(
+                    runtimeBoundaryReport,
+                    "host-bootstrap",
+                    localDemoDiagnosticsReport.buildIdentity,
+                    localDemoDiagnosticsReport.buildChannel,
+                    localDemoDiagnosticsReport.environmentName,
+                    localDemoDiagnosticsReport.connectTargetName,
+                    "nominal");
+
+            LiveOpsProtocol::noteReleaseStateWrite(runtimeBoundaryReport);
+
             LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "headless_host_trace.txt", "HeadlessHostBootstrap diagnostics report built");
             LocalDemoDiagnostics::writeStartupReport(
                 runtimeBoundaryReport,
@@ -67,7 +111,12 @@ namespace war
                 &environmentConfigReport,
                 &runtimeOwnershipReport,
                 &sessionEntryProtocolReport,
-                &failureBundleProtocolReport);
+                &failureBundleProtocolReport,
+                &marketOnboardingReport,
+                &liveOpsReport,
+                &releaseManagementReport,
+                &supportWorkflowReport,
+                &incidentResponseReport);
             LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "headless_host_trace.txt", "HeadlessHostBootstrap startup report written");
 
             if (!environmentConfigReport.configurationValid)
@@ -81,6 +130,15 @@ namespace war
                     "headless_host_trace.txt",
                     std::string("HeadlessHostBootstrap fail-fast config: ")
                         + EnvironmentConfig::diagnosticsSummary(environmentConfigReport));
+
+                (void)IncidentResponseProtocol::recordIncidentState(
+                    runtimeBoundaryReport,
+                    "host-bootstrap",
+                    localDemoDiagnosticsReport.buildIdentity,
+                    localDemoDiagnosticsReport.buildChannel,
+                    localDemoDiagnosticsReport.environmentName,
+                    localDemoDiagnosticsReport.connectTargetName,
+                    "config-invalid");
 
                 std::string bundleDirectory;
                 std::string bundleError;
@@ -114,6 +172,15 @@ namespace war
                     "headless_host_trace.txt",
                     std::string("HeadlessHostBootstrap fail-fast ownership: ")
                         + RuntimeOwnership::diagnosticsSummary(runtimeOwnershipReport));
+
+                (void)IncidentResponseProtocol::recordIncidentState(
+                    runtimeBoundaryReport,
+                    "host-bootstrap",
+                    localDemoDiagnosticsReport.buildIdentity,
+                    localDemoDiagnosticsReport.buildChannel,
+                    localDemoDiagnosticsReport.environmentName,
+                    localDemoDiagnosticsReport.connectTargetName,
+                    "runtime-ownership-invalid");
 
                 std::string bundleDirectory;
                 std::string bundleError;
@@ -174,6 +241,39 @@ namespace war
                 localDemoDiagnosticsReport.environmentName,
                 localDemoDiagnosticsReport.connectTargetName);
 
+            (void)LiveOpsProtocol::recordHostBootstrap(
+                runtimeBoundaryReport,
+                localDemoDiagnosticsReport.buildIdentity,
+                localDemoDiagnosticsReport.buildChannel,
+                localDemoDiagnosticsReport.environmentName,
+                localDemoDiagnosticsReport.connectTargetName);
+
+            (void)ReleaseManagementProtocol::recordReleaseState(
+                runtimeBoundaryReport,
+                "host-bootstrap-exception",
+                localDemoDiagnosticsReport.buildIdentity,
+                localDemoDiagnosticsReport.buildChannel,
+                localDemoDiagnosticsReport.environmentName,
+                localDemoDiagnosticsReport.connectTargetName);
+
+            (void)SupportWorkflowProtocol::recordHostBootstrap(
+                runtimeBoundaryReport,
+                localDemoDiagnosticsReport.buildIdentity,
+                localDemoDiagnosticsReport.buildChannel,
+                localDemoDiagnosticsReport.environmentName,
+                localDemoDiagnosticsReport.connectTargetName);
+
+            (void)IncidentResponseProtocol::recordIncidentState(
+                runtimeBoundaryReport,
+                "host-bootstrap-exception",
+                localDemoDiagnosticsReport.buildIdentity,
+                localDemoDiagnosticsReport.buildChannel,
+                localDemoDiagnosticsReport.environmentName,
+                localDemoDiagnosticsReport.connectTargetName,
+                "exception");
+
+            LiveOpsProtocol::noteReleaseStateWrite(runtimeBoundaryReport);
+
             LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "headless_host_trace.txt", std::string("HeadlessHostBootstrap exception: ") + exception.what());
 
             std::string bundleDirectory;
@@ -229,6 +329,39 @@ namespace war
                 localDemoDiagnosticsReport.buildChannel,
                 localDemoDiagnosticsReport.environmentName,
                 localDemoDiagnosticsReport.connectTargetName);
+
+            (void)LiveOpsProtocol::recordHostBootstrap(
+                runtimeBoundaryReport,
+                localDemoDiagnosticsReport.buildIdentity,
+                localDemoDiagnosticsReport.buildChannel,
+                localDemoDiagnosticsReport.environmentName,
+                localDemoDiagnosticsReport.connectTargetName);
+
+            (void)ReleaseManagementProtocol::recordReleaseState(
+                runtimeBoundaryReport,
+                "host-bootstrap-unknown-exception",
+                localDemoDiagnosticsReport.buildIdentity,
+                localDemoDiagnosticsReport.buildChannel,
+                localDemoDiagnosticsReport.environmentName,
+                localDemoDiagnosticsReport.connectTargetName);
+
+            (void)SupportWorkflowProtocol::recordHostBootstrap(
+                runtimeBoundaryReport,
+                localDemoDiagnosticsReport.buildIdentity,
+                localDemoDiagnosticsReport.buildChannel,
+                localDemoDiagnosticsReport.environmentName,
+                localDemoDiagnosticsReport.connectTargetName);
+
+            (void)IncidentResponseProtocol::recordIncidentState(
+                runtimeBoundaryReport,
+                "host-bootstrap-unknown-exception",
+                localDemoDiagnosticsReport.buildIdentity,
+                localDemoDiagnosticsReport.buildChannel,
+                localDemoDiagnosticsReport.environmentName,
+                localDemoDiagnosticsReport.connectTargetName,
+                "unknown-exception");
+
+            LiveOpsProtocol::noteReleaseStateWrite(runtimeBoundaryReport);
 
             LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "headless_host_trace.txt", "HeadlessHostBootstrap unknown exception");
 

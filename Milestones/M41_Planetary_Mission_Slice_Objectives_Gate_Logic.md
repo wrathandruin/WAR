@@ -34,7 +34,7 @@ Included
 - README.md
 - Milestones/WAR_Strategic_Roadmap.md
 - Milestones/M41_Planetary_Mission_Slice_Objectives_Gate_Logic.md
-- Docs/Wrath and Ruin - M41 Validation and Acceptance Checklist.md
+- Docs/Reports/Wrath and Ruin - M41 Validation and Acceptance Checklist.md
 - scripts/build_local_demo_package_win64.bat
 - scripts/acceptance_m41_planetary_mission_slice_win64.bat
 - scripts/acceptance_m41_planetary_mission_slice_win64.ps1

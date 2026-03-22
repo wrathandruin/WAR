@@ -1,0 +1,9 @@
+version=1
+brief_title=Welcome To Wrath And Ruin
+brief_subtitle=Read the room text, trust the prompt strip, and use the typed shell as part of play rather than as debug residue.
+primary_goal=Use left click to move, right click to interact, Shift+right click to inspect, and type help or onboarding in the shell.
+controls_hint=Left click move | Right click interact | Shift+Right click inspect | Enter submits typed commands
+session_hint=Use session to inspect entry state, entry for a fresh handoff, and resume when a saved identity exists.
+return_hint=Returning players should continue from the retained world state and use resume identity when the product prompts for it.
+first_objective=Reach a different authored room, confirm the room-entry text changes, and read the new objective text.
+text_layer_promise=The room title, description, prompt strip, and typed shell are all part of the intended product experience.
