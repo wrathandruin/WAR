@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{A1DFA0B2-0F1B-4A60-9D58-3DA1A95B01C1}</ProjectGuid>
+    <RootNamespace>WarEngine</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <OutDir>$(SolutionDir)\Bin64\$(Configuration)\split\WarEngine\</OutDir>
+    <IntDir>$(SolutionDir)\obj\$(Configuration)\WarEngine\</IntDir>
+    <TargetName>WARShared</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/Zc:__cplusplus /Zc:preprocessor %(AdditionalOptions)</AdditionalOptions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/Zc:__cplusplus /Zc:preprocessor %(AdditionalOptions)</AdditionalOptions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\core\Timer.cpp" />
+    <ClCompile Include="src\core\Log.cpp" />
+    <ClCompile Include="src\runtime\RuntimePaths.cpp" />
+    <ClCompile Include="src\runtime\host\AuthoritativeHostProtocol.cpp" />
+    <ClCompile Include="src\runtime\host\HeadlessHostPresence.cpp" />
+    <ClCompile Include="src\runtime\host\ReplicationHarness.cpp" />
+    <ClCompile Include="src\math\Vec2.cpp" />
+    <ClCompile Include="src\world\WorldGrid.cpp" />
+    <ClCompile Include="src\world\WorldRegionTag.cpp" />
+    <ClCompile Include="src\world\WorldSemanticDressing.cpp" />
+    <ClCompile Include="src\world\Pathfinding.cpp" />
+    <ClCompile Include="src\world\WorldState.cpp" />
+    <ClCompile Include="src\gameplay\EntityManager.cpp" />
+    <ClCompile Include="src\gameplay\ActionSystem.cpp" />
+    <ClCompile Include="src\simulation\SimulationRuntime.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\engine\core\Timer.h" />
+    <ClInclude Include="src\engine\core\Log.h" />
+    <ClInclude Include="src\engine\core\RuntimePaths.h" />
+    <ClInclude Include="src\engine\host\AuthoritativeHostProtocol.h" />
+    <ClInclude Include="src\engine\host\HeadlessHostPresence.h" />
+    <ClInclude Include="src\engine\host\ReplicationHarness.h" />
+    <ClInclude Include="src\engine\math\Vec2.h" />
+    <ClInclude Include="src\engine\world\WorldGrid.h" />
+    <ClInclude Include="src\engine\world\WorldRegionTag.h" />
+    <ClInclude Include="src\engine\world\WorldSemanticDressing.h" />
+    <ClInclude Include="src\engine\world\Pathfinding.h" />
+    <ClInclude Include="src\engine\world\WorldState.h" />
+    <ClInclude Include="src\engine\gameplay\Action.h" />
+    <ClInclude Include="src\engine\gameplay\ActionQueue.h" />
+    <ClInclude Include="src\engine\gameplay\ActionSystem.h" />
+    <ClInclude Include="src\engine\gameplay\Entity.h" />
+    <ClInclude Include="src\engine\gameplay\EntityManager.h" />
+    <ClInclude Include="src\engine\simulation\SimulationIntent.h" />
+    <ClInclude Include="src\engine\simulation\SimulationRuntime.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>

@@ -12,14 +12,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp"><Filter>Source Files</Filter></ClCompile>
-    <ClCompile Include="..\src\engine\host\HeadlessHostBootstrap.cpp"><Filter>Source Files</Filter></ClCompile>
-    <ClCompile Include="..\src\engine\core\LocalDemoDiagnostics.cpp"><Filter>Source Files</Filter></ClCompile>
-    <ClCompile Include="..\src\engine\host\HeadlessHostMode.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\WarEngine\src\engine\host\HeadlessHostBootstrap.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\WarEngine\src\engine\core\LocalDemoDiagnostics.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="..\WarEngine\src\engine\host\HeadlessHostMode.cpp"><Filter>Source Files</Filter></ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\engine\core\LocalDemoDiagnostics.h"><Filter>Header Files</Filter></ClInclude>
-    <ClInclude Include="..\src\engine\core\RuntimePaths.h"><Filter>Header Files</Filter></ClInclude>
-    <ClInclude Include="..\src\engine\host\HeadlessHostBootstrap.h"><Filter>Header Files</Filter></ClInclude>
-    <ClInclude Include="..\src\engine\host\HeadlessHostMode.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="..\WarEngine\src\engine\core\LocalDemoDiagnostics.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="..\WarEngine\src\engine\core\RuntimePaths.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="..\WarEngine\src\engine\host\HeadlessHostBootstrap.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="..\WarEngine\src\engine\host\HeadlessHostMode.h"><Filter>Header Files</Filter></ClInclude>
   </ItemGroup>
 </Project>

@@ -1,24 +1,24 @@
 set(WAR_DESKTOP_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
-    ${CMAKE_SOURCE_DIR}/src/engine/core/Application.cpp
-    ${CMAKE_SOURCE_DIR}/src/engine/core/LocalDemoDiagnostics.cpp
-    ${CMAKE_SOURCE_DIR}/src/engine/render/Camera2D.cpp
-    ${CMAKE_SOURCE_DIR}/src/engine/render/WorldRenderer.cpp
-    ${CMAKE_SOURCE_DIR}/src/engine/render/BgfxWorldRenderer.cpp
-    ${CMAKE_SOURCE_DIR}/src/engine/render/BgfxRenderData.cpp
-    ${CMAKE_SOURCE_DIR}/src/engine/render/BgfxViewTransform.cpp
-    ${CMAKE_SOURCE_DIR}/src/engine/render/BgfxShaderProgram.cpp
-    ${CMAKE_SOURCE_DIR}/src/engine/render/BgfxTextureAsset.cpp
-    ${CMAKE_SOURCE_DIR}/src/engine/render/BgfxSpriteMaterial.cpp
-    ${CMAKE_SOURCE_DIR}/src/engine/render/BgfxWorldTheme.cpp
-    ${CMAKE_SOURCE_DIR}/src/engine/render/BgfxTileVisuals.cpp
-    ${CMAKE_SOURCE_DIR}/src/engine/render/RenderAssetPaths.cpp
-    ${CMAKE_SOURCE_DIR}/src/engine/render/DebugOverlayRenderer.cpp
-    ${CMAKE_SOURCE_DIR}/src/engine/render/GdiRenderDevice.cpp
-    ${CMAKE_SOURCE_DIR}/src/engine/render/BgfxRenderDevice.cpp
-    ${CMAKE_SOURCE_DIR}/src/engine/render/BgfxDebugFrameRenderer.cpp
-    ${CMAKE_SOURCE_DIR}/src/platform/win32/Win32Window.cpp
-    ${CMAKE_SOURCE_DIR}/src/game/GameLayer.cpp
+    ${CMAKE_SOURCE_DIR}/WarEngine/src/engine/core/Application.cpp
+    ${CMAKE_SOURCE_DIR}/WarEngine/src/engine/core/LocalDemoDiagnostics.cpp
+    ${CMAKE_SOURCE_DIR}/WarEngine/src/engine/render/Camera2D.cpp
+    ${CMAKE_SOURCE_DIR}/WarEngine/src/engine/render/WorldRenderer.cpp
+    ${CMAKE_SOURCE_DIR}/WarEngine/src/engine/render/BgfxWorldRenderer.cpp
+    ${CMAKE_SOURCE_DIR}/WarEngine/src/engine/render/BgfxRenderData.cpp
+    ${CMAKE_SOURCE_DIR}/WarEngine/src/engine/render/BgfxViewTransform.cpp
+    ${CMAKE_SOURCE_DIR}/WarEngine/src/engine/render/BgfxShaderProgram.cpp
+    ${CMAKE_SOURCE_DIR}/WarEngine/src/engine/render/BgfxTextureAsset.cpp
+    ${CMAKE_SOURCE_DIR}/WarEngine/src/engine/render/BgfxSpriteMaterial.cpp
+    ${CMAKE_SOURCE_DIR}/WarEngine/src/engine/render/BgfxWorldTheme.cpp
+    ${CMAKE_SOURCE_DIR}/WarEngine/src/engine/render/BgfxTileVisuals.cpp
+    ${CMAKE_SOURCE_DIR}/WarEngine/src/engine/render/RenderAssetPaths.cpp
+    ${CMAKE_SOURCE_DIR}/WarEngine/src/engine/render/DebugOverlayRenderer.cpp
+    ${CMAKE_SOURCE_DIR}/WarEngine/src/engine/render/GdiRenderDevice.cpp
+    ${CMAKE_SOURCE_DIR}/WarEngine/src/engine/render/BgfxRenderDevice.cpp
+    ${CMAKE_SOURCE_DIR}/WarEngine/src/engine/render/BgfxDebugFrameRenderer.cpp
+    ${CMAKE_SOURCE_DIR}/WarEngine/src/platform/win32/Win32Window.cpp
+    ${CMAKE_SOURCE_DIR}/WarEngine/src/game/GameLayer.cpp
 )
 
 add_executable(WAR WIN32
@@ -27,9 +27,9 @@ add_executable(WAR WIN32
 
 target_include_directories(WAR
     PRIVATE
-        ${CMAKE_SOURCE_DIR}/src
+        ${CMAKE_SOURCE_DIR}/WarEngine/src
         ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${CMAKE_SOURCE_DIR}/shared/include
+        ${CMAKE_SOURCE_DIR}/WarEngine/include
 )
 
 target_link_libraries(WAR
@@ -89,10 +89,10 @@ if(WIN32)
         COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:WAR>/assets/shaders/dx11"
         COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:WAR>/assets/textures"
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_SOURCE_DIR}/assets/shaders/dx11"
+            "${CMAKE_SOURCE_DIR}/Assets/shaders/dx11"
             "$<TARGET_FILE_DIR:WAR>/assets/shaders/dx11"
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_SOURCE_DIR}/assets/textures"
+            "${CMAKE_SOURCE_DIR}/Assets/textures"
             "$<TARGET_FILE_DIR:WAR>/assets/textures"
         VERBATIM
     )
@@ -100,5 +100,5 @@ endif()
 
 set_target_properties(WAR PROPERTIES
     OUTPUT_NAME "WAR"
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/split/desktop/$<CONFIG>"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/Bin64/$<CONFIG>/split/desktop"
 )

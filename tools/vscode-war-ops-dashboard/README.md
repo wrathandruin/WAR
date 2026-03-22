@@ -2,24 +2,20 @@
 
 This is the VS Code operations dashboard for the `WAR` repo.
 
-It keeps the compact shell from the earlier dashboard, but now tracks the package and validation lanes that matter through `M50`.
+It is intentionally narrow now: one internal-alpha lane, the core run/smoke actions, and only the two documents the lead dev needs most often.
 
 ## What It Covers
 
-- sticky status strip at the top of the view
-- current staged package status across internal-alpha, beta-candidate, market-candidate, and local-demo lanes
-- latest packaged smoke, M45 bootstrap, M46 baseline, M47 session, M48 triage, M49 beta, and M50 market validation status
-- runtime artifact presence for host snapshot, host status, client status, and save files
-- build and package actions for internal-alpha, beta-candidate, and market-candidate lanes
-- shader rebuild buttons
-- host/client launch actions
-- M45 through M50 validation wrappers
-- quick links to the current roadmap, milestone docs, and validation evidence
+- internal-alpha package readiness
+- host and client smoke status
+- runtime artifact presence for the active stage
+- package, validate, launch, and smoke actions
+- quick links to the alpha handoff and technical architecture
 
 ## Install
 
 ```bash
-bash ./scripts/install_vscode_ops_dashboard.sh
+bash ./Project/scripts/install_vscode_ops_dashboard.sh
 ```
 
 Then reload VS Code.
@@ -35,4 +31,4 @@ The action registry lives in:
 
 - [registry.js](./registry.js)
 
-The panel is intended to be the fastest way to reach the repo-owned build, launch, smoke, and milestone validation lanes without bouncing between scripts and docs.
+The panel is intended to be the fastest way to package, validate, launch, smoke-test, and open the two docs that actually matter during development.

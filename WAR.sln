@@ -4,11 +4,11 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WARLegacy", "WAR.vcxproj", "{5ECF3E8A-6D76-4BF2-B2B6-7E93F4C8A1D2}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WARShared", "shared\WAR.Shared.vcxproj", "{A1DFA0B2-0F1B-4A60-9D58-3DA1A95B01C1}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WARShared", "WarEngine\WAR.Shared.vcxproj", "{A1DFA0B2-0F1B-4A60-9D58-3DA1A95B01C1}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WAR", "desktop\WAR.Desktop.vcxproj", "{0B0DB359-6A46-450F-B740-77D946A64B2D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WAR", "Desktop\WAR.Desktop.vcxproj", "{0B0DB359-6A46-450F-B740-77D946A64B2D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WARServer", "server\WAR.Server.vcxproj", "{9EADDF75-C55F-4D64-B667-FD9E4AB6C5E2}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WARServer", "Server\WAR.Server.vcxproj", "{9EADDF75-C55F-4D64-B667-FD9E4AB6C5E2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

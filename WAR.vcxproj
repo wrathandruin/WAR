@@ -42,8 +42,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <OutDir>$(SolutionDir)\bin\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)\obj\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)\Bin64\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)\obj\$(Configuration)\WARLegacy\</IntDir>
     <TargetName>WAR</TargetName>
   </PropertyGroup>
 
@@ -56,10 +56,10 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/Zc:__cplusplus /Zc:preprocessor /FS %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party\bgfx\include;$(ProjectDir)third_party\bx\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)WarEngine\src;$(ProjectDir)WarEngine\include;$(ProjectDir)third_party\bgfx\include;$(ProjectDir)third_party\bx\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <PreBuildEvent>
-      <Command>call "$(ProjectDir)scripts\build_shaders_win64.bat" "$(ProjectDir)" "$(Configuration)"</Command>
+      <Command>call "$(ProjectDir)Project\scripts\build_shaders_win64.bat" "$(ProjectDir)" "$(Configuration)"</Command>
     </PreBuildEvent>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -68,8 +68,8 @@
       <AdditionalLibraryDirectories>$(ProjectDir)third_party\bgfx\lib\win64\debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>if exist "$(ProjectDir)assets\shaders\dx11" xcopy /Y /I /E "$(ProjectDir)assets\shaders\dx11" "$(OutDir)assets\shaders\dx11\"
-if exist "$(ProjectDir)assets\textures" xcopy /Y /I /E "$(ProjectDir)assets\textures" "$(OutDir)assets\textures\"</Command>
+      <Command>if exist "$(ProjectDir)Assets\shaders\dx11" xcopy /Y /I /E "$(ProjectDir)Assets\shaders\dx11" "$(OutDir)assets\shaders\dx11\"
+if exist "$(ProjectDir)Assets\textures" xcopy /Y /I /E "$(ProjectDir)Assets\textures" "$(OutDir)assets\textures\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
 
@@ -84,10 +84,10 @@ if exist "$(ProjectDir)assets\textures" xcopy /Y /I /E "$(ProjectDir)assets\text
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/Zc:__cplusplus /Zc:preprocessor /FS %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party\bgfx\include;$(ProjectDir)third_party\bx\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)WarEngine\src;$(ProjectDir)WarEngine\include;$(ProjectDir)third_party\bgfx\include;$(ProjectDir)third_party\bx\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <PreBuildEvent>
-      <Command>call "$(ProjectDir)scripts\build_shaders_win64.bat" "$(ProjectDir)" "$(Configuration)"</Command>
+      <Command>call "$(ProjectDir)Project\scripts\build_shaders_win64.bat" "$(ProjectDir)" "$(Configuration)"</Command>
     </PreBuildEvent>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -98,95 +98,95 @@ if exist "$(ProjectDir)assets\textures" xcopy /Y /I /E "$(ProjectDir)assets\text
       <AdditionalLibraryDirectories>$(ProjectDir)third_party\bgfx\lib\win64\release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>if exist "$(ProjectDir)assets\shaders\dx11" xcopy /Y /I /E "$(ProjectDir)assets\shaders\dx11" "$(OutDir)assets\shaders\dx11\"
-if exist "$(ProjectDir)assets\textures" xcopy /Y /I /E "$(ProjectDir)assets\textures" "$(OutDir)assets\textures\"</Command>
+      <Command>if exist "$(ProjectDir)Assets\shaders\dx11" xcopy /Y /I /E "$(ProjectDir)Assets\shaders\dx11" "$(OutDir)assets\shaders\dx11\"
+if exist "$(ProjectDir)Assets\textures" xcopy /Y /I /E "$(ProjectDir)Assets\textures" "$(OutDir)assets\textures\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\engine\core\Application.cpp" />
-    <ClCompile Include="shared\src\core\Timer.cpp" />
-    <ClCompile Include="shared\src\core\Log.cpp" />
-    <ClCompile Include="shared\src\runtime\RuntimePaths.cpp" />
-    <ClCompile Include="src\engine\core\LocalDemoDiagnostics.cpp" />
-    <ClCompile Include="shared\src\runtime\host\AuthoritativeHostProtocol.cpp" />
-    <ClCompile Include="src\engine\host\HeadlessHostBootstrap.cpp" />
-    <ClCompile Include="src\engine\host\HeadlessHostMode.cpp" />
-    <ClCompile Include="shared\src\runtime\host\HeadlessHostPresence.cpp" />
-    <ClCompile Include="shared\src\runtime\host\ReplicationHarness.cpp" />
-    <ClCompile Include="shared\src\math\Vec2.cpp" />
-    <ClCompile Include="src\engine\render\Camera2D.cpp" />
-    <ClCompile Include="src\engine\render\WorldRenderer.cpp" />
-    <ClCompile Include="src\engine\render\BgfxWorldRenderer.cpp" />
-    <ClCompile Include="src\engine\render\BgfxRenderData.cpp" />
-    <ClCompile Include="src\engine\render\BgfxViewTransform.cpp" />
-    <ClCompile Include="src\engine\render\BgfxShaderProgram.cpp" />
-    <ClCompile Include="src\engine\render\BgfxTextureAsset.cpp" />
-    <ClCompile Include="src\engine\render\BgfxSpriteMaterial.cpp" />
-    <ClCompile Include="src\engine\render\BgfxWorldTheme.cpp" />
-    <ClCompile Include="src\engine\render\BgfxTileVisuals.cpp" />
-    <ClCompile Include="src\engine\render\RenderAssetPaths.cpp" />
-    <ClCompile Include="src\engine\render\DebugOverlayRenderer.cpp" />
-    <ClCompile Include="src\engine\render\GdiRenderDevice.cpp" />
-    <ClCompile Include="src\engine\render\BgfxRenderDevice.cpp" />
-    <ClCompile Include="src\engine\render\BgfxDebugFrameRenderer.cpp" />
-    <ClCompile Include="shared\src\world\WorldGrid.cpp" />
-    <ClCompile Include="shared\src\world\WorldRegionTag.cpp" />
-    <ClCompile Include="shared\src\world\WorldSemanticDressing.cpp" />
-    <ClCompile Include="shared\src\world\Pathfinding.cpp" />
-    <ClCompile Include="shared\src\world\WorldState.cpp" />
-    <ClCompile Include="shared\src\gameplay\EntityManager.cpp" />
-    <ClCompile Include="shared\src\gameplay\ActionSystem.cpp" />
-    <ClCompile Include="shared\src\simulation\SimulationRuntime.cpp" />
-    <ClCompile Include="src\platform\win32\Win32Window.cpp" />
-    <ClCompile Include="src\game\GameLayer.cpp" />
+    <ClCompile Include="WarEngine\src\main.cpp" />
+    <ClCompile Include="WarEngine\src\engine\core\Application.cpp" />
+    <ClCompile Include="WarEngine\src\core\Timer.cpp" />
+    <ClCompile Include="WarEngine\src\core\Log.cpp" />
+    <ClCompile Include="WarEngine\src\runtime\RuntimePaths.cpp" />
+    <ClCompile Include="WarEngine\src\engine\core\LocalDemoDiagnostics.cpp" />
+    <ClCompile Include="WarEngine\src\runtime\host\AuthoritativeHostProtocol.cpp" />
+    <ClCompile Include="WarEngine\src\engine\host\HeadlessHostBootstrap.cpp" />
+    <ClCompile Include="WarEngine\src\engine\host\HeadlessHostMode.cpp" />
+    <ClCompile Include="WarEngine\src\runtime\host\HeadlessHostPresence.cpp" />
+    <ClCompile Include="WarEngine\src\runtime\host\ReplicationHarness.cpp" />
+    <ClCompile Include="WarEngine\src\math\Vec2.cpp" />
+    <ClCompile Include="WarEngine\src\engine\render\Camera2D.cpp" />
+    <ClCompile Include="WarEngine\src\engine\render\WorldRenderer.cpp" />
+    <ClCompile Include="WarEngine\src\engine\render\BgfxWorldRenderer.cpp" />
+    <ClCompile Include="WarEngine\src\engine\render\BgfxRenderData.cpp" />
+    <ClCompile Include="WarEngine\src\engine\render\BgfxViewTransform.cpp" />
+    <ClCompile Include="WarEngine\src\engine\render\BgfxShaderProgram.cpp" />
+    <ClCompile Include="WarEngine\src\engine\render\BgfxTextureAsset.cpp" />
+    <ClCompile Include="WarEngine\src\engine\render\BgfxSpriteMaterial.cpp" />
+    <ClCompile Include="WarEngine\src\engine\render\BgfxWorldTheme.cpp" />
+    <ClCompile Include="WarEngine\src\engine\render\BgfxTileVisuals.cpp" />
+    <ClCompile Include="WarEngine\src\engine\render\RenderAssetPaths.cpp" />
+    <ClCompile Include="WarEngine\src\engine\render\DebugOverlayRenderer.cpp" />
+    <ClCompile Include="WarEngine\src\engine\render\GdiRenderDevice.cpp" />
+    <ClCompile Include="WarEngine\src\engine\render\BgfxRenderDevice.cpp" />
+    <ClCompile Include="WarEngine\src\engine\render\BgfxDebugFrameRenderer.cpp" />
+    <ClCompile Include="WarEngine\src\world\WorldGrid.cpp" />
+    <ClCompile Include="WarEngine\src\world\WorldRegionTag.cpp" />
+    <ClCompile Include="WarEngine\src\world\WorldSemanticDressing.cpp" />
+    <ClCompile Include="WarEngine\src\world\Pathfinding.cpp" />
+    <ClCompile Include="WarEngine\src\world\WorldState.cpp" />
+    <ClCompile Include="WarEngine\src\gameplay\EntityManager.cpp" />
+    <ClCompile Include="WarEngine\src\gameplay\ActionSystem.cpp" />
+    <ClCompile Include="WarEngine\src\simulation\SimulationRuntime.cpp" />
+    <ClCompile Include="WarEngine\src\platform\win32\Win32Window.cpp" />
+    <ClCompile Include="WarEngine\src\game\GameLayer.cpp" />
   </ItemGroup>
 
   <ItemGroup>
-    <ClInclude Include="src\engine\core\Application.h" />
-    <ClInclude Include="src\engine\core\Timer.h" />
-    <ClInclude Include="src\engine\core\Log.h" />
-    <ClInclude Include="src\engine\core\RuntimePaths.h" />
-    <ClInclude Include="src\engine\core\LocalDemoDiagnostics.h" />
-    <ClInclude Include="src\engine\host\AuthoritativeHostProtocol.h" />
-    <ClInclude Include="src\engine\host\HeadlessHostBootstrap.h" />
-    <ClInclude Include="src\engine\host\HeadlessHostMode.h" />
-    <ClInclude Include="src\engine\host\HeadlessHostPresence.h" />
-    <ClInclude Include="src\engine\host\ReplicationHarness.h" />
-    <ClInclude Include="src\engine\math\Vec2.h" />
-    <ClInclude Include="src\engine\render\Camera2D.h" />
-    <ClInclude Include="src\engine\render\WorldRenderer.h" />
-    <ClInclude Include="src\engine\render\BgfxWorldRenderer.h" />
-    <ClInclude Include="src\engine\render\BgfxRenderData.h" />
-    <ClInclude Include="src\engine\render\BgfxViewTransform.h" />
-    <ClInclude Include="src\engine\render\BgfxShaderProgram.h" />
-    <ClInclude Include="src\engine\render\BgfxTextureAsset.h" />
-    <ClInclude Include="src\engine\render\BgfxSpriteMaterial.h" />
-    <ClInclude Include="src\engine\render\BgfxWorldTheme.h" />
-    <ClInclude Include="src\engine\render\BgfxTileVisuals.h" />
-    <ClInclude Include="src\engine\render\RenderAssetPaths.h" />
-    <ClInclude Include="src\engine\render\DebugOverlayRenderer.h" />
-    <ClInclude Include="src\engine\render\RenderBackendType.h" />
-    <ClInclude Include="src\engine\render\IRenderDevice.h" />
-    <ClInclude Include="src\engine\render\GdiRenderDevice.h" />
-    <ClInclude Include="src\engine\render\BgfxRenderDevice.h" />
-    <ClInclude Include="src\engine\render\BgfxDebugFrameRenderer.h" />
-    <ClInclude Include="src\engine\world\WorldGrid.h" />
-    <ClInclude Include="src\engine\world\WorldRegionTag.h" />
-    <ClInclude Include="src\engine\world\WorldSemanticDressing.h" />
-    <ClInclude Include="src\engine\world\Pathfinding.h" />
-    <ClInclude Include="src\engine\world\WorldState.h" />
-    <ClInclude Include="src\engine\gameplay\Action.h" />
-    <ClInclude Include="src\engine\gameplay\ActionQueue.h" />
-    <ClInclude Include="src\engine\gameplay\Entity.h" />
-    <ClInclude Include="src\engine\gameplay\EntityManager.h" />
-    <ClInclude Include="src\engine\gameplay\ActionSystem.h" />
-    <ClInclude Include="src\engine\simulation\SimulationIntent.h" />
-    <ClInclude Include="src\engine\simulation\SimulationRuntime.h" />
-    <ClInclude Include="src\platform\IWindow.h" />
-    <ClInclude Include="src\platform\win32\Win32Window.h" />
-    <ClInclude Include="src\game\GameLayer.h" />
+    <ClInclude Include="WarEngine\src\engine\core\Application.h" />
+    <ClInclude Include="WarEngine\src\engine\core\Timer.h" />
+    <ClInclude Include="WarEngine\src\engine\core\Log.h" />
+    <ClInclude Include="WarEngine\src\engine\core\RuntimePaths.h" />
+    <ClInclude Include="WarEngine\src\engine\core\LocalDemoDiagnostics.h" />
+    <ClInclude Include="WarEngine\src\engine\host\AuthoritativeHostProtocol.h" />
+    <ClInclude Include="WarEngine\src\engine\host\HeadlessHostBootstrap.h" />
+    <ClInclude Include="WarEngine\src\engine\host\HeadlessHostMode.h" />
+    <ClInclude Include="WarEngine\src\engine\host\HeadlessHostPresence.h" />
+    <ClInclude Include="WarEngine\src\engine\host\ReplicationHarness.h" />
+    <ClInclude Include="WarEngine\src\engine\math\Vec2.h" />
+    <ClInclude Include="WarEngine\src\engine\render\Camera2D.h" />
+    <ClInclude Include="WarEngine\src\engine\render\WorldRenderer.h" />
+    <ClInclude Include="WarEngine\src\engine\render\BgfxWorldRenderer.h" />
+    <ClInclude Include="WarEngine\src\engine\render\BgfxRenderData.h" />
+    <ClInclude Include="WarEngine\src\engine\render\BgfxViewTransform.h" />
+    <ClInclude Include="WarEngine\src\engine\render\BgfxShaderProgram.h" />
+    <ClInclude Include="WarEngine\src\engine\render\BgfxTextureAsset.h" />
+    <ClInclude Include="WarEngine\src\engine\render\BgfxSpriteMaterial.h" />
+    <ClInclude Include="WarEngine\src\engine\render\BgfxWorldTheme.h" />
+    <ClInclude Include="WarEngine\src\engine\render\BgfxTileVisuals.h" />
+    <ClInclude Include="WarEngine\src\engine\render\RenderAssetPaths.h" />
+    <ClInclude Include="WarEngine\src\engine\render\DebugOverlayRenderer.h" />
+    <ClInclude Include="WarEngine\src\engine\render\RenderBackendType.h" />
+    <ClInclude Include="WarEngine\src\engine\render\IRenderDevice.h" />
+    <ClInclude Include="WarEngine\src\engine\render\GdiRenderDevice.h" />
+    <ClInclude Include="WarEngine\src\engine\render\BgfxRenderDevice.h" />
+    <ClInclude Include="WarEngine\src\engine\render\BgfxDebugFrameRenderer.h" />
+    <ClInclude Include="WarEngine\src\engine\world\WorldGrid.h" />
+    <ClInclude Include="WarEngine\src\engine\world\WorldRegionTag.h" />
+    <ClInclude Include="WarEngine\src\engine\world\WorldSemanticDressing.h" />
+    <ClInclude Include="WarEngine\src\engine\world\Pathfinding.h" />
+    <ClInclude Include="WarEngine\src\engine\world\WorldState.h" />
+    <ClInclude Include="WarEngine\src\engine\gameplay\Action.h" />
+    <ClInclude Include="WarEngine\src\engine\gameplay\ActionQueue.h" />
+    <ClInclude Include="WarEngine\src\engine\gameplay\Entity.h" />
+    <ClInclude Include="WarEngine\src\engine\gameplay\EntityManager.h" />
+    <ClInclude Include="WarEngine\src\engine\gameplay\ActionSystem.h" />
+    <ClInclude Include="WarEngine\src\engine\simulation\SimulationIntent.h" />
+    <ClInclude Include="WarEngine\src\engine\simulation\SimulationRuntime.h" />
+    <ClInclude Include="WarEngine\src\platform\IWindow.h" />
+    <ClInclude Include="WarEngine\src\platform\win32\Win32Window.h" />
+    <ClInclude Include="WarEngine\src\game\GameLayer.h" />
   </ItemGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

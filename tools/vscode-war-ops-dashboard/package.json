@@ -1,8 +1,8 @@
 {
   "name": "war-ops-dashboard",
   "displayName": "WAR Ops: Dashboard",
-  "description": "Operations dashboard for the WAR package, launch, and milestone validation lanes through M50.",
-  "version": "0.0.1",
+  "description": "Minimal operations dashboard for the WAR internal-alpha package, run, smoke, and docs workflow.",
+  "version": "0.0.3",
   "publisher": "imperator-local",
   "engines": {
     "vscode": "^1.111.0"
@@ -38,40 +38,16 @@
         "title": "WAR Ops: Dashboard: Open Output"
       },
       {
-        "command": "warOps.action.buildPackageRelease",
+        "command": "warOps.action.packageInternalAlphaRelease",
         "title": "WAR Ops: Dashboard: Package Release"
       },
       {
-        "command": "warOps.action.buildPackageDebug",
-        "title": "WAR Ops: Dashboard: Package Debug"
-      },
-      {
-        "command": "warOps.action.buildBetaCandidateRelease",
-        "title": "WAR Ops: Dashboard: Package Beta"
-      },
-      {
-        "command": "warOps.action.buildMarketCandidateRelease",
-        "title": "WAR Ops: Dashboard: Package Market"
-      },
-      {
-        "command": "warOps.action.buildShadersDebug",
-        "title": "WAR Ops: Dashboard: Build Shaders Debug"
-      },
-      {
-        "command": "warOps.action.buildShadersRelease",
-        "title": "WAR Ops: Dashboard: Build Shaders Release"
-      },
-      {
         "command": "warOps.action.launchHeadlessHost",
-        "title": "WAR Ops: Dashboard: Launch Headless Host"
+        "title": "WAR Ops: Dashboard: Launch Host"
       },
       {
         "command": "warOps.action.launchLocalDemo",
-        "title": "WAR Ops: Dashboard: Launch Local Demo"
-      },
-      {
-        "command": "warOps.action.launchClientAgainstHost",
-        "title": "WAR Ops: Dashboard: Launch Client + Host"
+        "title": "WAR Ops: Dashboard: Launch Client"
       },
       {
         "command": "warOps.action.smokeHost",
@@ -82,68 +58,16 @@
         "title": "WAR Ops: Dashboard: Smoke Client"
       },
       {
-        "command": "warOps.action.validateM45InternalAlpha",
-        "title": "WAR Ops: Dashboard: Validate M45"
+        "command": "warOps.action.validateInternalAlphaRelease",
+        "title": "WAR Ops: Dashboard: Validate Package"
       },
       {
-        "command": "warOps.action.validateM46InternalAlpha",
-        "title": "WAR Ops: Dashboard: Validate M46"
+        "command": "warOps.action.openAlphaHandoff",
+        "title": "WAR Ops: Dashboard: Open Alpha Handoff"
       },
       {
-        "command": "warOps.action.validateM47InternalAlpha",
-        "title": "WAR Ops: Dashboard: Validate M47"
-      },
-      {
-        "command": "warOps.action.validateM48InternalAlpha",
-        "title": "WAR Ops: Dashboard: Validate M48"
-      },
-      {
-        "command": "warOps.action.validateM49BetaCandidate",
-        "title": "WAR Ops: Dashboard: Validate M49"
-      },
-      {
-        "command": "warOps.action.validateM50MarketCandidate",
-        "title": "WAR Ops: Dashboard: Validate M50"
-      },
-      {
-        "command": "warOps.action.openReadme",
-        "title": "WAR Ops: Dashboard: Open Readme"
-      },
-      {
-        "command": "warOps.action.openRuntimeBoundary",
-        "title": "WAR Ops: Dashboard: Open Runtime Boundary"
-      },
-      {
-        "command": "warOps.action.openRunway",
-        "title": "WAR Ops: Dashboard: Open Runway"
-      },
-      {
-        "command": "warOps.action.openM48Milestone",
-        "title": "WAR Ops: Dashboard: Open M48 Milestone"
-      },
-      {
-        "command": "warOps.action.openM49Milestone",
-        "title": "WAR Ops: Dashboard: Open M49 Milestone"
-      },
-      {
-        "command": "warOps.action.openM50Milestone",
-        "title": "WAR Ops: Dashboard: Open M50 Milestone"
-      },
-      {
-        "command": "warOps.action.openM48Evidence",
-        "title": "WAR Ops: Dashboard: Open M48 Evidence"
-      },
-      {
-        "command": "warOps.action.openM49Evidence",
-        "title": "WAR Ops: Dashboard: Open M49 Evidence"
-      },
-      {
-        "command": "warOps.action.openM50Evidence",
-        "title": "WAR Ops: Dashboard: Open M50 Evidence"
-      },
-      {
-        "command": "warOps.action.openRoadmap",
-        "title": "WAR Ops: Dashboard: Open Roadmap"
+        "command": "warOps.action.openTechnicalArchitecture",
+        "title": "WAR Ops: Dashboard: Open Technical Architecture"
       }
     ],
     "viewsContainers": {

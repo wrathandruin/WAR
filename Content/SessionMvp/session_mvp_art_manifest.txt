@@ -1,0 +1,59 @@
+schema_version=1
+pass=art-integration-pass-1
+owner=environment-identity-and-text-presentation
+
+[space region.khepri-cargo-bay]
+environment_identity=Khepri Industrial Dock
+text_presentation_profile=industrial-manifest-shell
+asset_batch=cargo-bay-identity-pass1
+status=integrated-pass1
+placeholder_audit=controlled
+
+[space region.transit-spine]
+environment_identity=Transit Utility Conduit
+text_presentation_profile=utility-conduit-shell
+asset_batch=transit-spine-identity-pass1
+status=integrated-pass1
+placeholder_audit=controlled
+
+[space region.medlab-diagnostics]
+environment_identity=Clinical Triage White
+text_presentation_profile=clinical-diagnostic-shell
+asset_batch=medlab-identity-pass1
+status=integrated-pass1
+placeholder_audit=controlled
+
+[space region.command-deck-approach]
+environment_identity=Command Security Red
+text_presentation_profile=command-security-shell
+asset_batch=command-deck-identity-pass1
+status=integrated-pass1
+placeholder_audit=controlled
+
+[space region.hazard-containment]
+environment_identity=Containment Hazard Amber
+text_presentation_profile=hazard-warning-shell
+asset_batch=containment-identity-pass1
+status=integrated-pass1
+placeholder_audit=controlled
+
+[space ship.responder-shuttle-khepri.docked-interior]
+environment_identity=Responder Shuttle Interior
+text_presentation_profile=shuttle-cabin-shell
+asset_batch=shuttle-identity-pass1
+status=integrated-pass1
+placeholder_audit=controlled
+
+[space orbital.debris-survey-orbit]
+environment_identity=Orbital Survey Blue
+text_presentation_profile=orbital-survey-shell
+asset_batch=orbital-identity-pass1
+status=integrated-pass1
+placeholder_audit=controlled
+
+[space frontier.dust-frontier-landing-pad]
+environment_identity=Dust Frontier Surface
+text_presentation_profile=frontier-signal-shell
+asset_batch=frontier-identity-pass1
+status=integrated-pass1
+placeholder_audit=controlled

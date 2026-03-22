@@ -1,20 +1,14 @@
 # WAR Docs Index
 
-Project documentation is organized by function:
+The documentation set is intentionally small.
 
-- `Docs/Prompts/`
-  Lead-developer and lead-artist prompt material.
-- `Docs/Planning/`
-  Production plans, runway documents, roadmap audits, and high-level project planning.
-- `Docs/Technical/`
-  Runtime contracts, systems design, packaging/runtime boundary notes, and implementation-facing technical docs.
-- `Docs/Art/`
-  Art direction, art delivery contracts, onboarding, and asset-planning material.
-- `Docs/Reports/`
-  Sign-off reports, readiness reports, implementation reports, and validation checklists.
-- `Docs/Standards/`
-  Cross-cutting delivery and process standards.
-- `Docs/Validation/`
-  Milestone validation evidence files.
+- `Docs/Planning/WAR Product Blueprint.md`
+  Product goal, alpha scope, gameplay pillars, and SMART targets.
+- `Docs/Planning/WAR Alpha Handoff.md`
+  Single execution handoff for the lead developer, including milestones, zip rules, and lead-dev prompt text.
+- `Docs/Technical/WAR Technical Architecture.md`
+  Repo layout, source ownership, build rules, runtime rules, and packaging rules.
+- `Docs/Art/WAR Art Direction and Asset Targets.md`
+  Lead-artist-facing visual goals, benchmark scenes, and asset packages by milestone.
 
-Milestone-specific implementation docs remain in `Milestones/`.
+If information cannot fit cleanly into one of those documents, it should usually be folded back into them instead of creating a new file.

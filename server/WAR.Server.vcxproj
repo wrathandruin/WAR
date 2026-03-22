@@ -42,8 +42,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <OutDir>$(SolutionDir)\bin\$(Configuration)\split\server\</OutDir>
-    <IntDir>$(SolutionDir)\obj\$(Configuration)\WARServer\</IntDir>
+    <OutDir>$(SolutionDir)\Bin64\$(Configuration)\split\server\</OutDir>
+    <IntDir>$(SolutionDir)\obj\$(Configuration)\Server\</IntDir>
     <TargetName>WARServer</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -55,7 +55,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/Zc:__cplusplus /Zc:preprocessor %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\src;$(ProjectDir)include;$(ProjectDir)..\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\WarEngine\src;$(ProjectDir)..\WarEngine\include;$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -73,7 +73,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/Zc:__cplusplus /Zc:preprocessor %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\src;$(ProjectDir)include;$(ProjectDir)..\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\WarEngine\src;$(ProjectDir)..\WarEngine\include;$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -84,18 +84,18 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="..\src\engine\host\HeadlessHostBootstrap.cpp" />
-    <ClCompile Include="..\src\engine\core\LocalDemoDiagnostics.cpp" />
-    <ClCompile Include="..\src\engine\host\HeadlessHostMode.cpp" />
+    <ClCompile Include="..\WarEngine\src\engine\host\HeadlessHostBootstrap.cpp" />
+    <ClCompile Include="..\WarEngine\src\engine\core\LocalDemoDiagnostics.cpp" />
+    <ClCompile Include="..\WarEngine\src\engine\host\HeadlessHostMode.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\engine\core\LocalDemoDiagnostics.h" />
-    <ClInclude Include="..\src\engine\core\RuntimePaths.h" />
-    <ClInclude Include="..\src\engine\host\HeadlessHostBootstrap.h" />
-    <ClInclude Include="..\src\engine\host\HeadlessHostMode.h" />
+    <ClInclude Include="..\WarEngine\src\engine\core\LocalDemoDiagnostics.h" />
+    <ClInclude Include="..\WarEngine\src\engine\core\RuntimePaths.h" />
+    <ClInclude Include="..\WarEngine\src\engine\host\HeadlessHostBootstrap.h" />
+    <ClInclude Include="..\WarEngine\src\engine\host\HeadlessHostMode.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\shared\WAR.Shared.vcxproj">
+    <ProjectReference Include="..\WarEngine\WAR.Shared.vcxproj">
       <Project>{A1DFA0B2-0F1B-4A60-9D58-3DA1A95B01C1}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

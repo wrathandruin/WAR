@@ -4,33 +4,38 @@ Wrath and Ruin is a Windows-first, server-authoritative, top-down hard-sci-fi RP
 
 ## Start Here
 
-- product architecture: `Docs/Planning/Wrath and Ruin - Alpha Vertical Slice Architecture and Milestone Blueprint.md`
-- exact execution packs: `Docs/Planning/Wrath and Ruin - 0.1 Slice Execution Packages and Asset Schedule.md`
-- strategic roadmap: `Milestones/WAR_Strategic_Roadmap.md`
-- delivery rules: `Docs/Standards/Wrath and Ruin - Milestone Delivery Standard.md`
-- lead developer prompt: `Docs/Prompts/Wrath and Ruin - 0.1.1 Lead Developer Start Prompt.md`
+- product blueprint: `Docs/Planning/WAR Product Blueprint.md`
+- alpha handoff: `Docs/Planning/WAR Alpha Handoff.md`
+- technical architecture: `Docs/Technical/WAR Technical Architecture.md`
+- art targets: `Docs/Art/WAR Art Direction and Asset Targets.md`
 
 ## Root Layout
 
-The repo root is now organized around product ownership instead of ad hoc milestone clutter.
+The repo root is organized around stable product ownership.
 
-- `desktop/`, `server/`, `shared/`, `src/`: active runtime and gameplay code
-- `contracts/`: protocol, persistence, and content contracts
-- `assets/`: runtime-facing shaders and local texture workspace
-- `Docs/`: planning, art, technical, reports, prompts, standards, validation
-- `Milestones/`: milestone definitions and milestone validation wrappers
-- `scripts/`: Windows build, stage, smoke, and validation scripts
-- `Environment/`: deployable environment profiles and config inputs
-- `Runtime/`: mutable runtime state roots
-- `SourceManifests/`: consolidated source-of-truth package and ops manifests
-- `Governance/`: governance and owner-only material boundaries
-- `out/`, `bin/`, `obj/`, `Debug/`: generated outputs
+- `Assets/`: runtime-facing shaders and texture sources
+- `Bin64/`: built binaries and staged build outputs
+- `Content/`: authored scenario, mission, and validation-support content
+- `Desktop/`: desktop shell and desktop-only sources
+- `Docs/`: concise planning, technical, and art documentation
+- `Project/`: repo automation, source manifests, governance, environment profiles, runtime roots
+- `Server/`: dedicated-host shell and server-only sources
+- `Tools/`: developer tooling and editor integrations
+- `WarEngine/`: shared engine, gameplay, runtime, rendering, and world code
+- `obj/`: intermediate build output
+- `third_party/`: external dependencies
 
 ## Source Manifest Rule
 
-Repo source manifests now live under `SourceManifests/`.
+Repo source manifests now live under `Project/SourceManifests/`.
 
-Staged build packages still preserve the historical package layout:
+Source-tree operations roots also live under `Project/`:
+
+- `Project/Environment/`
+- `Project/Runtime/`
+- `Project/Governance/`
+
+Staged build packages may still preserve compatibility package lanes such as:
 
 - `BetaContent/`
 - `Launcher/`
@@ -45,12 +50,13 @@ This keeps the repo cleaner without breaking packaged validation or operator exp
 
 ## Current Production Direction
 
-The active planning target is the `0.1.x` vertical-slice runway toward the first internal alpha candidate.
+The active target is the internal-alpha vertical slice defined in the product blueprint and alpha handoff.
 
 The immediate operating rules are:
 
 - keep the build green
+- keep the repo structure canonical
 - keep localhost and packaged validation truthful
-- deliver complete milestone handoff packages
+- deliver one complete zip per milestone
 - no partial code deliveries
 - no widening scope before the current slice is truly complete

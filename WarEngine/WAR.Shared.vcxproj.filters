@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{3B1F263B-B70A-4451-B0D6-C089877A6D95}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{769ADB48-90C5-4050-8FF3-0D8E77A5DAB6}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;inl</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\core\Timer.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\core\Log.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\runtime\RuntimePaths.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\runtime\host\AuthoritativeHostProtocol.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\runtime\host\HeadlessHostPresence.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\runtime\host\ReplicationHarness.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\math\Vec2.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\world\WorldGrid.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\world\WorldRegionTag.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\world\WorldSemanticDressing.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\world\Pathfinding.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\world\WorldState.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\gameplay\EntityManager.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\gameplay\ActionSystem.cpp"><Filter>Source Files</Filter></ClCompile>
+    <ClCompile Include="src\simulation\SimulationRuntime.cpp"><Filter>Source Files</Filter></ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\engine\core\Timer.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\core\Log.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\core\RuntimePaths.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\host\AuthoritativeHostProtocol.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\host\HeadlessHostPresence.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\host\ReplicationHarness.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\math\Vec2.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\world\WorldGrid.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\world\WorldRegionTag.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\world\WorldSemanticDressing.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\world\Pathfinding.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\world\WorldState.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\gameplay\Action.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\gameplay\ActionQueue.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\gameplay\ActionSystem.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\gameplay\Entity.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\gameplay\EntityManager.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\simulation\SimulationIntent.h"><Filter>Header Files</Filter></ClInclude>
+    <ClInclude Include="src\engine\simulation\SimulationRuntime.h"><Filter>Header Files</Filter></ClInclude>
+  </ItemGroup>
+</Project>

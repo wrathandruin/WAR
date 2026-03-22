@@ -1,0 +1,113 @@
+schema_version=1
+
+[room region.khepri-cargo-bay]
+title=Khepri Dock Cargo Bay
+description=Floodlit pallet lanes, saffron dock clamps, and stacked freight walls make Khepri Dock's intake floor feel heavy, industrial, and permanently overworked.
+
+[room region.transit-spine]
+title=Transit Spine
+description=Conduit strips, amber maintenance lamps, and boxed cable runs pull traffic through the station's hardened central spine like a utility artery.
+
+[room region.medlab-diagnostics]
+title=MedLab Diagnostics
+description=Cold white panels, diagnostic trays, and sealed med stations give the lab a clinical glare that cuts hard against the rest of the dock.
+
+[room region.command-deck-approach]
+title=Command Deck Approach
+description=Armored bulkheads, red command telltales, and restricted sightlines tighten the command approach into a guarded operational throat.
+
+[room region.hazard-containment]
+title=Hazard Containment
+description=Scored containment walls, hazard amber strobes, and patchwork sealant make this sector feel scorched, unstable, and only barely under control.
+
+[room ship.responder-shuttle-khepri.docked-interior]
+title=Responder Shuttle Khepri - Docked Interior
+description=The responder shuttle feels tight, metallic, and mission-worn, with folded harness seats, brushed bulkheads, and compact readouts built for short hard transfers.
+
+[room ship.responder-shuttle-khepri.command-cabin]
+title=Responder Shuttle Khepri - Command Cabin
+description=Harness webbing, helm glass, and route controls crowd the shuttle's command cabin into a compact operational nerve center.
+
+[room orbital.traffic-separation-lane]
+title=Traffic Separation Lane
+description=The shuttle holds inside Khepri traffic separation, bracketed by traffic-control windows and collision-avoidance protocol.
+
+[room orbital.debris-survey-orbit]
+title=Debris Survey Orbit
+description=Broken survey debris, pale telemetry traces, and wide orbital sightlines turn this orbit into a cold blue operational watchpoint.
+
+[room orbital.relay-holding-track]
+title=Relay Holding Track
+description=The shuttle paces a narrow relay holding track where approach timing and platform clearance are more important than comfort.
+
+[room orbital.relay-platform-dock]
+title=Relay Platform Dock
+description=Docking clamps, relay trusswork, and hard-vacuum service lanes crowd the shuttle against the survey platform.
+
+[room orbital.home-dock-anchor]
+title=Home Dock Anchor
+description=Khepri's home-dock anchor feels controlled and procedural, with docking geometry and return vectors replacing the uncertainty of open transfer.
+
+[room frontier.dust-frontier-landing-pad]
+title=Dust Frontier Landing Pad
+description=Dust-scoured plating, relay scaffold shadows, and hard signal beacons make the frontier pad feel exposed, temporary, and very far from home.
+
+[mission recover-transit-data]
+objective=Reach the Transit Service Terminal and recover route data.
+journal=Recovered route intelligence should explain how the breach propagated through Khepri Dock. The next lead is inside MedLab diagnostics.
+
+[mission diagnose-medlab]
+objective=Inspect the Diagnostic Station in the MedLab to identify the breach route.
+journal=Transit data points to a breach route through MedLab. Diagnostic records should tell us how quarantine failed.
+
+[mission secure-quarantine-gate]
+objective=Push through the unlocked quarantine lane and secure the Quarantine Access Gate.
+journal=The breach route is confirmed. Secure the gate before the containment failure spreads farther through the station.
+
+[mission restore-quarantine-control]
+objective=Use the Quarantine Control Terminal to restore the evac corridor.
+journal=The gate is secure. Restoring quarantine control should reopen the corridor and authorize shuttle boarding.
+
+[mission board-responder-shuttle]
+objective=Return to the cargo bay and board Responder Shuttle Khepri.
+journal=Quarantine control is stable enough to move. Board the responder shuttle and transition the slice out of the dock.
+
+[mission claim-shuttle-command]
+objective=Use Shuttle Helm Terminal to claim command authority over the docked shuttle.
+journal=Boarding is complete. Claiming shuttle command will unlock the local orbital lane and move the fiction beyond the station floor.
+
+[mission enter-orbital-lane]
+objective=Use Shuttle Helm Terminal to clear the docking collar and enter the local orbital traffic lane.
+journal=The shuttle is under command authority. Commit to departure and stabilize in the first orbital holding lane.
+
+[mission reach-survey-orbit]
+objective=Use Orbital Navigation Console to plot transfer to Debris Survey Orbit.
+journal=Khepri traffic separation is stable. The survey orbit is the next waypoint and the first real proof of travel continuity.
+
+[mission stabilize-relay-track]
+objective=Use Orbital Navigation Console to stabilize the relay holding track.
+journal=Survey orbit telemetry is good enough to proceed. Stabilize the relay track so Dust Frontier docking becomes viable.
+
+[mission dock-relay-platform]
+objective=Use Orbital Navigation Console to dock with Dust Frontier Relay Platform.
+journal=The relay track is stable. Docking with the Dust Frontier platform opens the second-destination landing beat.
+
+[mission land-dust-frontier]
+objective=Interact with Responder Shuttle Khepri to disembark onto Dust Frontier Landing Pad.
+journal=Dust Frontier docking is complete. Step onto the pad and validate that authored text survives the destination handoff.
+
+[mission secure-frontier-relay]
+objective=Use Frontier Relay Beacon to secure the surface relay handoff.
+journal=The frontier surface is active. Secure the beacon so the return journey carries mission continuity instead of just travel state.
+
+[mission return-to-shuttle]
+objective=Re-board Responder Shuttle Khepri and use Shuttle Helm Terminal to launch back toward Khepri Dock.
+journal=The relay handoff is secured. Re-board the shuttle and start the return leg while keeping the mission journal coherent.
+
+[mission return-to-home-dock]
+objective=Disembark from Responder Shuttle Khepri at Khepri Dock to complete the return loop.
+journal=The shuttle is back on the home approach. One final disembark should close the return loop and prove session continuity.
+
+[mission mission-complete]
+objective=Art-integrated session presentation is active. M59 cooperation validation is unblocked.
+journal=The directed session loop now reads as an authored product lane with distinct space identity. The next milestone can validate cooperation and communication on top of that shell.

@@ -1,8 +1,15 @@
-# Canonical source-controlled asset pipeline files live under assets/shaders.
-# Local development textures/images under assets/textures are machine-local and must not be committed.
-# Mutable runtime data belongs under Runtime/ and must not be committed.
+# Canonical source-controlled asset pipeline files live under Assets/shaders.
+# Local development textures/images under Assets/textures are machine-local and must not be committed.
+# Mutable runtime data belongs under Project/Runtime/ and must not be committed.
 
 # Private/local assets
+/Assets/*
+!/Assets/.gitkeep
+!/Assets/shaders/
+!/Assets/shaders/**
+!/Assets/textures/
+/Assets/textures/**
+!/Assets/textures/.gitkeep
 /assets/*
 !/assets/.gitkeep
 !/assets/shaders/
@@ -14,6 +21,7 @@
 # Owner-only / confidential materials
 /owners/
 /Governance/owners/
+/Project/Governance/owners/
 /secrets/
 /private/
 
@@ -40,6 +48,18 @@
 !/Runtime/CrashDumps/.gitkeep
 !/Runtime/Host/
 !/Runtime/Host/.gitkeep
+/Project/Runtime/**
+!/Project/Runtime/
+!/Project/Runtime/Config/
+!/Project/Runtime/Config/.gitkeep
+!/Project/Runtime/Logs/
+!/Project/Runtime/Logs/.gitkeep
+!/Project/Runtime/Saves/
+!/Project/Runtime/Saves/.gitkeep
+!/Project/Runtime/CrashDumps/
+!/Project/Runtime/CrashDumps/.gitkeep
+!/Project/Runtime/Host/
+!/Project/Runtime/Host/.gitkeep
 
 # Packaging outputs
 /Packaging/output/
@@ -48,6 +68,7 @@
 # Build folders
 /build/
 /out/
+/Bin64/
 /bin/
 /obj/
 /x64/
@@ -55,6 +76,12 @@
 /Release/
 /.vs/
 /.vscode/ipch/
+/WarEngine/bin/
+/WarEngine/obj/
+/Desktop/bin/
+/Desktop/obj/
+/Server/bin/
+/Server/obj/
 
 # Build outputs
 *.dll

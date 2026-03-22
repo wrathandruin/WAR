@@ -1,0 +1,89 @@
+@echo off
+setlocal enableextensions
+
+set "SCRIPT_DIR=%~dp0"
+set "DEMO_ROOT=%SCRIPT_DIR%"
+if not exist "%DEMO_ROOT%\WAR.exe" (
+    for %%I in ("%SCRIPT_DIR%..") do set "DEMO_ROOT=%%~fI"
+)
+
+set "CLIENT_EXE_PATH=%DEMO_ROOT%\WAR.exe"
+set "HOST_EXE_PATH=%DEMO_ROOT%\WARServer.exe"
+set "HOST_ARGS="
+if not exist "%HOST_EXE_PATH%" (
+    set "HOST_EXE_PATH=%DEMO_ROOT%\WAR.exe"
+    set "HOST_ARGS=--headless-host"
+)
+
+set "LOCAL_RUNTIME_ROOT=%DEMO_ROOT%\runtime"
+if not exist "%LOCAL_RUNTIME_ROOT%" set "LOCAL_RUNTIME_ROOT=%DEMO_ROOT%\Runtime"
+set "TARGET_RUNTIME_ROOT=%~1"
+if "%TARGET_RUNTIME_ROOT%"=="" set "TARGET_RUNTIME_ROOT=%LOCAL_RUNTIME_ROOT%"
+set "TARGET_NAME=%~2"
+if "%TARGET_NAME%"=="" set "TARGET_NAME=localhost-fallback"
+set "LANE_MODE=%~3"
+if "%LANE_MODE%"=="" (
+    if /I "%TARGET_RUNTIME_ROOT%"=="%LOCAL_RUNTIME_ROOT%" (
+        set "LANE_MODE=localhost-fallback"
+    ) else (
+        set "LANE_MODE=hosted-bootstrap"
+    )
+)
+
+set "ENVIRONMENT_NAME=%~4"
+if "%ENVIRONMENT_NAME%"=="" (
+    if /I "%LANE_MODE%"=="hosted-bootstrap" (
+        set "ENVIRONMENT_NAME=hosted_internal_alpha"
+    ) else (
+        set "ENVIRONMENT_NAME=local"
+    )
+)
+set "CONFIG_PROFILE=%~5"
+if "%CONFIG_PROFILE%"=="" set "CONFIG_PROFILE=%ENVIRONMENT_NAME%"
+set "SECRETS_FILE=%~6"
+set "PERSISTENCE_SLOT=%~7"
+if "%PERSISTENCE_SLOT%"=="" set "PERSISTENCE_SLOT=primary"
+
+set "TRANSPORT_KIND=file-backed-localhost-fallback"
+if /I "%LANE_MODE%"=="hosted-bootstrap" set "TRANSPORT_KIND=file-backed-hosted-bootstrap"
+
+if not exist "%CLIENT_EXE_PATH%" (
+    echo [M46] ERROR: WAR.exe not found next to the client/host launch script.
+    exit /b 1
+)
+
+if not exist "%HOST_EXE_PATH%" (
+    echo [M46] ERROR: host executable not found next to the client/host launch script.
+    exit /b 1
+)
+
+call :resolve_build_channel "%DEMO_ROOT%"
+if defined RESOLVED_BUILD_CHANNEL set "WAR_BUILD_CHANNEL=%RESOLVED_BUILD_CHANNEL%"
+
+set "WAR_RUNTIME_ROOT=%TARGET_RUNTIME_ROOT%"
+set "WAR_CONNECT_TARGET_NAME=%TARGET_NAME%"
+set "WAR_CONNECT_TRANSPORT=%TRANSPORT_KIND%"
+set "WAR_CONNECT_LANE_MODE=%LANE_MODE%"
+set "WAR_ENVIRONMENT=%ENVIRONMENT_NAME%"
+set "WAR_CONFIG_PROFILE=%CONFIG_PROFILE%"
+set "WAR_PERSISTENCE_SLOT=%PERSISTENCE_SLOT%"
+if not "%SECRETS_FILE%"=="" set "WAR_SECRETS_FILE=%SECRETS_FILE%"
+
+if /I "%LANE_MODE%"=="localhost-fallback" (
+    start "WAR Headless Host" /min "%HOST_EXE_PATH%" %HOST_ARGS%
+    ping 127.0.0.1 -n 2 >nul
+) else (
+    echo [M46] Client connecting to hosted bootstrap target "%TARGET_NAME%" via runtime root "%TARGET_RUNTIME_ROOT%" in environment "%ENVIRONMENT_NAME%" with config profile "%CONFIG_PROFILE%" and persistence slot "%PERSISTENCE_SLOT%".
+)
+
+start "WAR Client" "%CLIENT_EXE_PATH%"
+exit /b 0
+
+:resolve_build_channel
+set "RESOLVED_BUILD_CHANNEL=internal-alpha"
+set "CHANNEL_ROOT=%~1"
+if exist "%CHANNEL_ROOT%\session_mvp_candidate_manifest.txt" set "RESOLVED_BUILD_CHANNEL=session-mvp-candidate"
+if exist "%CHANNEL_ROOT%\market_candidate_manifest.txt" set "RESOLVED_BUILD_CHANNEL=market-candidate"
+if exist "%CHANNEL_ROOT%\beta_release_candidate_manifest.txt" set "RESOLVED_BUILD_CHANNEL=beta-candidate"
+if exist "%CHANNEL_ROOT%\demo_manifest.txt" set "RESOLVED_BUILD_CHANNEL=local-demo"
+exit /b 0

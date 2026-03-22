@@ -1,8 +1,8 @@
 set(WAR_SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
-    ${CMAKE_SOURCE_DIR}/src/engine/host/HeadlessHostBootstrap.cpp
-    ${CMAKE_SOURCE_DIR}/src/engine/core/LocalDemoDiagnostics.cpp
-    ${CMAKE_SOURCE_DIR}/src/engine/host/HeadlessHostMode.cpp
+    ${CMAKE_SOURCE_DIR}/WarEngine/src/engine/host/HeadlessHostBootstrap.cpp
+    ${CMAKE_SOURCE_DIR}/WarEngine/src/engine/core/LocalDemoDiagnostics.cpp
+    ${CMAKE_SOURCE_DIR}/WarEngine/src/engine/host/HeadlessHostMode.cpp
 )
 
 add_executable(WARServer
@@ -11,9 +11,9 @@ add_executable(WARServer
 
 target_include_directories(WARServer
     PRIVATE
-        ${CMAKE_SOURCE_DIR}/src
+        ${CMAKE_SOURCE_DIR}/WarEngine/src
         ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${CMAKE_SOURCE_DIR}/shared/include
+        ${CMAKE_SOURCE_DIR}/WarEngine/include
 )
 
 target_link_libraries(WARServer
@@ -33,5 +33,5 @@ endif()
 
 set_target_properties(WARServer PROPERTIES
     OUTPUT_NAME "WARServer"
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/split/server/$<CONFIG>"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/Bin64/$<CONFIG>/split/server"
 )

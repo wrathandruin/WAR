@@ -7,8 +7,7 @@ const { execFileSync, spawn } = require("child_process");
 const {
   ACTIONS,
   SECTIONS,
-  STATUS_DEFINITIONS,
-  TOP_ACTION_IDS
+  STATUS_DEFINITIONS
 } = require("./registry");
 
 const VIEW_TYPE = "warOps.panel";
@@ -28,10 +27,7 @@ const REQUIRED_STAGE_FILES = [
   "smoke_test_local_demo_win64.bat"
 ];
 const STAGE_MANIFEST_FILES = [
-  "internal_alpha_manifest.txt",
-  "beta_release_candidate_manifest.txt",
-  "market_candidate_manifest.txt",
-  "demo_manifest.txt"
+  "internal_alpha_manifest.txt"
 ];
 
 function toActionCommandId(actionId) {
@@ -269,6 +265,7 @@ class WarOperationsDashboardProvider {
         async () => new Promise((resolve, reject) => {
           const child = spawn(invocation.command, invocation.args, {
             cwd: invocation.cwd,
+            shell: invocation.shell === true,
             detached: true,
             stdio: "ignore"
           });
@@ -302,7 +299,9 @@ class WarOperationsDashboardProvider {
       this.state.paths = {
         workspaceRoot: paths.workspaceRoot,
         repoRoot: paths.repoRoot,
+        stageLabel: paths.stageLabel || "No staged package found",
         stageRoot: paths.stageRoot || "No staged package found",
+        runtimeLabel: paths.runtimeLabel || "Project/Runtime",
         runtimeRoot: paths.runtimeRoot || "No runtime root found"
       };
 
@@ -579,8 +578,6 @@ class WarOperationsDashboardProvider {
   }
 
   buildViewState() {
-    const topActions = TOP_ACTION_IDS.map(id => this.summarizeAction(ACTIONS[id]));
-
     const sections = SECTIONS.map(section => ({
       id: section.id,
       title: section.title,
@@ -599,7 +596,6 @@ class WarOperationsDashboardProvider {
       lastAction: this.state.lastAction,
       paths: this.state.paths,
       statuses,
-      topActions,
       sections
     };
   }
@@ -676,13 +672,23 @@ class WarOperationsDashboardProvider {
   }
 
   isRepoRoot(candidate) {
-    return (
+    const canonicalLayout = (
+      fs.existsSync(path.join(candidate, "WAR.sln")) &&
+      fs.existsSync(path.join(candidate, "Project", "scripts")) &&
+      fs.existsSync(path.join(candidate, "Desktop")) &&
+      fs.existsSync(path.join(candidate, "Server")) &&
+      fs.existsSync(path.join(candidate, "WarEngine"))
+    );
+
+    const legacyLayout = (
       fs.existsSync(path.join(candidate, "WAR.sln")) &&
       fs.existsSync(path.join(candidate, "scripts")) &&
       fs.existsSync(path.join(candidate, "desktop")) &&
       fs.existsSync(path.join(candidate, "server")) &&
       fs.existsSync(path.join(candidate, "shared"))
     );
+
+    return canonicalLayout || legacyLayout;
   }
 
   findRepoRoot(startPath) {
@@ -734,41 +740,15 @@ class WarOperationsDashboardProvider {
   }
 
   findLatestStageInfo(repoRoot) {
-    const laneRoots = [
-      {
-        basePath: path.join(repoRoot, "out", "market_candidate"),
-        laneLabel: "market candidate",
-        laneRank: 4
-      },
-      {
-        basePath: path.join(repoRoot, "out", "beta_candidate"),
-        laneLabel: "beta candidate",
-        laneRank: 3
-      },
-      {
-        basePath: path.join(repoRoot, "out", "internal_alpha"),
-        laneLabel: "internal alpha",
-        laneRank: 2
-      },
-      {
-        basePath: path.join(repoRoot, "out", "local_demo"),
-        laneLabel: "local demo",
-        laneRank: 1
-      }
-    ];
+    const basePath = path.join(repoRoot, "out", "internal_alpha");
+    if (!fs.existsSync(basePath)) {
+      return null;
+    }
 
-    const candidates = laneRoots
-      .filter(lane => fs.existsSync(lane.basePath))
-      .flatMap(lane => fs.readdirSync(lane.basePath, { withFileTypes: true })
-        .filter(entry => entry.isDirectory())
-        .map(entry => this.parseStageName(entry.name))
-        .filter(Boolean)
-        .map(parsed => ({
-          ...parsed,
-          laneLabel: lane.laneLabel,
-          laneRank: lane.laneRank,
-          basePath: lane.basePath
-        })))
+    const candidates = fs.readdirSync(basePath, { withFileTypes: true })
+      .filter(entry => entry.isDirectory())
+      .map(entry => this.parseStageName(entry.name))
+      .filter(Boolean)
       .sort((left, right) => {
         if (right.milestone !== left.milestone) {
           return right.milestone - left.milestone;
@@ -776,10 +756,6 @@ class WarOperationsDashboardProvider {
 
         if (right.configRank !== left.configRank) {
           return right.configRank - left.configRank;
-        }
-
-        if (right.laneRank !== left.laneRank) {
-          return right.laneRank - left.laneRank;
         }
 
         return left.name.localeCompare(right.name);
@@ -790,17 +766,17 @@ class WarOperationsDashboardProvider {
     }
 
     const best = candidates.find(candidate => {
-      return this.isUsableStageRoot(path.join(candidate.basePath, candidate.name));
+      return this.isUsableStageRoot(path.join(basePath, candidate.name));
     });
     if (!best) {
       return null;
     }
 
-    const stageRoot = path.join(best.basePath, best.name);
+    const stageRoot = path.join(basePath, best.name);
 
     return {
       stageRoot,
-      stageLabel: `${best.name} (${best.laneLabel})`,
+      stageLabel: `${best.name} (internal alpha)`,
       runtimeRoot: path.join(stageRoot, "runtime"),
       runtimeLabel: `${best.name}/runtime`
     };
@@ -811,8 +787,8 @@ class WarOperationsDashboardProvider {
     const repoRoot = this.findRepoRoot(workspaceRoot);
     const stageInfo = this.findLatestStageInfo(repoRoot);
 
-    const runtimeRoot = stageInfo?.runtimeRoot || path.join(repoRoot, "Runtime");
-    const runtimeLabel = stageInfo?.runtimeLabel || "Runtime";
+    const runtimeRoot = stageInfo?.runtimeRoot || path.join(repoRoot, "Project", "Runtime");
+    const runtimeLabel = stageInfo?.runtimeLabel || "Project/Runtime";
 
     return {
       workspaceRoot,
@@ -826,10 +802,14 @@ class WarOperationsDashboardProvider {
 
   execAction(action, inputValue, onOutput) {
     const invocation = this.buildExecInvocation(action, inputValue);
+    this.output.appendLine(
+      `[exec-action] command=${invocation.command} shell=${invocation.shell === true} cwd=${invocation.cwd} args=${JSON.stringify(invocation.args)}`
+    );
 
     return new Promise((resolve, reject) => {
       const child = spawn(invocation.command, invocation.args, {
-        cwd: invocation.cwd
+        cwd: invocation.cwd,
+        shell: invocation.shell === true
       });
       let stdout = "";
       let stderr = "";
@@ -875,6 +855,15 @@ class WarOperationsDashboardProvider {
     const scriptInvocation = this.resolveScriptInvocation(action, inputValue);
 
     if (this.isBatchScript(scriptInvocation.scriptPath)) {
+      if (process.platform === "win32") {
+        return {
+          command: scriptInvocation.scriptPathWindows,
+          args: scriptInvocation.args,
+          cwd: scriptInvocation.cwd,
+          shell: true
+        };
+      }
+
       return {
         command: "cmd.exe",
         args: [
@@ -902,20 +891,7 @@ class WarOperationsDashboardProvider {
   }
 
   buildActionInvocation(action, inputValue) {
-    const scriptInvocation = this.resolveScriptInvocation(action, inputValue);
-
-    return {
-      command: this.getPowerShellExecutable(),
-      args: [
-        "-NoLogo",
-        "-NoProfile",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-Command",
-        this.buildPowerShellCall(scriptInvocation.scriptPathWindows, scriptInvocation.args)
-      ],
-      cwd: scriptInvocation.cwd
-    };
+    return this.buildExecInvocation(action, inputValue);
   }
 
   resolveScriptInvocation(action, inputValue) {
@@ -965,10 +941,9 @@ class WarOperationsDashboardProvider {
 
   openTerminal(name, action, inputValue) {
     const invocation = this.buildActionInvocation(action, inputValue);
-    const paths = this.resolveWorkspacePaths();
     const terminal = vscode.window.createTerminal({
       name: `WAR: ${name}`,
-      cwd: paths.repoRoot
+      cwd: invocation.cwd
     });
     terminal.show(true);
     const commandLine = process.platform === "win32"
@@ -1270,9 +1245,33 @@ class WarOperationsDashboardProvider {
     }
 
     .status-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+      display: flex;
+      flex-wrap: wrap;
       gap: 8px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 9px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--panel) 84%, transparent);
+      color: var(--text);
+      font-size: 10px;
+    }
+
+    .status-pill[data-tone="healthy"] { border-color: color-mix(in srgb, var(--ok) 55%, var(--border)); }
+    .status-pill[data-tone="warning"] { border-color: color-mix(in srgb, var(--warn) 55%, var(--border)); }
+    .status-pill[data-tone="error"] { border-color: color-mix(in srgb, var(--err) 55%, var(--border)); }
+
+    .status-pill strong {
+      font-size: 10px;
+    }
+
+    .status-pill span {
+      color: var(--muted);
     }
 
     .status-card {
@@ -1314,12 +1313,6 @@ class WarOperationsDashboardProvider {
       margin: 2px 0 0;
       font-size: 10px;
       color: var(--muted);
-    }
-
-    .meta-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 8px;
     }
 
     details.meta-section {
@@ -1370,6 +1363,11 @@ class WarOperationsDashboardProvider {
       display: flex;
       flex-direction: column;
       gap: 6px;
+    }
+
+    .path-list {
+      flex-direction: row;
+      flex-wrap: wrap;
     }
 
     .last-action {
@@ -1465,6 +1463,27 @@ class WarOperationsDashboardProvider {
       gap: 6px;
     }
 
+    .section-card {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--panel) 80%, transparent);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .section-header strong {
+      font-size: 12px;
+    }
+
     .group-title {
       font-size: 10px;
       font-weight: 700;
@@ -1474,22 +1493,20 @@ class WarOperationsDashboardProvider {
     }
 
     .action-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-      gap: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
     }
 
     .action-card {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      align-items: flex-start;
+      display: inline-flex;
+      align-items: center;
       text-align: left;
-      width: 100%;
-      padding: 9px 10px;
-      border-radius: 12px;
+      width: auto;
+      padding: 7px 10px;
+      border-radius: 999px;
       border: 1px solid var(--border);
-      background: linear-gradient(180deg, color-mix(in srgb, var(--panel) 92%, transparent), color-mix(in srgb, var(--panel) 72%, black));
+      background: color-mix(in srgb, var(--panel) 86%, transparent);
       cursor: pointer;
     }
 
@@ -1498,12 +1515,7 @@ class WarOperationsDashboardProvider {
     }
 
     .action-card strong {
-      font-size: 11px;
-    }
-
-    .action-card span {
       font-size: 10px;
-      color: var(--muted);
     }
 
     .section-meta {
@@ -1520,38 +1532,25 @@ class WarOperationsDashboardProvider {
         <img src="${iconUri}" alt="" />
         <div>
           <h1>WAR Ops: Dashboard</h1>
-          <p>Compact control surface for build, package, host, client, and milestone validation workflows.</p>
+          <p>Minimal internal-alpha control surface for package, run, smoke, and docs.</p>
         </div>
       </div>
 
       <div class="busy-banner" id="busyBanner"></div>
       <div class="status-grid" id="statusGrid"></div>
-      <div class="meta-grid">
-        <details class="meta-section">
-          <summary>
-            <div class="meta-summary">
-              <h2>Resolved Paths</h2>
-              <span>Open when you need to sanity-check workspace and package routing.</span>
-            </div>
-            <span class="section-meta">expand</span>
-          </summary>
-          <div class="meta-body">
-            <div class="path-list" id="pathList"></div>
+      <div class="path-list" id="pathList"></div>
+      <details class="meta-section">
+        <summary>
+          <div class="meta-summary">
+            <h2>Last Action</h2>
+            <span>Recent command result and timestamp.</span>
           </div>
-        </details>
-        <details class="meta-section">
-          <summary>
-            <div class="meta-summary">
-              <h2>Last Action</h2>
-              <span>Recent command result and timestamp.</span>
-            </div>
-            <span class="section-meta">expand</span>
-          </summary>
-          <div class="meta-body">
-            <div class="last-action" id="lastAction"></div>
-          </div>
-        </details>
-      </div>
+          <span class="section-meta">expand</span>
+        </summary>
+        <div class="meta-body">
+          <div class="last-action" id="lastAction"></div>
+        </div>
+      </details>
     </div>
 
     <div id="sections"></div>
@@ -1560,12 +1559,16 @@ class WarOperationsDashboardProvider {
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
     const initialState = ${JSON.stringify(this.buildViewState())};
-    const persistedViewState = vscode.getState() || {};
+    const persistedUiState = vscode.getState() || {};
 
     let currentState = initialState;
     let uiState = {
-      openSections: Array.isArray(persistedViewState.openSections) ? persistedViewState.openSections : null
+      lastActionOutputOpen: persistedUiState.lastActionOutputOpen === true
     };
+
+    function persistUiState() {
+      vscode.setState(uiState);
+    }
 
     function escapeHtml(value) {
       return String(value ?? "")
@@ -1574,15 +1577,6 @@ class WarOperationsDashboardProvider {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#39;");
-    }
-
-    function toneLabel(tone) {
-      switch (tone) {
-        case "healthy": return "GOOD";
-        case "warning": return "WARN";
-        case "error": return "BAD";
-        default: return "WAIT";
-      }
     }
 
     function renderBusy(state) {
@@ -1599,13 +1593,10 @@ class WarOperationsDashboardProvider {
     function renderStatuses(state) {
       const statusGrid = document.getElementById("statusGrid");
       statusGrid.innerHTML = state.statuses.map(status => \`
-        <article class="status-card" data-tone="\${escapeHtml(status.tone)}">
-          <div class="dial">\${toneLabel(status.tone)}</div>
-          <div>
-            <h2>\${escapeHtml(status.label)}</h2>
-            <p>\${escapeHtml(status.detail)}</p>
-          </div>
-        </article>
+        <span class="status-pill" data-tone="\${escapeHtml(status.tone)}">
+          <strong>\${escapeHtml(status.label)}</strong>
+          <span>\${escapeHtml(status.detail)}</span>
+        </span>
       \`).join("");
     }
 
@@ -1617,10 +1608,8 @@ class WarOperationsDashboardProvider {
       }
 
       pathList.innerHTML = [
-        ["Workspace", state.paths.workspaceRoot],
-        ["Repo", state.paths.repoRoot],
-        ["Stage", state.paths.stageRoot],
-        ["Runtime", state.paths.runtimeRoot],
+        ["Stage", state.paths.stageLabel || state.paths.stageRoot],
+        ["Runtime", state.paths.runtimeLabel || state.paths.runtimeRoot],
         ["Last refresh", state.lastRefresh]
       ].map(([label, value]) => \`<span class="pill"><strong>\${escapeHtml(label)}:</strong>&nbsp;\${escapeHtml(value)}</span>\`).join("");
     }
@@ -1642,42 +1631,16 @@ class WarOperationsDashboardProvider {
         <div class="last-action-summary">
           <span class="pill"><strong>\${escapeHtml(state.lastAction.label)}</strong>&nbsp;\${escapeHtml(marker)} at \${escapeHtml(state.lastAction.time)}</span>
         </div>
-        <pre class="last-action-output">\${escapeHtml(output)}</pre>
+        <details data-last-action-output \${uiState.lastActionOutputOpen ? "open" : ""}>
+          <summary class="section-meta">show output</summary>
+          <pre class="last-action-output">\${escapeHtml(output)}</pre>
+        </details>
       \`;
 
-      const outputNode = container.querySelector(".last-action-output");
-      if (outputNode) {
-        outputNode.scrollTop = outputNode.scrollHeight;
-      }
-    }
-
-    function persistUiState() {
-      vscode.setState(uiState);
-    }
-
-    function snapshotOpenSections() {
-      return Array.from(document.querySelectorAll("#sections details.section[data-section-id]"))
-        .filter(section => section.open)
-        .map(section => section.dataset.sectionId);
-    }
-
-    function resolveOpenSections(state) {
-      const validIds = new Set(state.sections.map(section => section.id));
-      const savedIds = Array.isArray(uiState.openSections)
-        ? uiState.openSections.filter(sectionId => validIds.has(sectionId))
-        : null;
-
-      if (savedIds !== null) {
-        return savedIds;
-      }
-
-      return state.sections[0] ? [state.sections[0].id] : [];
-    }
-
-    function attachSectionListeners() {
-      for (const section of document.querySelectorAll("#sections details.section[data-section-id]")) {
-        section.addEventListener("toggle", () => {
-          uiState.openSections = snapshotOpenSections();
+      const outputDetails = container.querySelector("[data-last-action-output]");
+      if (outputDetails) {
+        outputDetails.addEventListener("toggle", () => {
+          uiState.lastActionOutputOpen = outputDetails.open;
           persistUiState();
         });
       }
@@ -1685,41 +1648,26 @@ class WarOperationsDashboardProvider {
 
     function renderSections(state) {
       const sections = document.getElementById("sections");
-      const existingOpenSections = snapshotOpenSections();
-      if (existingOpenSections.length > 0 || document.querySelector("#sections details.section")) {
-        uiState.openSections = existingOpenSections;
-      }
-
-      const openSections = new Set(resolveOpenSections(state));
-
       sections.innerHTML = state.sections.map(section => \`
-        <details class="section" data-section-id="\${escapeHtml(section.id)}" \${openSections.has(section.id) ? "open" : ""}>
-          <summary>
-            <div class="summary-copy">
-              <strong>\${escapeHtml(section.title)}</strong>
-              <span>\${escapeHtml(section.description)}</span>
-            </div>
+        <section class="section-card" data-section-id="\${escapeHtml(section.id)}">
+          <div class="section-header">
+            <strong>\${escapeHtml(section.title)}</strong>
             <span class="section-meta">\${section.groups.reduce((count, group) => count + group.actions.length, 0)} actions</span>
-          </summary>
-          <div class="section-body">
-            \${section.groups.map(group => \`
-              <div class="group">
-                <div class="group-title">\${escapeHtml(group.title)}</div>
-                <div class="action-grid">
-                  \${group.actions.map(action => \`
-                    <button class="action-card" data-action-id="\${escapeHtml(action.id)}" data-tone="\${escapeHtml(action.tone)}" \${state.busy ? "disabled" : ""}>
-                      <strong>\${escapeHtml(action.label)}</strong>
-                      <span>\${escapeHtml(action.description)}</span>
-                    </button>
-                  \`).join("")}
-                </div>
-              </div>
-            \`).join("")}
           </div>
-        </details>
+          \${section.groups.map(group => \`
+            <div class="group">
+              <div class="group-title">\${escapeHtml(group.title)}</div>
+              <div class="action-grid">
+                \${group.actions.map(action => \`
+                  <button class="action-card" title="\${escapeHtml(action.description)}" data-action-id="\${escapeHtml(action.id)}" data-tone="\${escapeHtml(action.tone)}" \${state.busy ? "disabled" : ""}>
+                    <strong>\${escapeHtml(action.label)}</strong>
+                  </button>
+                \`).join("")}
+              </div>
+            </div>
+          \`).join("")}
+        </section>
       \`).join("");
-
-      attachSectionListeners();
     }
 
     function render(state) {
@@ -1747,6 +1695,7 @@ class WarOperationsDashboardProvider {
     });
 
     render(initialState);
+    persistUiState();
     vscode.postMessage({ type: "ready" });
   </script>
 </body>
