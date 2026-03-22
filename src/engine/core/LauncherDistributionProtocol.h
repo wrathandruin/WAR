@@ -10,6 +10,7 @@
 #include <windows.h>
 
 #include "engine/core/RuntimePaths.h"
+#include "engine/core/SourceManifestLayout.h"
 
 namespace war
 {
@@ -119,50 +120,29 @@ namespace war
 
         [[nodiscard]] static std::filesystem::path resolveLauncherManifestPath(const RuntimeBoundaryReport& runtimeBoundaryReport)
         {
-            const std::filesystem::path packagedPath =
-                runtimeBoundaryReport.executableDirectory / "Launcher" / "m50_launcher_manifest.txt";
-            const std::filesystem::path sourcePath =
-                runtimeBoundaryReport.repoRoot / "Launcher" / "m50_launcher_manifest.txt";
-            return resolvePreferredPath(packagedPath, sourcePath);
+            return SourceManifestLayout::resolveManifestPath(
+                runtimeBoundaryReport,
+                "Launcher",
+                "m50_launcher_manifest.txt");
         }
 
         [[nodiscard]] static std::filesystem::path resolveInstallerManifestPath(const RuntimeBoundaryReport& runtimeBoundaryReport)
         {
-            const std::filesystem::path packagedPath =
-                runtimeBoundaryReport.executableDirectory / "Installer" / "m50_installer_manifest.txt";
-            const std::filesystem::path sourcePath =
-                runtimeBoundaryReport.repoRoot / "Installer" / "m50_installer_manifest.txt";
-            return resolvePreferredPath(packagedPath, sourcePath);
+            return SourceManifestLayout::resolveManifestPath(
+                runtimeBoundaryReport,
+                "Installer",
+                "m50_installer_manifest.txt");
         }
 
         [[nodiscard]] static std::filesystem::path resolveUpdateManifestPath(const RuntimeBoundaryReport& runtimeBoundaryReport)
         {
-            const std::filesystem::path packagedPath =
-                runtimeBoundaryReport.executableDirectory / "Installer" / "m50_update_channel_manifest.txt";
-            const std::filesystem::path sourcePath =
-                runtimeBoundaryReport.repoRoot / "Installer" / "m50_update_channel_manifest.txt";
-            return resolvePreferredPath(packagedPath, sourcePath);
+            return SourceManifestLayout::resolveManifestPath(
+                runtimeBoundaryReport,
+                "Installer",
+                "m50_update_channel_manifest.txt");
         }
 
     private:
-        [[nodiscard]] static std::filesystem::path resolvePreferredPath(
-            const std::filesystem::path& packagedPath,
-            const std::filesystem::path& sourcePath)
-        {
-            std::error_code error;
-            if (std::filesystem::exists(packagedPath, error) && std::filesystem::is_regular_file(packagedPath, error))
-            {
-                return packagedPath;
-            }
-
-            error.clear();
-            if (std::filesystem::exists(sourcePath, error) && std::filesystem::is_regular_file(sourcePath, error))
-            {
-                return sourcePath;
-            }
-
-            return packagedPath;
-        }
 
         [[nodiscard]] static uint64_t currentEpochMilliseconds()
         {

@@ -230,6 +230,8 @@ Reference audits and planning:
 - `Docs/Planning/Wrath and Ruin - M44 Roadmap Audit and Phase 5 Amendments.md`
 - `Docs/Art/Wrath and Ruin - Art Production and Asset Planning Track.md`
 - `Docs/Planning/Wrath and Ruin - M45-M70 Alpha Playtest Runway.md`
+- `Docs/Planning/Wrath and Ruin - Alpha Vertical Slice Architecture and Milestone Blueprint.md`
+- `Docs/Planning/Wrath and Ruin - 0.1 Slice Execution Packages and Asset Schedule.md`
 
 ## Nominal Weekly Sprint View
 

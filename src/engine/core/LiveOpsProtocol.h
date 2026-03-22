@@ -11,6 +11,7 @@
 #include <windows.h>
 
 #include "engine/core/RuntimePaths.h"
+#include "engine/core/SourceManifestLayout.h"
 
 namespace war
 {
@@ -182,39 +183,22 @@ namespace war
 
         [[nodiscard]] static std::filesystem::path resolveLiveOpsManifestPath(const RuntimeBoundaryReport& runtimeBoundaryReport)
         {
-            return resolvePreferredPath(
-                runtimeBoundaryReport.executableDirectory / "LiveOps" / "m52_live_ops_tooling_manifest.txt",
-                runtimeBoundaryReport.repoRoot / "LiveOps" / "m52_live_ops_tooling_manifest.txt");
+            return SourceManifestLayout::resolveManifestPath(
+                runtimeBoundaryReport,
+                "LiveOps",
+                "m52_live_ops_tooling_manifest.txt");
         }
 
         [[nodiscard]] static std::filesystem::path resolveAnalyticsManifestPath(const RuntimeBoundaryReport& runtimeBoundaryReport)
         {
-            return resolvePreferredPath(
-                runtimeBoundaryReport.executableDirectory / "LiveOps" / "m52_analytics_hardening_manifest.txt",
-                runtimeBoundaryReport.repoRoot / "LiveOps" / "m52_analytics_hardening_manifest.txt");
+            return SourceManifestLayout::resolveManifestPath(
+                runtimeBoundaryReport,
+                "LiveOps",
+                "m52_analytics_hardening_manifest.txt");
         }
 
     private:
         using KeyValueMap = std::unordered_map<std::string, std::string>;
-
-        [[nodiscard]] static std::filesystem::path resolvePreferredPath(
-            const std::filesystem::path& packagedPath,
-            const std::filesystem::path& sourcePath)
-        {
-            std::error_code error;
-            if (std::filesystem::exists(packagedPath, error) && std::filesystem::is_regular_file(packagedPath, error))
-            {
-                return packagedPath;
-            }
-
-            error.clear();
-            if (std::filesystem::exists(sourcePath, error) && std::filesystem::is_regular_file(sourcePath, error))
-            {
-                return sourcePath;
-            }
-
-            return packagedPath;
-        }
 
         [[nodiscard]] static uint64_t currentEpochMilliseconds()
         {

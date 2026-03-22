@@ -28,16 +28,28 @@ This is the operating standard for the next lead developer.
 
 ## Package Contract
 
-Every milestone package should use this naming pattern:
+Every milestone package should use one of these naming patterns:
 
 ```text
 WAR_M##_code_package.zip
 ```
 
-The milestone document inside the package should use this path pattern:
+or for the `0.1.x` vertical-slice runway:
+
+```text
+WAR_0.1.x_slice_handoff.zip
+```
+
+The milestone document inside the package should use one of these path patterns:
 
 ```text
 Milestones/M##_milestone_name.md
+```
+
+or:
+
+```text
+Docs/Planning/Wrath and Ruin - 0.1 Slice Execution Packages and Asset Schedule.md
 ```
 
 The package should contain:
@@ -46,6 +58,8 @@ The package should contain:
 - complete updated build and project files
 - complete updated docs
 - the milestone document
+- a validation report or explicit validation limitation note
+- a handoff manifest describing exactly what was included
 - any new supporting assets or generated files that are intentionally versioned
 
 The package should not require the receiver to reconstruct code manually.

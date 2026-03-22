@@ -70,7 +70,6 @@ if "%FAILED%"=="1" goto :cleanup
     echo %CLIENT_STATUS_FILE%^|^^session_denial_reason=none$^|No denial reason on success
     echo %CLIENT_STATUS_FILE%^|^^granted_session_id=session-.+^|Granted session id visible
     echo %CLIENT_STATUS_FILE%^|^^resume_session_id=session-.+^|Resume session id visible
-    echo %CLIENT_STATUS_FILE%^|^^reconnect_requested=no$^|Fresh entry is not marked reconnect
     echo %CLIENT_STATUS_FILE%^|^^authority_mode=headless-host$^|Authority waits for granted ticket
     echo %CLIENT_STATUS_FILE%^|^^connect_state=connected-headless-host$^|Host lane is active after ticket issue
     echo %CLIENT_STATUS_FILE%^|^^account_id=.+^|Account id visible
@@ -80,6 +79,8 @@ if "%FAILED%"=="1" goto :cleanup
     echo %RESUME_FILE%^|^^granted_session_id=session-.+^|Resume identity persisted
     echo %RESUME_FILE%^|^^ticket_id=ticket-.+^|Issued ticket id persisted
 ) > "%CHECKLIST_PATH%"
+
+call :require_exact_line "%CLIENT_STATUS_FILE%" "reconnect_requested=no" "Fresh entry is not marked reconnect"
 
 for /f "usebackq tokens=1,2,* delims=|" %%A in ("%CHECKLIST_PATH%") do (
     powershell.exe -NoProfile -Command "if (Select-String -Path '%%~A' -Pattern '%%~B' -Quiet) { exit 0 } else { exit 1 }" >nul 2>nul
@@ -135,3 +136,15 @@ if %WAIT_ATTEMPT% GEQ 30 (
 )
 ping 127.0.0.1 -n 2 >nul
 goto :wait_prefix_loop
+
+:require_exact_line
+set "REQUIRE_PATH=%~1"
+set "REQUIRE_LINE=%~2"
+findstr /x /c:"%REQUIRE_LINE%" "%REQUIRE_PATH%" >nul 2>nul
+if errorlevel 1 (
+    echo [FAIL] %~3>> "%DETAILS_PATH%"
+    set "FAILED=1"
+) else (
+    echo [PASS] %~3>> "%DETAILS_PATH%"
+)
+exit /b 0

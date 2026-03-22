@@ -27,9 +27,9 @@ The milestone document is included inside the package at:
 
 ## Included
 
-- `LiveOps/m52_live_ops_tooling_manifest.txt`
-- `LiveOps/m52_analytics_hardening_manifest.txt`
-- `ReleaseManagement/m52_release_management_manifest.txt`
+- `SourceManifests/LiveOps/m52_live_ops_tooling_manifest.txt`
+- `SourceManifests/LiveOps/m52_analytics_hardening_manifest.txt`
+- `SourceManifests/ReleaseManagement/m52_release_management_manifest.txt`
 - `src/engine/core/LiveOpsProtocol.h`
 - `src/engine/core/ReleaseManagementProtocol.h`
 - client live-ops runtime capture
@@ -41,8 +41,8 @@ The milestone document is included inside the package at:
 
 The packaged market-ops candidate should now stage:
 
-- a real `LiveOps/` lane with source manifests
-- a real `ReleaseManagement/` lane with source manifests
+- a real `SourceManifests/LiveOps/` lane with source manifests
+- a real `SourceManifests/ReleaseManagement/` lane with source manifests
 - runtime live-ops summaries and analytics counters under `runtime/Logs/LiveOps/`
 - runtime release state and gate summaries under `runtime/Logs/ReleaseManagement/`
 - preserved package discipline from M45 through M51

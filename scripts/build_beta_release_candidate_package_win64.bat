@@ -88,7 +88,7 @@ call :copy_directory "%REPO_ROOT%\assets" "%STAGE_ROOT%\assets" "assets" "%REPO_
 if errorlevel 1 exit /b 1
 call :copy_directory "%REPO_ROOT%\Environment" "%STAGE_ROOT%\Environment" "Environment"
 if errorlevel 1 exit /b 1
-call :copy_directory "%REPO_ROOT%\BetaContent" "%STAGE_ROOT%\BetaContent" "BetaContent"
+call :copy_source_manifest_directory "BetaContent" "%STAGE_ROOT%\BetaContent"
 if errorlevel 1 exit /b 1
 
 if not exist "%STAGE_ROOT%\assets\shaders\dx11\vs_color.bin" (
@@ -111,8 +111,8 @@ if not exist "%STAGE_ROOT%\assets\shaders\dx11\fs_texture.bin" (
     exit /b 1
 )
 
-if not exist "%STAGE_ROOT%\assets\textures\world_atlas.bmp" (
-    echo [M49] ERROR: staged atlas texture missing at "%STAGE_ROOT%\assets\textures\world_atlas.bmp".
+if not exist "%STAGE_ROOT%\assets\textures\world_atlas.png" (
+    echo [M49] ERROR: staged atlas texture missing at "%STAGE_ROOT%\assets\textures\world_atlas.png".
     exit /b 1
 )
 
@@ -181,6 +181,14 @@ for %%F in (
 
 echo [M49] Beta release candidate package staged at "%STAGE_ROOT%".
 exit /b 0
+
+:copy_source_manifest_directory
+set "COPY_LANE=%~1"
+set "COPY_DEST=%~2"
+set "COPY_SOURCE=%REPO_ROOT%\SourceManifests\%COPY_LANE%"
+if not exist "%COPY_SOURCE%" set "COPY_SOURCE=%REPO_ROOT%\%COPY_LANE%"
+call :copy_directory "%COPY_SOURCE%" "%COPY_DEST%" "%COPY_LANE%"
+exit /b %ERRORLEVEL%
 
 :copy_directory
 set "COPY_SOURCE=%~1"

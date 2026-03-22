@@ -87,8 +87,10 @@ if exist "%CLIENT_PDB_PATH%" copy /y "%CLIENT_PDB_PATH%" "%STAGE_ROOT%\WAR.pdb" 
 if exist "%SERVER_PDB_PATH%" copy /y "%SERVER_PDB_PATH%" "%STAGE_ROOT%\WARServer.pdb" >nul
 if exist "%REPO_ROOT%\assets" xcopy /y /i /e "%REPO_ROOT%\assets" "%STAGE_ROOT%\assets\" >nul 2>nul
 if exist "%REPO_ROOT%\Environment" xcopy /y /i /e "%REPO_ROOT%\Environment" "%STAGE_ROOT%\Environment\" >nul 2>nul
-if exist "%REPO_ROOT%\Support" xcopy /y /i /e "%REPO_ROOT%\Support" "%STAGE_ROOT%\Support\" >nul 2>nul
-if exist "%REPO_ROOT%\IncidentResponse" xcopy /y /i /e "%REPO_ROOT%\IncidentResponse" "%STAGE_ROOT%\IncidentResponse\" >nul 2>nul
+call :copy_source_manifest_directory "Support" "%STAGE_ROOT%\Support"
+if errorlevel 1 exit /b 1
+call :copy_source_manifest_directory "IncidentResponse" "%STAGE_ROOT%\IncidentResponse"
+if errorlevel 1 exit /b 1
 
 for %%F in (
     "README.md"
@@ -119,6 +121,26 @@ for %%F in (
 ) > "%MANIFEST_PATH%"
 
 echo [M53] Support ops candidate package staged at "%STAGE_ROOT%".
+exit /b 0
+
+:copy_source_manifest_directory
+set "COPY_LANE=%~1"
+set "COPY_DEST=%~2"
+set "COPY_SOURCE=%REPO_ROOT%\SourceManifests\%COPY_LANE%"
+if not exist "%COPY_SOURCE%" set "COPY_SOURCE=%REPO_ROOT%\%COPY_LANE%"
+call :copy_directory "%COPY_SOURCE%" "%COPY_DEST%" "%COPY_LANE%"
+exit /b %ERRORLEVEL%
+
+:copy_directory
+set "COPY_SOURCE=%~1"
+set "COPY_DEST=%~2"
+set "COPY_LABEL=%~3"
+if not exist "%COPY_SOURCE%" exit /b 0
+xcopy /y /i /e "%COPY_SOURCE%" "%COPY_DEST%\" >nul 2>nul
+if errorlevel 1 (
+    echo [M53] ERROR: failed to stage %COPY_LABEL% from "%COPY_SOURCE%" to "%COPY_DEST%".
+    exit /b 1
+)
 exit /b 0
 
 :prepare_stage_root

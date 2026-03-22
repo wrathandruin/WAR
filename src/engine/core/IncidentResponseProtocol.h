@@ -10,6 +10,7 @@
 #include <windows.h>
 
 #include "engine/core/RuntimePaths.h"
+#include "engine/core/SourceManifestLayout.h"
 
 namespace war
 {
@@ -107,24 +108,10 @@ namespace war
 
         [[nodiscard]] static std::filesystem::path resolveIncidentManifestPath(const RuntimeBoundaryReport& runtimeBoundaryReport)
         {
-            const std::filesystem::path packagedPath =
-                runtimeBoundaryReport.executableDirectory / "IncidentResponse" / "m53_incident_response_manifest.txt";
-            const std::filesystem::path sourcePath =
-                runtimeBoundaryReport.repoRoot / "IncidentResponse" / "m53_incident_response_manifest.txt";
-
-            std::error_code error;
-            if (std::filesystem::exists(packagedPath, error) && std::filesystem::is_regular_file(packagedPath, error))
-            {
-                return packagedPath;
-            }
-
-            error.clear();
-            if (std::filesystem::exists(sourcePath, error) && std::filesystem::is_regular_file(sourcePath, error))
-            {
-                return sourcePath;
-            }
-
-            return packagedPath;
+            return SourceManifestLayout::resolveManifestPath(
+                runtimeBoundaryReport,
+                "IncidentResponse",
+                "m53_incident_response_manifest.txt");
         }
 
     private:

@@ -13,6 +13,7 @@
 
 # Owner-only / confidential materials
 /owners/
+/Governance/owners/
 /secrets/
 /private/
 

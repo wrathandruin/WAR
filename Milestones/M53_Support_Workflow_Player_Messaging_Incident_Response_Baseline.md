@@ -27,9 +27,9 @@ The milestone document is included inside the package at:
 
 ## Included
 
-- `Support/m53_support_workflow_manifest.txt`
-- `Support/m53_player_messaging_manifest.txt`
-- `IncidentResponse/m53_incident_response_manifest.txt`
+- `SourceManifests/Support/m53_support_workflow_manifest.txt`
+- `SourceManifests/Support/m53_player_messaging_manifest.txt`
+- `SourceManifests/IncidentResponse/m53_incident_response_manifest.txt`
 - `src/engine/core/SupportWorkflowProtocol.h`
 - `src/engine/core/IncidentResponseProtocol.h`
 - client support runtime capture
@@ -41,8 +41,8 @@ The milestone document is included inside the package at:
 
 The packaged support-ops candidate should now stage:
 
-- a real `Support/` lane with source manifests
-- a real `IncidentResponse/` lane with source manifests
+- a real `SourceManifests/Support/` lane with source manifests
+- a real `SourceManifests/IncidentResponse/` lane with source manifests
 - runtime support summaries and player-message brief files under `runtime/Logs/Support/`
 - runtime incident-response summaries under `runtime/Logs/IncidentResponse/`
 - preserved package discipline from M45 through M52

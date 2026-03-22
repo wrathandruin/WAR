@@ -10,6 +10,7 @@
 #include <windows.h>
 
 #include "engine/core/RuntimePaths.h"
+#include "engine/core/SourceManifestLayout.h"
 
 namespace war
 {
@@ -190,16 +191,18 @@ namespace war
 
         [[nodiscard]] static std::filesystem::path resolveSupportManifestPath(const RuntimeBoundaryReport& runtimeBoundaryReport)
         {
-            return resolvePreferredPath(
-                runtimeBoundaryReport.executableDirectory / "Support" / "m53_support_workflow_manifest.txt",
-                runtimeBoundaryReport.repoRoot / "Support" / "m53_support_workflow_manifest.txt");
+            return SourceManifestLayout::resolveManifestPath(
+                runtimeBoundaryReport,
+                "Support",
+                "m53_support_workflow_manifest.txt");
         }
 
         [[nodiscard]] static std::filesystem::path resolvePlayerMessagingManifestPath(const RuntimeBoundaryReport& runtimeBoundaryReport)
         {
-            return resolvePreferredPath(
-                runtimeBoundaryReport.executableDirectory / "Support" / "m53_player_messaging_manifest.txt",
-                runtimeBoundaryReport.repoRoot / "Support" / "m53_player_messaging_manifest.txt");
+            return SourceManifestLayout::resolveManifestPath(
+                runtimeBoundaryReport,
+                "Support",
+                "m53_player_messaging_manifest.txt");
         }
 
     private:
@@ -214,25 +217,6 @@ namespace war
             std::string incidentMessage =
                 "If a host or bootstrap lane fails, preserve the failure bundle and the incident-response summary.";
         };
-
-        [[nodiscard]] static std::filesystem::path resolvePreferredPath(
-            const std::filesystem::path& packagedPath,
-            const std::filesystem::path& sourcePath)
-        {
-            std::error_code error;
-            if (std::filesystem::exists(packagedPath, error) && std::filesystem::is_regular_file(packagedPath, error))
-            {
-                return packagedPath;
-            }
-
-            error.clear();
-            if (std::filesystem::exists(sourcePath, error) && std::filesystem::is_regular_file(sourcePath, error))
-            {
-                return sourcePath;
-            }
-
-            return packagedPath;
-        }
 
         [[nodiscard]] static uint64_t currentEpochMilliseconds()
         {

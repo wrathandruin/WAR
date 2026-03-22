@@ -88,8 +88,8 @@ if not exist "%STAGE_ROOT%\assets\shaders\dx11\fs_texture.bin" (
     exit /b 1
 )
 
-if not exist "%STAGE_ROOT%\assets\textures\world_atlas.bmp" (
-    echo [M48] ERROR: staged atlas texture missing at "%STAGE_ROOT%\assets\textures\world_atlas.bmp".
+if not exist "%STAGE_ROOT%\assets\textures\world_atlas.png" (
+    echo [M48] ERROR: staged atlas texture missing at "%STAGE_ROOT%\assets\textures\world_atlas.png".
     exit /b 1
 )
 

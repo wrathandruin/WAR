@@ -26,8 +26,8 @@ The milestone document is included inside the package at:
 
 ## Included
 
-- `BetaContent/m49_beta_content_manifest.txt`
-- `BetaContent/m49_retention_journey_cards.txt`
+- `SourceManifests/BetaContent/m49_beta_content_manifest.txt`
+- `SourceManifests/BetaContent/m49_retention_journey_cards.txt`
 - `src/engine/core/BetaRetentionProtocol.h`
 - `src/engine/core/ReleaseCandidateProtocol.h`
 - client launch retention and release-candidate capture
@@ -50,7 +50,7 @@ M49 validation scripts are:
 
 The aggregate M49 package validation must preserve the M45 through M48 packaged lanes and then prove:
 
-- beta content manifests are staged inside `BetaContent/`
+- beta content manifests are sourced from `SourceManifests/BetaContent/` and staged inside package `BetaContent/`
 - retention summaries and launch journals are emitted under `runtime/Logs/Retention/`
 - release-candidate manifest, checklist, and latest pointer are emitted under `runtime/Logs/ReleaseCandidate/`
 
@@ -58,7 +58,7 @@ The aggregate M49 package validation must preserve the M45 through M48 packaged 
 
 The packaged beta candidate should now stage:
 
-- a real `BetaContent/` directory with authored content manifests
+- a real `SourceManifests/BetaContent/` source lane with authored content manifests
 - preserved internal-alpha runtime surfaces under `runtime/`
 - preserved M45 through M48 validation scripts alongside the new M49 validators
 - a beta candidate manifest at `beta_release_candidate_manifest.txt`

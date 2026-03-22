@@ -27,9 +27,9 @@ The milestone document is included inside the package at:
 
 ## Included
 
-- `Launcher/m50_launcher_manifest.txt`
-- `Installer/m50_installer_manifest.txt`
-- `Installer/m50_update_channel_manifest.txt`
+- `SourceManifests/Launcher/m50_launcher_manifest.txt`
+- `SourceManifests/Installer/m50_installer_manifest.txt`
+- `SourceManifests/Installer/m50_update_channel_manifest.txt`
 - `src/engine/core/LauncherDistributionProtocol.h`
 - client launcher-session runtime capture
 - host bootstrap installer and update runtime capture
@@ -54,14 +54,14 @@ The aggregate M50 package validation must preserve the M45 through M49 lanes and
 - launcher session manifests and latest pointers are emitted under `runtime/Logs/Launcher/`
 - installer runtime manifests are emitted under `runtime/Logs/Installer/`
 - updater runtime manifests are emitted under `runtime/Logs/Updater/`
-- the staged package contains `Launcher/` and `Installer/` source-of-truth manifests
+- the staged package contains `Launcher/` and `Installer/` manifests sourced from `SourceManifests/`
 
 ## Market truth for M50
 
 The packaged market candidate should now stage:
 
-- a real `Launcher/` lane with product-entry source manifests
-- a real `Installer/` lane with install and update source manifests
+- a real `SourceManifests/Launcher/` lane with product-entry source manifests
+- a real `SourceManifests/Installer/` lane with install and update source manifests
 - preserved beta content and internal runtime surfaces
 - a market candidate manifest at `market_candidate_manifest.txt`
 

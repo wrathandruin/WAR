@@ -26,8 +26,8 @@ The milestone document is included inside the package at:
 
 ## Included
 
-- `Onboarding/m51_market_onboarding_manifest.txt`
-- `Onboarding/m51_first_session_polish_manifest.txt`
+- `SourceManifests/Onboarding/m51_market_onboarding_manifest.txt`
+- `SourceManifests/Onboarding/m51_first_session_polish_manifest.txt`
 - `src/engine/core/MarketOnboardingProtocol.h`
 - client onboarding runtime capture
 - first-session text guidance surfaces
@@ -38,7 +38,7 @@ The milestone document is included inside the package at:
 
 The packaged market-onboarding candidate should now stage:
 
-- a real `Onboarding/` lane with source manifests
+- a real `SourceManifests/Onboarding/` lane with source manifests
 - runtime onboarding summaries and first-session brief files under `runtime/Logs/Onboarding/`
 - preserved package discipline from M45 through M50
 
