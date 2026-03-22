@@ -8,6 +8,7 @@
 #include "engine/core/RuntimeOwnership.h"
 #include "engine/core/RuntimePaths.h"
 #include "engine/host/HeadlessHostMode.h"
+#include "engine/host/SessionEntryProtocol.h"
 
 namespace war
 {
@@ -22,12 +23,17 @@ namespace war
             LocalDemoDiagnosticsReport localDemoDiagnosticsReport = LocalDemoDiagnostics::buildReport(runtimeBoundaryReport);
             const EnvironmentConfigReport environmentConfigReport = EnvironmentConfig::load(runtimeBoundaryReport);
             const RuntimeOwnershipReport runtimeOwnershipReport = RuntimeOwnership::analyze(runtimeBoundaryReport);
+
+            SessionEntryProtocolReport sessionEntryProtocolReport = SessionEntryProtocol::buildReport(runtimeBoundaryReport);
+            SessionEntryProtocol::ensureDirectories(sessionEntryProtocolReport);
+
             LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "headless_host_trace.txt", "HeadlessHostBootstrap diagnostics report built");
             LocalDemoDiagnostics::writeStartupReport(
                 runtimeBoundaryReport,
                 localDemoDiagnosticsReport,
                 &environmentConfigReport,
-                &runtimeOwnershipReport);
+                &runtimeOwnershipReport,
+                &sessionEntryProtocolReport);
             LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "headless_host_trace.txt", "HeadlessHostBootstrap startup report written");
 
             if (!environmentConfigReport.configurationValid)

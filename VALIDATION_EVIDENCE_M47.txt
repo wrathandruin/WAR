@@ -1,0 +1,30 @@
+M47 Validation Evidence
+
+Submission classification:
+- sign-off candidate
+
+Patch-closeout batch:
+- make packaged desktop/server build identity validation compatible within the same staged release
+- harden the M47 ticket issue / denial / reconnect validators so they produce truthful results on Windows
+- re-run the full packaged Windows M47 lane to sign-off quality
+
+What is fully complete in this patch package:
+- session entry request contract
+- issued / denied / active-session ownership model
+- host-side session validation / deny / fail states
+- client ticket request, polling, grant capture, and authority gating
+- reconnect / resume identity direction
+- packaged M47 validation lane
+- packaged Windows validation execution
+
+What is intentionally not complete:
+- final post-M47 roadmap work in M48 and beyond
+
+Exact Windows validation run and result:
+- `scripts\validate_m47_internal_alpha_package_win64.bat Release`: PASS
+
+Non-Windows verification run and result:
+- not required for sign-off once the real Windows packaged lane passed
+
+Final statement:
+- M47 sign-off ready

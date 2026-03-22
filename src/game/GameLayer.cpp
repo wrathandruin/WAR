@@ -8,6 +8,7 @@
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <unordered_map>
 #include <vector>
 
 #include <windows.h>
@@ -126,6 +127,41 @@ namespace war
                 + std::to_string(ReplicationHarness::currentEpochMilliseconds());
         }
 
+
+std::filesystem::path clientResumeIdentityPath(const RuntimeBoundaryReport& runtimeBoundaryReport)
+{
+    return runtimeBoundaryReport.configDirectory / "client_resume_identity.txt";
+}
+
+bool parseSimpleKeyValueFile(const std::filesystem::path& path, std::unordered_map<std::string, std::string>& outValues)
+{
+    outValues.clear();
+    std::ifstream input(path, std::ios::in);
+    if (!input.is_open())
+    {
+        return false;
+    }
+
+    std::string line;
+    while (std::getline(input, line))
+    {
+        if (!line.empty() && line.back() == '\r')
+        {
+            line.pop_back();
+        }
+
+        const size_t split = line.find('=');
+        if (split == std::string::npos)
+        {
+            continue;
+        }
+
+        outValues.emplace(line.substr(0, split), line.substr(split + 1));
+    }
+
+    return true;
+}
+
         std::string toLowerTrim(std::string value)
         {
             value.erase(value.begin(), std::find_if(value.begin(), value.end(), [](unsigned char ch)
@@ -197,6 +233,7 @@ namespace war
         m_headlessHostPresenceReport = HeadlessHostPresence::buildReport(m_runtimeBoundaryReport);
         m_authoritativeHostProtocolReport = AuthoritativeHostProtocol::buildReport(m_runtimeBoundaryReport);
         m_replicationHarnessConfig = ReplicationHarness::loadConfig(m_runtimeBoundaryReport);
+        m_sessionEntryProtocolReport = SessionEntryProtocol::buildReport(m_runtimeBoundaryReport);
 
         m_expectedProtocolVersion = kExpectedProtocolVersion;
         m_clientStartedEpochMilliseconds = ReplicationHarness::currentEpochMilliseconds();
@@ -204,6 +241,8 @@ namespace war
         m_clientSessionId = buildClientIdentity("client-session");
         m_connectState = "connect-pending";
         m_connectFailureReason = "none";
+        loadPersistedResumeIdentity();
+        updateSessionEntryFlow();
 
         refreshAuthorityMode();
         updateConnectionTelemetry();
@@ -211,14 +250,20 @@ namespace war
         updatePresentationRuntime();
         writeClientReplicationStatus();
 
-        pushEvent("Milestone 45 initialized");
-        pushEvent("internal alpha package / hosted deploy / telemetry baseline active");
+        pushEvent("Milestone 47 initialized");
+        pushEvent("account session ticket handoff / authenticated entry active");
         pushEvent(std::string("Client instance: ") + m_clientInstanceId);
         pushEvent(std::string("Client session: ") + m_clientSessionId);
         pushEvent(std::string("Connect target: ") + m_localDemoDiagnosticsReport.connectTargetName);
         pushEvent(std::string("Transport: ") + m_localDemoDiagnosticsReport.connectTransport);
         pushEvent(std::string("Lane mode: ") + m_localDemoDiagnosticsReport.connectLaneMode);
+        pushEvent(std::string("Session account: ") + m_accountId);
+        pushEvent(std::string("Session identity: ") + m_playerIdentity);
         pushEvent("MUD surfaces live: room descriptions, prompt strip, and typed command shell are active.");
+        if (m_resumeSessionId != "none")
+        {
+            pushEvent(std::string("Resume identity detected: ") + m_resumeSessionId);
+        }
         pushEvent("Type 'help' and press Enter for MVP shell commands.");
 
         auto preferred = std::make_unique<BgfxRenderDevice>();
@@ -240,6 +285,7 @@ namespace war
 
         m_headlessHostPresenceReport = HeadlessHostPresence::buildReport(m_runtimeBoundaryReport);
         m_authoritativeHostProtocolReport = AuthoritativeHostProtocol::buildReport(m_runtimeBoundaryReport);
+        updateSessionEntryFlow();
         refreshAuthorityMode();
         updateConnectionTelemetry();
         pollAuthoritativeHostResponses();
@@ -551,8 +597,9 @@ namespace war
     {
         std::string compatibilityReason;
         const bool hostCompatible = hostConnectionCompatible(compatibilityReason);
+        const bool sessionGranted = m_sessionTicketIssued && m_sessionEntryState == "ticket-issued";
         const bool previousMode = m_useHeadlessHostAuthority;
-        m_useHeadlessHostAuthority = hostCompatible;
+        m_useHeadlessHostAuthority = hostCompatible && sessionGranted;
 
         m_simulationRuntime.setAuthorityMode(
             !m_useHeadlessHostAuthority,
@@ -569,7 +616,13 @@ namespace war
             m_lastAppliedSnapshotPublishedEpochMilliseconds = 0;
             m_lastAppliedSnapshotSimulationTicks = 0;
             m_lastAppliedSnapshotSequence = 0;
-            pushEvent("Authority mode: hosted headless host online, client prediction + reconciliation active");
+            pushEvent(std::string("Authority mode: ticket accepted for session ") + m_grantedSessionId + ", hosted headless host authority active");
+            return;
+        }
+
+        if (hostCompatible && !sessionGranted)
+        {
+            pushEvent("Authority mode: host online but session-entry ticket not yet granted");
             return;
         }
 
@@ -656,6 +709,193 @@ namespace war
         }
     }
 
+
+    void GameLayer::updateSessionEntryFlow()
+    {
+        m_sessionEntryProtocolReport = SessionEntryProtocol::buildReport(m_runtimeBoundaryReport);
+
+        if (!m_sessionEntryRequestWritten && m_sessionEntryProtocolReport.sessionEntryLaneReady)
+        {
+            submitSessionEntryRequest(m_reconnectRequested);
+        }
+
+        if (!m_sessionEntryRequestWritten)
+        {
+            m_sessionEntryState = m_sessionEntryProtocolReport.sessionEntryLaneReady
+                ? "entry-request-pending-write"
+                : "entry-lane-unavailable";
+            return;
+        }
+
+        SessionTicket deniedTicket{};
+        if (!m_sessionTicketIssued && tryResolveDeniedTicket(deniedTicket))
+        {
+            m_sessionTicketId = deniedTicket.ticketId;
+            m_sessionTicketState = "denied";
+            m_sessionDenialReason = deniedTicket.denialReason;
+            m_sessionEntryState = "entry-denied";
+            m_sessionTicketIssued = false;
+            if (!m_sessionDenialLogged)
+            {
+                pushEvent(std::string("Session entry denied: ") + m_sessionDenialReason);
+                m_commandEcho = std::string("Entry denied: ") + m_sessionDenialReason + ". Type 'entry' for a fresh request or 'resume' to retry resume identity.";
+                m_sessionDenialLogged = true;
+            }
+            return;
+        }
+
+        SessionTicket issuedTicket{};
+        if (tryResolveIssuedTicket(issuedTicket))
+        {
+            const bool firstIssue = !m_sessionTicketIssued || m_sessionTicketId != issuedTicket.ticketId;
+            m_sessionTicketIssued = true;
+            m_sessionTicketId = issuedTicket.ticketId;
+            m_sessionTicketState = "issued";
+            m_sessionDenialReason = "none";
+            m_grantedSessionId = issuedTicket.grantedSessionId;
+            m_resumeSessionId = issuedTicket.grantedSessionId;
+            m_sessionTicketIssuedEpochMilliseconds = issuedTicket.issuedAtEpochMilliseconds;
+            m_sessionTicketExpiresEpochMilliseconds = issuedTicket.expiresAtEpochMilliseconds;
+            m_sessionEntryState = "ticket-issued";
+            if (firstIssue)
+            {
+                persistResumeIdentity();
+                pushEvent(std::string("Session ticket issued: ") + m_sessionTicketId);
+                pushEvent(std::string("Granted session identity: ") + m_grantedSessionId);
+                m_commandEcho = std::string("Entry granted for session ") + m_grantedSessionId + ".";
+            }
+            return;
+        }
+
+        if (m_sessionEntryState != "ticket-issued")
+        {
+            m_sessionEntryState = m_reconnectRequested ? "entry-pending-resume-ticket" : "entry-pending-ticket";
+        }
+    }
+
+    void GameLayer::submitSessionEntryRequest(bool reconnectRequested)
+    {
+        if (!m_sessionEntryProtocolReport.sessionEntryLaneReady)
+        {
+            return;
+        }
+
+        SessionEntryRequest request{};
+        request.requestId = std::string("request-") + m_clientInstanceId + "-" + std::to_string(ReplicationHarness::currentEpochMilliseconds());
+        request.accountId = m_accountId;
+        request.playerIdentity = m_playerIdentity;
+        request.clientInstanceId = m_clientInstanceId;
+        request.buildIdentity = m_localDemoDiagnosticsReport.buildIdentity;
+        request.environmentName = m_localDemoDiagnosticsReport.environmentName;
+        request.connectTargetName = m_localDemoDiagnosticsReport.connectTargetName;
+        request.requestedResumeSessionId = reconnectRequested ? m_resumeSessionId : std::string("none");
+        request.requestedAtEpochMilliseconds = ReplicationHarness::currentEpochMilliseconds();
+        request.requestedTicketTtlSeconds = 120u;
+        request.reconnectRequested = reconnectRequested;
+
+        std::string error;
+        if (!SessionEntryProtocol::writeEntryRequest(m_runtimeBoundaryReport, request, error))
+        {
+            pushEvent(std::string("Failed to write session entry request: ") + error);
+            m_sessionEntryState = "entry-request-write-failed";
+            m_sessionDenialReason = error;
+            return;
+        }
+
+        m_sessionEntryRequestWritten = true;
+        m_sessionTicketIssued = false;
+        m_reconnectRequested = reconnectRequested;
+        m_sessionDenialLogged = false;
+        m_sessionRequestId = request.requestId;
+        m_sessionTicketId = "none";
+        m_sessionTicketState = "none";
+        m_sessionDenialReason = "none";
+        m_grantedSessionId = "none";
+        m_sessionEntryState = reconnectRequested ? "entry-requested-resume" : "entry-requested";
+        pushEvent(std::string("Session entry request submitted: ") + m_sessionRequestId);
+        if (reconnectRequested)
+        {
+            pushEvent(std::string("Reconnect requested with resume session ") + m_resumeSessionId);
+        }
+    }
+
+    void GameLayer::loadPersistedResumeIdentity()
+    {
+        m_resumeSessionId = "none";
+        std::unordered_map<std::string, std::string> values{};
+        if (!parseSimpleKeyValueFile(clientResumeIdentityPath(m_runtimeBoundaryReport), values))
+        {
+            return;
+        }
+
+        const auto sessionIt = values.find("granted_session_id");
+        if (sessionIt != values.end() && !sessionIt->second.empty())
+        {
+            m_resumeSessionId = sessionIt->second;
+        }
+
+        const auto accountIt = values.find("account_id");
+        if (accountIt != values.end() && !accountIt->second.empty())
+        {
+            m_accountId = accountIt->second;
+        }
+
+        const auto playerIt = values.find("player_identity");
+        if (playerIt != values.end() && !playerIt->second.empty())
+        {
+            m_playerIdentity = playerIt->second;
+        }
+    }
+
+    void GameLayer::persistResumeIdentity() const
+    {
+        if (m_grantedSessionId == "none")
+        {
+            return;
+        }
+
+        std::ostringstream output;
+        output
+            << "granted_session_id=" << sanitizeSingleLine(m_grantedSessionId) << "\n"
+            << "account_id=" << sanitizeSingleLine(m_accountId) << "\n"
+            << "player_identity=" << sanitizeSingleLine(m_playerIdentity) << "\n"
+            << "ticket_id=" << sanitizeSingleLine(m_sessionTicketId) << "\n";
+        writeTextFileAtomically(clientResumeIdentityPath(m_runtimeBoundaryReport), output.str());
+    }
+
+    bool GameLayer::tryResolveIssuedTicket(SessionTicket& outTicket) const
+    {
+        const std::vector<SessionTicket> tickets = SessionEntryProtocol::collectIssuedTickets(m_runtimeBoundaryReport);
+        for (auto it = tickets.rbegin(); it != tickets.rend(); ++it)
+        {
+            if (it->requestId == SessionEntryProtocol::sanitizeIdentifier(m_sessionRequestId)
+                && it->clientInstanceId == SessionEntryProtocol::sanitizeIdentifier(m_clientInstanceId))
+            {
+                outTicket = *it;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    bool GameLayer::tryResolveDeniedTicket(SessionTicket& outTicket) const
+    {
+        const std::vector<SessionTicket> tickets = SessionEntryProtocol::collectDeniedTickets(m_runtimeBoundaryReport);
+        for (auto it = tickets.rbegin(); it != tickets.rend(); ++it)
+        {
+            if (it->requestId == SessionEntryProtocol::sanitizeIdentifier(m_sessionRequestId)
+                && it->clientInstanceId == SessionEntryProtocol::sanitizeIdentifier(m_clientInstanceId))
+            {
+                outTicket = *it;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+
     void GameLayer::updateConnectionTelemetry()
     {
         if (!m_connectAttemptLogged)
@@ -676,8 +916,9 @@ namespace war
 
         std::string compatibilityReason;
         const bool hostCompatible = hostConnectionCompatible(compatibilityReason);
+        const bool sessionGranted = m_sessionTicketIssued && m_sessionEntryState == "ticket-issued";
 
-        if (hostCompatible)
+        if (hostCompatible && sessionGranted)
         {
             const bool sessionChanged = !m_connectionEstablished
                 || m_lastHostSessionId != m_headlessHostPresenceReport.sessionId
@@ -694,8 +935,10 @@ namespace war
                     + m_headlessHostPresenceReport.connectTargetName
                     + " | transport="
                     + m_headlessHostPresenceReport.transportKind
-                    + " | session="
+                    + " | host_session="
                     + m_headlessHostPresenceReport.sessionId
+                    + " | granted_session="
+                    + m_grantedSessionId
                     + " | host_instance="
                     + m_headlessHostPresenceReport.hostInstanceId
                     + " | protocol=v"
@@ -708,6 +951,14 @@ namespace war
                 m_lastHostSessionId = m_headlessHostPresenceReport.sessionId;
                 m_lastConnectedHostInstanceId = m_headlessHostPresenceReport.hostInstanceId;
             }
+            return;
+        }
+
+        if (hostCompatible && !sessionGranted)
+        {
+            m_connectState = m_reconnectRequested ? "entry-pending-resume-ticket" : "entry-pending-ticket";
+            m_connectFailureReason = "none";
+            m_connectionEstablished = false;
             return;
         }
 
@@ -730,6 +981,14 @@ namespace war
             m_connectFailureReason = compatibilityReason;
             m_lastDisconnectReason = compatibilityReason;
             m_lastConnectEvent = "disconnected";
+            return;
+        }
+
+        if (m_sessionEntryState == "entry-denied")
+        {
+            m_connectState = "entry-denied";
+            m_connectFailureReason = m_sessionDenialReason;
+            m_lastConnectEvent = "denied";
             return;
         }
 
@@ -834,7 +1093,7 @@ namespace war
         const SharedSimulationDiagnostics& diagnostics = m_simulationRuntime.diagnostics();
         std::ostringstream output;
         output
-            << "version=5\n"
+            << "version=6\n"
             << "build_identity=" << sanitizeSingleLine(m_localDemoDiagnosticsReport.buildIdentity) << "\n"
             << "build_channel=" << sanitizeSingleLine(m_localDemoDiagnosticsReport.buildChannel) << "\n"
             << "client_instance_id=" << sanitizeSingleLine(m_clientInstanceId) << "\n"
@@ -847,6 +1106,16 @@ namespace war
             << "connect_failure_reason=" << sanitizeSingleLine(m_connectFailureReason) << "\n"
             << "last_connect_event=" << sanitizeSingleLine(m_lastConnectEvent) << "\n"
             << "last_disconnect_reason=" << sanitizeSingleLine(m_lastDisconnectReason) << "\n"
+            << "session_entry_state=" << sanitizeSingleLine(m_sessionEntryState) << "\n"
+            << "session_request_id=" << sanitizeSingleLine(m_sessionRequestId) << "\n"
+            << "session_ticket_id=" << sanitizeSingleLine(m_sessionTicketId) << "\n"
+            << "session_ticket_state=" << sanitizeSingleLine(m_sessionTicketState) << "\n"
+            << "session_denial_reason=" << sanitizeSingleLine(m_sessionDenialReason) << "\n"
+            << "granted_session_id=" << sanitizeSingleLine(m_grantedSessionId) << "\n"
+            << "resume_session_id=" << sanitizeSingleLine(m_resumeSessionId) << "\n"
+            << "reconnect_requested=" << (m_reconnectRequested ? "yes" : "no") << "\n"
+            << "account_id=" << sanitizeSingleLine(m_accountId) << "\n"
+            << "player_identity=" << sanitizeSingleLine(m_playerIdentity) << "\n"
             << "expected_protocol_version=" << m_expectedProtocolVersion << "\n"
             << "authority_mode=" << (m_useHeadlessHostAuthority ? "headless-host" : "local") << "\n"
             << "host_online=" << (m_headlessHostPresenceReport.hostOnline ? "yes" : "no") << "\n"
@@ -937,7 +1206,7 @@ namespace war
 
         if (normalized == "help")
         {
-            m_commandEcho = "Commands: help, look, room, where, status, vitals, inspect, interact, move x y, clear.";
+            m_commandEcho = "Commands: help, look, room, where, status, vitals, session, entry, resume, inspect, interact, move x y, clear.";
             return;
         }
 
@@ -953,6 +1222,39 @@ namespace war
         {
             m_commandEcho = "Displayed vitals prompt.";
             pushEvent(std::string("Vitals: ") + m_promptLine);
+            return;
+        }
+
+        if (normalized == "session")
+        {
+            m_commandEcho = std::string("Entry state: ") + m_sessionEntryState + ", granted session: " + m_grantedSessionId + ", resume identity: " + m_resumeSessionId + ".";
+            pushEvent(std::string("Session entry: ") + m_sessionEntryState + " | granted=" + m_grantedSessionId + " | resume=" + m_resumeSessionId);
+            return;
+        }
+
+        if (normalized == "entry")
+        {
+            m_sessionEntryRequestWritten = false;
+            m_sessionTicketIssued = false;
+            m_reconnectRequested = false;
+            submitSessionEntryRequest(false);
+            m_commandEcho = "Fresh session entry requested.";
+            return;
+        }
+
+        if (normalized == "resume")
+        {
+            if (m_resumeSessionId == "none")
+            {
+                m_commandEcho = "No persisted resume session is available yet.";
+                return;
+            }
+
+            m_sessionEntryRequestWritten = false;
+            m_sessionTicketIssued = false;
+            m_reconnectRequested = true;
+            submitSessionEntryRequest(true);
+            m_commandEcho = std::string("Reconnect requested for resume session ") + m_resumeSessionId + ".";
             return;
         }
 
@@ -1154,7 +1456,8 @@ namespace war
             << "HP " << diagnostics.playerHealth << "/" << diagnostics.playerMaxHealth
             << " | ARM " << diagnostics.playerArmor
             << " | O2 " << static_cast<int>(diagnostics.oxygenSecondsRemaining) << "s"
-            << " | PHASE " << diagnostics.missionPhaseText;
+            << " | PHASE " << diagnostics.missionPhaseText
+            << " | ENTRY " << m_sessionEntryState;
         return prompt.str();
     }
 

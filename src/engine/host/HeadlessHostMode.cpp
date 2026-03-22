@@ -16,6 +16,7 @@
 #include "engine/host/AuthoritativeHostProtocol.h"
 #include "engine/host/HeadlessHostPresence.h"
 #include "engine/host/ReplicationHarness.h"
+#include "engine/host/SessionEntryProtocol.h"
 #include "engine/simulation/SimulationRuntime.h"
 
 namespace war
@@ -113,6 +114,17 @@ namespace war
                 return 5;
             }
 
+            SessionEntryProtocolReport sessionEntryProtocolReport = SessionEntryProtocol::buildReport(runtimeBoundaryReport);
+            SessionEntryProtocol::ensureDirectories(sessionEntryProtocolReport);
+            if (!sessionEntryProtocolReport.issues.empty() || !sessionEntryProtocolReport.sessionEntryLaneReady)
+            {
+                LocalDemoDiagnostics::appendTraceLine(
+                    runtimeBoundaryReport,
+                    "headless_host_trace.txt",
+                    "HeadlessHostMode fail-fast session-entry-lane");
+                return 6;
+            }
+
             SimulationRuntime simulationRuntime{};
             simulationRuntime.initializeForLocalAuthority();
             LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "headless_host_trace.txt", "HeadlessHostMode initialized simulation");
@@ -163,6 +175,7 @@ namespace war
             appendLogLine(logPath, std::string("Save slot: ") + runtimeOwnershipReport.primarySaveSlotName);
             appendLogLine(logPath, std::string("Save path: ") + RuntimePaths::displayPath(savePath));
             appendLogLine(logPath, std::string("Runtime ownership: ") + RuntimeOwnership::diagnosticsSummary(runtimeOwnershipReport));
+            appendLogLine(logPath, std::string("Session entry root: ") + RuntimePaths::displayPath(sessionEntryProtocolReport.sessionEntryRootDirectory));
             LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "headless_host_trace.txt", "HeadlessHostMode initial log lines written");
 
             std::deque<PendingIntentArrival> pendingIntentArrivals{};
@@ -196,6 +209,102 @@ namespace war
                 {
                     std::this_thread::sleep_until(nextTick);
                     continue;
+                }
+
+                const std::vector<SessionEntryRequest> entryRequests =
+                    SessionEntryProtocol::collectPendingEntryRequestsForHost(runtimeBoundaryReport);
+                for (const SessionEntryRequest& entryRequest : entryRequests)
+                {
+                    const SessionEntryValidationResult validationResult =
+                        SessionEntryProtocol::validateRequest(
+                            runtimeBoundaryReport,
+                            entryRequest,
+                            localDemoDiagnosticsReport.buildIdentity,
+                            localDemoDiagnosticsReport.environmentName,
+                            localDemoDiagnosticsReport.connectTargetName,
+                            nowEpochMilliseconds);
+
+                    if (validationResult.accepted)
+                    {
+                        const SessionTicket ticket =
+                            SessionEntryProtocol::buildIssuedTicket(
+                                entryRequest,
+                                localDemoDiagnosticsReport.buildIdentity,
+                                nowEpochMilliseconds);
+                        std::string ticketError;
+                        if (SessionEntryProtocol::writeIssuedTicket(runtimeBoundaryReport, ticket, ticketError))
+                        {
+                            const ActiveSessionRecord activeSession =
+                                SessionEntryProtocol::buildActiveSessionRecord(ticket, nowEpochMilliseconds);
+                            std::string activeSessionError;
+                            if (!SessionEntryProtocol::writeActiveSession(runtimeBoundaryReport, activeSession, activeSessionError))
+                            {
+                                appendLogLine(logPath, std::string("Session entry active-session write failed: ") + activeSessionError);
+                                LocalDemoDiagnostics::appendTraceLine(
+                                    runtimeBoundaryReport,
+                                    "headless_host_trace.txt",
+                                    std::string("Session entry active-session write failed: ") + activeSessionError);
+                            }
+                            else
+                            {
+                                appendLogLine(
+                                    logPath,
+                                    std::string("Session entry accepted: request=")
+                                        + entryRequest.requestId
+                                        + " ticket="
+                                        + ticket.ticketId
+                                        + " session="
+                                        + ticket.grantedSessionId
+                                        + " account="
+                                        + entryRequest.accountId);
+                                LocalDemoDiagnostics::appendTraceLine(
+                                    runtimeBoundaryReport,
+                                    "headless_host_trace.txt",
+                                    std::string("Session entry accepted: ") + ticket.ticketId);
+                            }
+                        }
+                        else
+                        {
+                            appendLogLine(logPath, std::string("Session entry issued-ticket write failed: ") + ticketError);
+                            LocalDemoDiagnostics::appendTraceLine(
+                                runtimeBoundaryReport,
+                                "headless_host_trace.txt",
+                                std::string("Session entry issued-ticket write failed: ") + ticketError);
+                        }
+                    }
+                    else
+                    {
+                        const SessionTicket deniedTicket =
+                            SessionEntryProtocol::buildDeniedTicket(
+                                entryRequest,
+                                localDemoDiagnosticsReport.buildIdentity,
+                                nowEpochMilliseconds,
+                                validationResult.denialReason);
+                        std::string deniedTicketError;
+                        if (SessionEntryProtocol::writeDeniedTicket(runtimeBoundaryReport, deniedTicket, deniedTicketError))
+                        {
+                            appendLogLine(
+                                logPath,
+                                std::string("Session entry denied: request=")
+                                    + entryRequest.requestId
+                                    + " reason="
+                                    + validationResult.denialReason
+                                    + " account="
+                                    + entryRequest.accountId);
+                            LocalDemoDiagnostics::appendTraceLine(
+                                runtimeBoundaryReport,
+                                "headless_host_trace.txt",
+                                std::string("Session entry denied: ") + validationResult.denialReason);
+                        }
+                        else
+                        {
+                            appendLogLine(logPath, std::string("Session entry denied-ticket write failed: ") + deniedTicketError);
+                            LocalDemoDiagnostics::appendTraceLine(
+                                runtimeBoundaryReport,
+                                "headless_host_trace.txt",
+                                std::string("Session entry denied-ticket write failed: ") + deniedTicketError);
+                        }
+                    }
                 }
 
                 const std::vector<SimulationIntent> incomingRequests =

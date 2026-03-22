@@ -11,6 +11,7 @@
 #include <windows.h>
 
 #include "engine/core/RuntimeOwnership.h"
+#include "engine/host/SessionEntryProtocol.h"
 
 namespace war
 {
@@ -446,8 +447,31 @@ namespace war
         report.persistenceMigrationApplied = persistenceMigrationApplied;
         report.persistenceRestoreVisible = persistenceLastLoadSucceeded || persistenceLoadCount > 0 || report.restoreState == "restored";
 
+        bool sessionEntryParseValid = true;
+        if (values.find("session_entry_lane_ready") != values.end())
+        {
+            sessionEntryParseValid &= tryParseYesNo(values, "session_entry_lane_ready", report.sessionEntryLaneReady);
+        }
+        if (values.find("session_entry_pending_request_count") != values.end())
+        {
+            sessionEntryParseValid &= tryParseUnsigned(values, "session_entry_pending_request_count", report.sessionEntryPendingRequestCount);
+        }
+        if (values.find("session_entry_issued_ticket_count") != values.end())
+        {
+            sessionEntryParseValid &= tryParseUnsigned(values, "session_entry_issued_ticket_count", report.sessionEntryIssuedTicketCount);
+        }
+        if (values.find("session_entry_denied_ticket_count") != values.end())
+        {
+            sessionEntryParseValid &= tryParseUnsigned(values, "session_entry_denied_ticket_count", report.sessionEntryDeniedTicketCount);
+        }
+        if (values.find("session_entry_active_session_count") != values.end())
+        {
+            sessionEntryParseValid &= tryParseUnsigned(values, "session_entry_active_session_count", report.sessionEntryActiveSessionCount);
+        }
+
         report.statusParseValid = !malformed
             && persistenceParseValid
+            && sessionEntryParseValid
             && statusVersion >= 6
             && report.hostTickMilliseconds > 0
             && report.protocolVersion == kCurrentProtocolVersion;
@@ -497,6 +521,8 @@ namespace war
         }
 
         const RuntimeOwnershipReport runtimeOwnershipReport = RuntimeOwnership::analyze(runtimeBoundaryReport);
+        SessionEntryProtocolReport sessionEntryProtocolReport = SessionEntryProtocol::buildReport(runtimeBoundaryReport);
+        SessionEntryProtocol::ensureDirectories(sessionEntryProtocolReport);
 
         const std::filesystem::path finalPath = runtimeBoundaryReport.hostDirectory / "headless_host_status.txt";
         const std::filesystem::path tempPath = runtimeBoundaryReport.hostDirectory / "headless_host_status.tmp";
@@ -574,6 +600,11 @@ namespace war
             << "runtime_owned_directories_sane=" << (runtimeOwnershipReport.runtimeOwnedDirectoriesSane ? "yes" : "no") << "\n"
             << "deployable_environment_separated=" << (runtimeOwnershipReport.deployableEnvironmentSeparated ? "yes" : "no") << "\n"
             << "primary_save_path_owned=" << (runtimeOwnershipReport.primarySavePathOwned ? "yes" : "no") << "\n"
+            << "session_entry_lane_ready=" << (sessionEntryProtocolReport.sessionEntryLaneReady ? "yes" : "no") << "\n"
+            << "session_entry_pending_request_count=" << SessionEntryProtocol::pendingRequestCount(runtimeBoundaryReport) << "\n"
+            << "session_entry_issued_ticket_count=" << SessionEntryProtocol::issuedTicketCount(runtimeBoundaryReport) << "\n"
+            << "session_entry_denied_ticket_count=" << SessionEntryProtocol::deniedTicketCount(runtimeBoundaryReport) << "\n"
+            << "session_entry_active_session_count=" << SessionEntryProtocol::activeSessionCount(runtimeBoundaryReport) << "\n"
             << "persistence_active=" << (simulationDiagnostics.persistenceActive ? "yes" : "no") << "\n"
             << "persistence_slot=" << runtimeOwnershipReport.primarySaveSlotName << "\n"
             << "persistence_save_path=" << runtimeOwnershipReport.primarySavePath.generic_string() << "\n"

@@ -8,6 +8,7 @@
 #include "engine/core/EnvironmentConfig.h"
 #include "engine/core/RuntimeOwnership.h"
 #include "engine/core/RuntimePaths.h"
+#include "engine/host/SessionEntryProtocol.h"
 
 namespace war
 {
@@ -53,7 +54,8 @@ namespace war
             const RuntimeBoundaryReport& runtimeBoundaryReport,
             LocalDemoDiagnosticsReport& localDemoDiagnosticsReport,
             const EnvironmentConfigReport* environmentConfigReport = nullptr,
-            const RuntimeOwnershipReport* runtimeOwnershipReport = nullptr);
+            const RuntimeOwnershipReport* runtimeOwnershipReport = nullptr,
+            const SessionEntryProtocolReport* sessionEntryProtocolReport = nullptr);
         static void appendTraceLine(
             const RuntimeBoundaryReport& runtimeBoundaryReport,
             const std::string& filename,

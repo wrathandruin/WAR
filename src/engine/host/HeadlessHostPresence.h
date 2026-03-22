@@ -30,6 +30,7 @@ namespace war
         bool runtimeOwnedDirectoriesSane = false;
         bool deployableEnvironmentSeparated = false;
         bool primarySavePathOwned = false;
+        bool sessionEntryLaneReady = false;
 
         uint64_t heartbeatAgeMilliseconds = 0;
         uint64_t advertisedSimulationTicks = 0;
@@ -40,6 +41,10 @@ namespace war
         uint64_t persistenceLoadCount = 0;
         uint64_t lastPersistenceSaveEpochMilliseconds = 0;
         uint64_t lastPersistenceLoadEpochMilliseconds = 0;
+        uint64_t sessionEntryPendingRequestCount = 0;
+        uint64_t sessionEntryIssuedTicketCount = 0;
+        uint64_t sessionEntryDeniedTicketCount = 0;
+        uint64_t sessionEntryActiveSessionCount = 0;
         uint32_t hostTickMilliseconds = 0;
         uint32_t persistenceSchemaVersion = 0;
         uint32_t persistenceLoadedSchemaVersion = 0;

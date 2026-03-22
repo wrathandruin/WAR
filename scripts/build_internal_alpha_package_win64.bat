@@ -14,19 +14,19 @@ set "CLIENT_EXE_PATH=%CLIENT_OUTPUT_DIR%\WAR.exe"
 set "CLIENT_PDB_PATH=%CLIENT_OUTPUT_DIR%\WAR.pdb"
 set "SERVER_EXE_PATH=%SERVER_OUTPUT_DIR%\WARServer.exe"
 set "SERVER_PDB_PATH=%SERVER_OUTPUT_DIR%\WARServer.pdb"
-set "STAGE_ROOT=%REPO_ROOT%\out\internal_alpha\WAR_M46_%CONFIG%"
+set "STAGE_ROOT=%REPO_ROOT%\out\internal_alpha\WAR_M47_%CONFIG%"
 set "RUNTIME_STAGE=%STAGE_ROOT%\runtime"
 set "HOST_STAGE=%RUNTIME_STAGE%\Host"
 set "MANIFEST_PATH=%STAGE_ROOT%\internal_alpha_manifest.txt"
 
 if not exist "%SOLUTION_FILE%" (
-    echo [M46] ERROR: WAR.sln not found at "%SOLUTION_FILE%".
+    echo [M47] ERROR: WAR.sln not found at "%SOLUTION_FILE%".
     exit /b 1
 )
 
 set "VSWHERE_EXE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
 if not exist "%VSWHERE_EXE%" (
-    echo [M46] ERROR: vswhere.exe not found at "%VSWHERE_EXE%".
+    echo [M47] ERROR: vswhere.exe not found at "%VSWHERE_EXE%".
     exit /b 1
 )
 
@@ -36,24 +36,24 @@ for /f "usebackq delims=" %%I in (`"%VSWHERE_EXE%" -latest -products * -requires
 )
 
 if not defined MSBUILD_EXE (
-    echo [M46] ERROR: MSBuild.exe could not be resolved via vswhere.exe.
+    echo [M47] ERROR: MSBuild.exe could not be resolved via vswhere.exe.
     exit /b 1
 )
 
-echo [M46] Rebuilding WAR %CONFIG%^|%PLATFORM%...
+echo [M47] Rebuilding WAR %CONFIG%^|%PLATFORM%...
 "%MSBUILD_EXE%" "%SOLUTION_FILE%" /m /nologo /t:Rebuild /p:Configuration=%CONFIG%;Platform=%PLATFORM%
 if errorlevel 1 (
-    echo [M46] ERROR: build failed.
+    echo [M47] ERROR: build failed.
     exit /b 1
 )
 
 if not exist "%CLIENT_EXE_PATH%" (
-    echo [M46] ERROR: expected client executable missing at "%CLIENT_EXE_PATH%".
+    echo [M47] ERROR: expected client executable missing at "%CLIENT_EXE_PATH%".
     exit /b 1
 )
 
 if not exist "%SERVER_EXE_PATH%" (
-    echo [M46] ERROR: expected host executable missing at "%SERVER_EXE_PATH%".
+    echo [M47] ERROR: expected host executable missing at "%SERVER_EXE_PATH%".
     exit /b 1
 )
 
@@ -79,25 +79,27 @@ if exist "%REPO_ROOT%\Environment" xcopy /y /i /e "%REPO_ROOT%\Environment" "%ST
 
 for %%F in (
     "README.md"
-    "VALIDATION_EVIDENCE_M46.txt"
-    "Milestones\M46_Trust_Boundary_Environment_Config_Secrets_Baseline.md"
+    "VALIDATION_EVIDENCE_M47.txt"
+    "Milestones\M47_Account_Session_Ticket_Handoff_Authenticated_Entry.md"
     "scripts\launch_headless_host_win64.bat"
     "scripts\launch_local_client_against_host_win64.bat"
     "scripts\smoke_test_headless_host_win64.bat"
     "scripts\smoke_test_local_demo_win64.bat"
     "scripts\validate_m45_hosted_bootstrap_win64.bat"
-    "scripts\validate_m45_internal_alpha_package_win64.bat"
     "scripts\validate_m46_environment_identity_win64.bat"
     "scripts\validate_m46_missing_required_secrets_win64.bat"
     "scripts\validate_m46_runtime_save_hygiene_win64.bat"
-    "scripts\validate_m46_internal_alpha_package_win64.bat"
+    "scripts\validate_m47_ticket_issue_and_client_entry_win64.bat"
+    "scripts\validate_m47_ticket_denial_and_fail_states_win64.bat"
+    "scripts\validate_m47_reconnect_identity_win64.bat"
+    "scripts\validate_m47_internal_alpha_package_win64.bat"
 ) do (
     if exist "%REPO_ROOT%\%%~F" copy /y "%REPO_ROOT%\%%~F" "%STAGE_ROOT%\%%~nxF" >nul
 )
 
 (
     echo WAR Internal Alpha Manifest
-    echo Milestone: M46 - Trust Boundary / Environment Config / Secrets Baseline
+    echo Milestone: M47 - Account Session Ticket Handoff / Authenticated Entry
     echo Configuration: %CONFIG%
     echo Platform: %PLATFORM%
     echo Stage root: %STAGE_ROOT%
@@ -109,13 +111,13 @@ for %%F in (
     echo Hosted bootstrap transport: file-backed-hosted-bootstrap
     echo Environment profiles staged: local, staging, hosted_internal_alpha
     echo Validation scripts staged:
-    echo - validate_m46_environment_identity_win64.bat
-    echo - validate_m46_missing_required_secrets_win64.bat
-    echo - validate_m46_runtime_save_hygiene_win64.bat
-    echo - validate_m46_internal_alpha_package_win64.bat
+    echo - validate_m47_ticket_issue_and_client_entry_win64.bat
+    echo - validate_m47_ticket_denial_and_fail_states_win64.bat
+    echo - validate_m47_reconnect_identity_win64.bat
+    echo - validate_m47_internal_alpha_package_win64.bat
 ) > "%MANIFEST_PATH%"
 
-echo [M46] Internal alpha package staged at "%STAGE_ROOT%".
+echo [M47] Internal alpha package staged at "%STAGE_ROOT%".
 exit /b 0
 
 :prepare_stage_root
@@ -130,7 +132,7 @@ rmdir /s /q "%STAGE_ROOT%" >nul 2>nul
 if not exist "%STAGE_ROOT%" exit /b 0
 set /a STAGE_ATTEMPT+=1
 if %STAGE_ATTEMPT% GEQ 10 (
-    echo [M46] ERROR: unable to clear existing stage root "%STAGE_ROOT%".
+    echo [M47] ERROR: unable to clear existing stage root "%STAGE_ROOT%".
     exit /b 1
 )
 taskkill /IM WAR.exe /F >nul 2>nul

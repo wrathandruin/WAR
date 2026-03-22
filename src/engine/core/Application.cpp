@@ -10,6 +10,7 @@
 #include "engine/core/RuntimeOwnership.h"
 #include "engine/core/RuntimePaths.h"
 #include "engine/core/Timer.h"
+#include "engine/host/SessionEntryProtocol.h"
 #include "game/GameLayer.h"
 #include "platform/win32/Win32Window.h"
 
@@ -41,10 +42,10 @@ namespace war
             const std::wstring connectTargetName = readEnvironmentWide(L"WAR_CONNECT_TARGET_NAME");
             if (connectTargetName.empty())
             {
-                return L"WAR - Milestone 46";
+                return L"WAR - Milestone 47";
             }
 
-            return std::wstring(L"WAR - Milestone 46 [") + connectTargetName + L"]";
+            return std::wstring(L"WAR - Milestone 47 [") + connectTargetName + L"]";
         }
     }
 
@@ -61,11 +62,14 @@ namespace war
             LocalDemoDiagnosticsReport localDemoDiagnosticsReport = LocalDemoDiagnostics::buildReport(runtimeBoundaryReport);
             const EnvironmentConfigReport environmentConfigReport = EnvironmentConfig::load(runtimeBoundaryReport);
             const RuntimeOwnershipReport runtimeOwnershipReport = RuntimeOwnership::analyze(runtimeBoundaryReport);
+            const SessionEntryProtocolReport sessionEntryProtocolReport = SessionEntryProtocol::buildReport(runtimeBoundaryReport);
+
             LocalDemoDiagnostics::writeStartupReport(
                 runtimeBoundaryReport,
                 localDemoDiagnosticsReport,
                 &environmentConfigReport,
-                &runtimeOwnershipReport);
+                &runtimeOwnershipReport,
+                &sessionEntryProtocolReport);
 
             if (!environmentConfigReport.configurationValid)
             {

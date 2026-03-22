@@ -11,6 +11,7 @@
 #include "engine/host/AuthoritativeHostProtocol.h"
 #include "engine/host/HeadlessHostPresence.h"
 #include "engine/host/ReplicationHarness.h"
+#include "engine/host/SessionEntryProtocol.h"
 #include "engine/math/Vec2.h"
 #include "engine/render/BgfxDebugFrameRenderer.h"
 #include "engine/render/BgfxWorldRenderer.h"
@@ -39,6 +40,12 @@ namespace war
         void refreshAuthorityMode();
         void pollAuthoritativeHostResponses();
         void updateConnectionTelemetry();
+        void updateSessionEntryFlow();
+        void submitSessionEntryRequest(bool reconnectRequested);
+        void loadPersistedResumeIdentity();
+        void persistResumeIdentity() const;
+        [[nodiscard]] bool tryResolveIssuedTicket(SessionTicket& outTicket) const;
+        [[nodiscard]] bool tryResolveDeniedTicket(SessionTicket& outTicket) const;
         [[nodiscard]] bool hostConnectionCompatible(std::string& outReason) const;
         void persistReplicationHarnessConfig();
         void updateReplicationDiagnostics();
@@ -65,6 +72,7 @@ namespace war
         SimulationRuntime m_simulationRuntime{};
         RuntimeBoundaryReport m_runtimeBoundaryReport{};
         LocalDemoDiagnosticsReport m_localDemoDiagnosticsReport{};
+        SessionEntryProtocolReport m_sessionEntryProtocolReport{};
         HeadlessHostPresenceReport m_headlessHostPresenceReport{};
         AuthoritativeHostProtocolReport m_authoritativeHostProtocolReport{};
         ReplicationHarnessConfig m_replicationHarnessConfig{};
@@ -103,6 +111,22 @@ namespace war
         std::string m_lastDisconnectReason = "none";
         std::string m_lastHostSessionId = "none";
         std::string m_lastConnectedHostInstanceId = "none";
+
+        std::string m_accountId = "internal-alpha-player";
+        std::string m_playerIdentity = "operator-alpha";
+        std::string m_sessionEntryState = "uninitialized";
+        std::string m_sessionRequestId = "none";
+        std::string m_sessionTicketId = "none";
+        std::string m_sessionTicketState = "none";
+        std::string m_sessionDenialReason = "none";
+        std::string m_grantedSessionId = "none";
+        std::string m_resumeSessionId = "none";
+        uint64_t m_sessionTicketIssuedEpochMilliseconds = 0;
+        uint64_t m_sessionTicketExpiresEpochMilliseconds = 0;
+        bool m_sessionEntryRequestWritten = false;
+        bool m_sessionTicketIssued = false;
+        bool m_reconnectRequested = false;
+        bool m_sessionDenialLogged = false;
 
         std::string m_roomSignature{};
         std::string m_roomTitle{};

@@ -219,7 +219,8 @@ namespace war
         const RuntimeBoundaryReport& runtimeBoundaryReport,
         LocalDemoDiagnosticsReport& localDemoDiagnosticsReport,
         const EnvironmentConfigReport* environmentConfigReport,
-        const RuntimeOwnershipReport* runtimeOwnershipReport)
+        const RuntimeOwnershipReport* runtimeOwnershipReport,
+        const SessionEntryProtocolReport* sessionEntryProtocolReport)
     {
         std::error_code error;
         std::filesystem::create_directories(localDemoDiagnosticsReport.startupReportPath.parent_path(), error);
@@ -236,7 +237,7 @@ namespace war
 
         output
             << "WAR Startup Report\n"
-            << "Milestone: M46 - Trust Boundary / Environment Config / Secrets Baseline\n"
+            << "Milestone: M47 - Account Session Ticket Handoff / Authenticated Entry\n"
             << "Build configuration: " << localDemoDiagnosticsReport.buildConfiguration << "\n"
             << "Build timestamp: " << localDemoDiagnosticsReport.buildTimestamp << "\n"
             << "Build identity: " << localDemoDiagnosticsReport.buildIdentity << "\n"
@@ -292,6 +293,17 @@ namespace war
                 << "Deployable environment separated: " << (runtimeOwnershipReport->deployableEnvironmentSeparated ? "yes" : "no") << "\n"
                 << "Primary save path owned: " << (runtimeOwnershipReport->primarySavePathOwned ? "yes" : "no") << "\n"
                 << "Runtime ownership valid: " << (runtimeOwnershipReport->ownershipValid ? "yes" : "no") << "\n";
+        }
+
+        if (sessionEntryProtocolReport != nullptr)
+        {
+            output
+                << "Session entry lane ready: " << (sessionEntryProtocolReport->sessionEntryLaneReady ? "yes" : "no") << "\n"
+                << "Session entry root directory: " << RuntimePaths::displayPath(sessionEntryProtocolReport->sessionEntryRootDirectory) << "\n"
+                << "Session entry request queue: " << RuntimePaths::displayPath(sessionEntryProtocolReport->requestQueueDirectory) << "\n"
+                << "Session entry issued ticket directory: " << RuntimePaths::displayPath(sessionEntryProtocolReport->issuedTicketDirectory) << "\n"
+                << "Session entry denied ticket directory: " << RuntimePaths::displayPath(sessionEntryProtocolReport->deniedTicketDirectory) << "\n"
+                << "Session entry active session directory: " << RuntimePaths::displayPath(sessionEntryProtocolReport->activeSessionDirectory) << "\n";
         }
 
         output
