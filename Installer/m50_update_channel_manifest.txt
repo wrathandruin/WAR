@@ -1,0 +1,8 @@
+version=1
+update_channel=market-candidate
+patch_lane=stable
+rollback_lane=stable-previous
+delta_updates_enabled=yes
+manifest_feed_kind=file-backed-package-feed
+manifest_feed_root=Installer
+required_validation_gate=validate_m50_market_candidate_package_win64.bat

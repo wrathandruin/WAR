@@ -220,7 +220,8 @@ namespace war
         LocalDemoDiagnosticsReport& localDemoDiagnosticsReport,
         const EnvironmentConfigReport* environmentConfigReport,
         const RuntimeOwnershipReport* runtimeOwnershipReport,
-        const SessionEntryProtocolReport* sessionEntryProtocolReport)
+        const SessionEntryProtocolReport* sessionEntryProtocolReport,
+        const FailureBundleProtocolReport* failureBundleProtocolReport)
     {
         std::error_code error;
         std::filesystem::create_directories(localDemoDiagnosticsReport.startupReportPath.parent_path(), error);
@@ -237,7 +238,7 @@ namespace war
 
         output
             << "WAR Startup Report\n"
-            << "Milestone: M47 - Account Session Ticket Handoff / Authenticated Entry\n"
+            << "Milestone: M48 - Crash Capture / Failure Bundles / Operator Triage Baseline\n"
             << "Build configuration: " << localDemoDiagnosticsReport.buildConfiguration << "\n"
             << "Build timestamp: " << localDemoDiagnosticsReport.buildTimestamp << "\n"
             << "Build identity: " << localDemoDiagnosticsReport.buildIdentity << "\n"
@@ -251,6 +252,7 @@ namespace war
             << "Mutable runtime logs directory: " << RuntimePaths::displayPath(runtimeBoundaryReport.logsDirectory) << "\n"
             << "Mutable runtime saves directory: " << RuntimePaths::displayPath(runtimeBoundaryReport.savesDirectory) << "\n"
             << "Mutable runtime host directory: " << RuntimePaths::displayPath(runtimeBoundaryReport.hostDirectory) << "\n"
+            << "Mutable runtime crash directory: " << RuntimePaths::displayPath(runtimeBoundaryReport.crashDirectory) << "\n"
             << "Connect target: " << localDemoDiagnosticsReport.connectTargetName << "\n"
             << "Connect transport: " << localDemoDiagnosticsReport.connectTransport << "\n"
             << "Connect lane mode: " << localDemoDiagnosticsReport.connectLaneMode << "\n"
@@ -306,8 +308,19 @@ namespace war
                 << "Session entry active session directory: " << RuntimePaths::displayPath(sessionEntryProtocolReport->activeSessionDirectory) << "\n";
         }
 
+        if (failureBundleProtocolReport != nullptr)
+        {
+            output
+                << "Failure bundle lane ready: " << (failureBundleProtocolReport->failureBundleLaneReady ? "yes" : "no") << "\n"
+                << "Failure bundle root directory: " << RuntimePaths::displayPath(failureBundleProtocolReport->failureBundleRootDirectory) << "\n"
+                << "Startup failure bundle directory: " << RuntimePaths::displayPath(failureBundleProtocolReport->startupBundleDirectory) << "\n"
+                << "Runtime failure bundle directory: " << RuntimePaths::displayPath(failureBundleProtocolReport->runtimeBundleDirectory) << "\n"
+                << "Bootstrap failure bundle directory: " << RuntimePaths::displayPath(failureBundleProtocolReport->bootstrapBundleDirectory) << "\n"
+                << "Operator triage directory: " << RuntimePaths::displayPath(failureBundleProtocolReport->operatorTriageDirectory) << "\n";
+        }
+
         output
-            << "Trust boundary summary: Environment/ is deployable config; Runtime/Config is mutable runtime config; Runtime/Saves, Runtime/Logs, Runtime/Host are runtime-owned.\n";
+            << "Trust boundary summary: Environment/ is deployable config; Runtime/Config is mutable runtime config; Runtime/Saves, Runtime/Logs, Runtime/Host, and Runtime/CrashDumps are runtime-owned.\n";
 
         output.flush();
         localDemoDiagnosticsReport.startupReportWritten = output.good();

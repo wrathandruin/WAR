@@ -1,0 +1,10 @@
+version=1
+launcher_product=war_market_candidate
+launcher_channel=market-candidate
+entry_mode=desktop-launcher
+required_server_session_handoff=yes
+required_runtime_logs=Launcher,Installer,Updater,Retention,ReleaseCandidate
+primary_launch_target=WAR.exe
+fallback_launch_target=WARServer.exe
+resume_identity_source=runtime/Config/client_resume_identity.txt
+distribution_policy=launcher-first

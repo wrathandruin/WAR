@@ -29,6 +29,11 @@ namespace war
         std::filesystem::path savesDirectory;
         std::filesystem::path crashDirectory;
         std::filesystem::path hostDirectory;
+        std::filesystem::path failureBundleRootDirectory;
+        std::filesystem::path startupFailureBundleDirectory;
+        std::filesystem::path runtimeFailureBundleDirectory;
+        std::filesystem::path bootstrapFailureBundleDirectory;
+        std::filesystem::path operatorTriageDirectory;
         std::filesystem::path environmentRoot;
         std::filesystem::path environmentProfilesDirectory;
         std::filesystem::path environmentProfileDirectory;

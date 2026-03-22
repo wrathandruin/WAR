@@ -188,9 +188,9 @@ The correct production move is to complete one tidy return loop and hand a stabl
 - M45: Internal Alpha Package / Hosted Deploy / Telemetry Baseline
 - M46: Trust Boundary / Environment Config / Secrets Baseline
 - M47: Account Session Ticket Handoff / Authenticated Entry
-- M48: Structured Telemetry / Crash Capture / Runtime Event Pipeline
-- M49: Admin Surface / Backup Restore / Recovery Discipline
-- M50: Security Hardening Pass 1 / Abuse Controls / Rate Limits
+- M48: Crash Capture / Failure Bundles / Operator Triage Baseline
+- M49: Beta Content Scale / Retention Expansion / Release-Candidate Discipline
+- M50: Launcher / Installer / Update Productionization
 
 ### Phase 5B - Graphical MUD Session MVP
 

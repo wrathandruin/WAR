@@ -1,0 +1,29 @@
+version=1
+content_pack=beta_content_scale
+pack_name=station_to_frontier_beta_pack
+pack_tier=beta-candidate
+content_card_count=4
+
+card_01_id=station_cargo_recovery
+card_01_title=Station Cargo Recovery
+card_01_location=Khepri Dock Cargo Bay
+card_01_checkpoint=cargo-bay
+card_01_return_objective=secure_manifest_and_return_to_transit_spine
+
+card_02_id=transit_spine_quarantine
+card_02_title=Transit Spine Quarantine
+card_02_location=Transit Spine
+card_02_checkpoint=transit-spine
+card_02_return_objective=restore_command_access_and_reach_command_deck
+
+card_03_id=orbital_departure_window
+card_03_title=Orbital Departure Window
+card_03_location=Orbital Approach
+card_03_checkpoint=orbital-approach
+card_03_return_objective=stabilize_orbital_lane_and_commit_to_frontier_transfer
+
+card_04_id=frontier_pad_reentry
+card_04_title=Frontier Pad Reentry
+card_04_location=Dust Frontier Landing Pad
+card_04_checkpoint=frontier-pad
+card_04_return_objective=reestablish_surface_presence_and_resume_planetary_mission

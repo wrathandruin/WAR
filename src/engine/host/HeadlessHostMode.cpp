@@ -11,6 +11,8 @@
 
 #include <windows.h>
 
+#include "engine/core/FailureBundleProtocol.h"
+#include "engine/core/FailureBundleWriter.h"
 #include "engine/core/LocalDemoDiagnostics.h"
 #include "engine/core/RuntimeOwnership.h"
 #include "engine/host/AuthoritativeHostProtocol.h"
@@ -103,14 +105,40 @@ namespace war
         {
             LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "headless_host_trace.txt", "HeadlessHostMode::run entered");
 
+            FailureBundleProtocolReport failureBundleProtocolReport = FailureBundleProtocol::buildReport(runtimeBoundaryReport);
+            FailureBundleProtocol::ensureDirectories(failureBundleProtocolReport);
+
             const RuntimeOwnershipReport runtimeOwnershipReport = RuntimeOwnership::analyze(runtimeBoundaryReport);
             if (!runtimeOwnershipReport.ownershipValid)
             {
+                const std::string failureReason =
+                    std::string("Headless host runtime ownership invalid: ")
+                    + RuntimeOwnership::diagnosticsSummary(runtimeOwnershipReport);
+
                 LocalDemoDiagnostics::appendTraceLine(
                     runtimeBoundaryReport,
                     "headless_host_trace.txt",
                     std::string("HeadlessHostMode fail-fast ownership: ")
                         + RuntimeOwnership::diagnosticsSummary(runtimeOwnershipReport));
+
+                std::string bundleDirectory;
+                std::string bundleError;
+                FailureBundleWriter::capture(
+                    runtimeBoundaryReport,
+                    FailureBundleKind::Runtime,
+                    "headless-host",
+                    "runtime",
+                    "runtime-ownership-invalid",
+                    failureReason,
+                    localDemoDiagnosticsReport.buildIdentity,
+                    localDemoDiagnosticsReport.buildChannel,
+                    localDemoDiagnosticsReport.environmentName,
+                    localDemoDiagnosticsReport.connectTargetName,
+                    5,
+                    FailureBundleWriter::headlessHostFailureAttachments(runtimeBoundaryReport),
+                    bundleDirectory,
+                    bundleError);
+
                 return 5;
             }
 
@@ -122,6 +150,25 @@ namespace war
                     runtimeBoundaryReport,
                     "headless_host_trace.txt",
                     "HeadlessHostMode fail-fast session-entry-lane");
+
+                std::string bundleDirectory;
+                std::string bundleError;
+                FailureBundleWriter::capture(
+                    runtimeBoundaryReport,
+                    FailureBundleKind::Runtime,
+                    "headless-host",
+                    "runtime",
+                    "session-entry-lane-invalid",
+                    "Headless host session-entry lane is not ready.",
+                    localDemoDiagnosticsReport.buildIdentity,
+                    localDemoDiagnosticsReport.buildChannel,
+                    localDemoDiagnosticsReport.environmentName,
+                    localDemoDiagnosticsReport.connectTargetName,
+                    6,
+                    FailureBundleWriter::headlessHostFailureAttachments(runtimeBoundaryReport),
+                    bundleDirectory,
+                    bundleError);
+
                 return 6;
             }
 
@@ -176,6 +223,7 @@ namespace war
             appendLogLine(logPath, std::string("Save path: ") + RuntimePaths::displayPath(savePath));
             appendLogLine(logPath, std::string("Runtime ownership: ") + RuntimeOwnership::diagnosticsSummary(runtimeOwnershipReport));
             appendLogLine(logPath, std::string("Session entry root: ") + RuntimePaths::displayPath(sessionEntryProtocolReport.sessionEntryRootDirectory));
+            appendLogLine(logPath, std::string("Failure bundle root: ") + RuntimePaths::displayPath(runtimeBoundaryReport.failureBundleRootDirectory));
             LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "headless_host_trace.txt", "HeadlessHostMode initial log lines written");
 
             std::deque<PendingIntentArrival> pendingIntentArrivals{};
@@ -428,11 +476,49 @@ namespace war
                 runtimeBoundaryReport,
                 "headless_host_trace.txt",
                 std::string("HeadlessHostMode exception: ") + exception.what());
+
+            std::string bundleDirectory;
+            std::string bundleError;
+            FailureBundleWriter::capture(
+                runtimeBoundaryReport,
+                FailureBundleKind::Runtime,
+                "headless-host",
+                "runtime",
+                "headless-host-exception",
+                exception.what(),
+                localDemoDiagnosticsReport.buildIdentity,
+                localDemoDiagnosticsReport.buildChannel,
+                localDemoDiagnosticsReport.environmentName,
+                localDemoDiagnosticsReport.connectTargetName,
+                4,
+                FailureBundleWriter::headlessHostFailureAttachments(runtimeBoundaryReport),
+                bundleDirectory,
+                bundleError);
+
             return 4;
         }
         catch (...)
         {
             LocalDemoDiagnostics::appendTraceLine(runtimeBoundaryReport, "headless_host_trace.txt", "HeadlessHostMode unknown exception");
+
+            std::string bundleDirectory;
+            std::string bundleError;
+            FailureBundleWriter::capture(
+                runtimeBoundaryReport,
+                FailureBundleKind::Runtime,
+                "headless-host",
+                "runtime",
+                "headless-host-unknown-exception",
+                "Unknown headless-host runtime exception.",
+                localDemoDiagnosticsReport.buildIdentity,
+                localDemoDiagnosticsReport.buildChannel,
+                localDemoDiagnosticsReport.environmentName,
+                localDemoDiagnosticsReport.connectTargetName,
+                4,
+                FailureBundleWriter::headlessHostFailureAttachments(runtimeBoundaryReport),
+                bundleDirectory,
+                bundleError);
+
             return 4;
         }
     }

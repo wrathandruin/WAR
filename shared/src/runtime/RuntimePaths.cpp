@@ -247,6 +247,11 @@ namespace war
         report.savesDirectory = report.runtimeRoot / "Saves";
         report.crashDirectory = report.runtimeRoot / "CrashDumps";
         report.hostDirectory = report.runtimeRoot / "Host";
+        report.failureBundleRootDirectory = report.crashDirectory / "FailureBundles";
+        report.startupFailureBundleDirectory = report.failureBundleRootDirectory / "Startup";
+        report.runtimeFailureBundleDirectory = report.failureBundleRootDirectory / "Runtime";
+        report.bootstrapFailureBundleDirectory = report.failureBundleRootDirectory / "Bootstrap";
+        report.operatorTriageDirectory = report.failureBundleRootDirectory / "OperatorTriage";
 
         const std::filesystem::path packagedEnvironmentRoot = report.executableDirectory / "Environment";
         const std::filesystem::path sourceEnvironmentRoot = report.repoRootResolved
@@ -320,6 +325,11 @@ namespace war
         ensureDirectory(report.savesDirectory, report);
         ensureDirectory(report.crashDirectory, report);
         ensureDirectory(report.hostDirectory, report);
+        ensureDirectory(report.failureBundleRootDirectory, report);
+        ensureDirectory(report.startupFailureBundleDirectory, report);
+        ensureDirectory(report.runtimeFailureBundleDirectory, report);
+        ensureDirectory(report.bootstrapFailureBundleDirectory, report);
+        ensureDirectory(report.operatorTriageDirectory, report);
         report.runtimeDirectoriesReady = true;
     }
 

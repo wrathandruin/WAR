@@ -5,7 +5,7 @@ set "SCRIPT_DIR=%~dp0"
 for %%I in ("%SCRIPT_DIR%..") do set "REPO_ROOT=%%~fI"
 set "CONFIG=%~1"
 if "%CONFIG%"=="" set "CONFIG=Release"
-set "STAGE_ROOT=%REPO_ROOT%\out\internal_alpha\WAR_M46_%CONFIG%"
+set "STAGE_ROOT=%REPO_ROOT%\out\internal_alpha\WAR_M48_%CONFIG%"
 set "REPORT_PATH=%REPO_ROOT%\out\internal_alpha\m46_validation_report_%CONFIG%.txt"
 
 call "%SCRIPT_DIR%build_internal_alpha_package_win64.bat" "%CONFIG%"

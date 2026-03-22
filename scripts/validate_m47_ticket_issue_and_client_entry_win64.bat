@@ -59,6 +59,7 @@ if errorlevel 1 (
 
 call :wait_for_file "%CLIENT_STATUS_FILE%" "Client replication status"
 call :wait_for_file "%RESUME_FILE%" "Client resume identity file"
+call :wait_for_prefix_line "%CLIENT_STATUS_FILE%" "host_session_id=session-" "Host session id mirror"
 if "%FAILED%"=="1" goto :cleanup
 
 (
@@ -118,3 +119,19 @@ if %WAIT_ATTEMPT% GEQ 30 (
 )
 ping 127.0.0.1 -n 2 >nul
 goto :wait_loop
+
+:wait_for_prefix_line
+set "WAIT_PATH=%~1"
+set "WAIT_PREFIX=%~2"
+set /a WAIT_ATTEMPT=0
+:wait_prefix_loop
+findstr /b /c:"%WAIT_PREFIX%" "%WAIT_PATH%" >nul 2>nul
+if not errorlevel 1 exit /b 0
+set /a WAIT_ATTEMPT+=1
+if %WAIT_ATTEMPT% GEQ 30 (
+    echo [FAIL] %~3 missing: %WAIT_PREFIX% in %WAIT_PATH%>> "%DETAILS_PATH%"
+    set "FAILED=1"
+    exit /b 0
+)
+ping 127.0.0.1 -n 2 >nul
+goto :wait_prefix_loop

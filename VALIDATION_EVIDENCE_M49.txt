@@ -1,0 +1,24 @@
+M49 Validation Evidence
+
+Submission classification:
+- sign-off complete via the M50 aggregate lane
+
+Validation date:
+- March 22, 2026
+
+Primary report:
+- out/market_candidate/m50_validation_report_Release.txt : PASS
+
+Embedded M49 reports:
+- out/market_candidate/WAR_M50_Release/runtime/Logs/m49_beta_content_scale_validation.txt : PASS
+- out/market_candidate/WAR_M50_Release/M49RetentionRuntime/Logs/m49_retention_expansion_validation.txt : PASS
+- out/market_candidate/WAR_M50_Release/M49ReleaseCandidateRuntime/Logs/m49_release_candidate_discipline_validation.txt : PASS
+
+Stage root covered:
+- out/market_candidate/WAR_M50_Release
+
+Validation basis:
+- M49 was intentionally validated as carried-forward content inside the successful M50 market-candidate sign-off run rather than as a separate top-level batch in this pass.
+
+Final statement:
+- M49 is signed off as complete inside the successful M50 sign-off lane

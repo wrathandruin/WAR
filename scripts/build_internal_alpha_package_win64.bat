@@ -11,22 +11,16 @@ set "SOLUTION_FILE=%REPO_ROOT%\WAR.sln"
 set "CLIENT_OUTPUT_DIR=%REPO_ROOT%\bin\%CONFIG%\split\desktop"
 set "SERVER_OUTPUT_DIR=%REPO_ROOT%\bin\%CONFIG%\split\server"
 set "CLIENT_EXE_PATH=%CLIENT_OUTPUT_DIR%\WAR.exe"
-set "CLIENT_PDB_PATH=%CLIENT_OUTPUT_DIR%\WAR.pdb"
 set "SERVER_EXE_PATH=%SERVER_OUTPUT_DIR%\WARServer.exe"
-set "SERVER_PDB_PATH=%SERVER_OUTPUT_DIR%\WARServer.pdb"
-set "STAGE_ROOT=%REPO_ROOT%\out\internal_alpha\WAR_M47_%CONFIG%"
-set "RUNTIME_STAGE=%STAGE_ROOT%\runtime"
-set "HOST_STAGE=%RUNTIME_STAGE%\Host"
-set "MANIFEST_PATH=%STAGE_ROOT%\internal_alpha_manifest.txt"
 
 if not exist "%SOLUTION_FILE%" (
-    echo [M47] ERROR: WAR.sln not found at "%SOLUTION_FILE%".
+    echo [M48] ERROR: WAR.sln not found at "%SOLUTION_FILE%".
     exit /b 1
 )
 
 set "VSWHERE_EXE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
 if not exist "%VSWHERE_EXE%" (
-    echo [M47] ERROR: vswhere.exe not found at "%VSWHERE_EXE%".
+    echo [M48] ERROR: vswhere.exe not found at "%VSWHERE_EXE%".
     exit /b 1
 )
 
@@ -36,110 +30,27 @@ for /f "usebackq delims=" %%I in (`"%VSWHERE_EXE%" -latest -products * -requires
 )
 
 if not defined MSBUILD_EXE (
-    echo [M47] ERROR: MSBuild.exe could not be resolved via vswhere.exe.
+    echo [M48] ERROR: MSBuild.exe could not be resolved via vswhere.exe.
     exit /b 1
 )
 
-echo [M47] Rebuilding WAR %CONFIG%^|%PLATFORM%...
+echo [M48] Rebuilding WAR %CONFIG%^|%PLATFORM%...
 "%MSBUILD_EXE%" "%SOLUTION_FILE%" /m /nologo /t:Rebuild /p:Configuration=%CONFIG%;Platform=%PLATFORM%
 if errorlevel 1 (
-    echo [M47] ERROR: build failed.
+    echo [M48] ERROR: build failed.
     exit /b 1
 )
 
 if not exist "%CLIENT_EXE_PATH%" (
-    echo [M47] ERROR: expected client executable missing at "%CLIENT_EXE_PATH%".
+    echo [M48] ERROR: expected client executable missing at "%CLIENT_EXE_PATH%".
     exit /b 1
 )
 
 if not exist "%SERVER_EXE_PATH%" (
-    echo [M47] ERROR: expected host executable missing at "%SERVER_EXE_PATH%".
+    echo [M48] ERROR: expected host executable missing at "%SERVER_EXE_PATH%".
     exit /b 1
 )
 
-call :prepare_stage_root
-if errorlevel 1 exit /b 1
-
-mkdir "%STAGE_ROOT%" || exit /b 1
-mkdir "%STAGE_ROOT%\assets" || exit /b 1
-mkdir "%STAGE_ROOT%\Environment" || exit /b 1
-mkdir "%RUNTIME_STAGE%\Config" || exit /b 1
-mkdir "%RUNTIME_STAGE%\Logs" || exit /b 1
-mkdir "%RUNTIME_STAGE%\Saves" || exit /b 1
-mkdir "%RUNTIME_STAGE%\CrashDumps" || exit /b 1
-mkdir "%HOST_STAGE%" || exit /b 1
-mkdir "%STAGE_ROOT%\Milestones" || exit /b 1
-
-copy /y "%CLIENT_EXE_PATH%" "%STAGE_ROOT%\WAR.exe" >nul || exit /b 1
-copy /y "%SERVER_EXE_PATH%" "%STAGE_ROOT%\WARServer.exe" >nul || exit /b 1
-if exist "%CLIENT_PDB_PATH%" copy /y "%CLIENT_PDB_PATH%" "%STAGE_ROOT%\WAR.pdb" >nul
-if exist "%SERVER_PDB_PATH%" copy /y "%SERVER_PDB_PATH%" "%STAGE_ROOT%\WARServer.pdb" >nul
-if exist "%REPO_ROOT%\assets" xcopy /y /i /e "%REPO_ROOT%\assets" "%STAGE_ROOT%\assets\" >nul 2>nul
-if exist "%REPO_ROOT%\Environment" xcopy /y /i /e "%REPO_ROOT%\Environment" "%STAGE_ROOT%\Environment\" >nul 2>nul
-
-for %%F in (
-    "README.md"
-    "VALIDATION_EVIDENCE_M47.txt"
-    "Milestones\M47_Account_Session_Ticket_Handoff_Authenticated_Entry.md"
-    "scripts\launch_headless_host_win64.bat"
-    "scripts\launch_local_client_against_host_win64.bat"
-    "scripts\smoke_test_headless_host_win64.bat"
-    "scripts\smoke_test_local_demo_win64.bat"
-    "scripts\validate_m45_hosted_bootstrap_win64.bat"
-    "scripts\validate_m46_environment_identity_win64.bat"
-    "scripts\validate_m46_missing_required_secrets_win64.bat"
-    "scripts\validate_m46_runtime_save_hygiene_win64.bat"
-    "scripts\validate_m47_ticket_issue_and_client_entry_win64.bat"
-    "scripts\validate_m47_ticket_denial_and_fail_states_win64.bat"
-    "scripts\validate_m47_reconnect_identity_win64.bat"
-    "scripts\validate_m47_internal_alpha_package_win64.bat"
-) do (
-    if exist "%REPO_ROOT%\%%~F" copy /y "%REPO_ROOT%\%%~F" "%STAGE_ROOT%\%%~nxF" >nul
-)
-
-(
-    echo WAR Internal Alpha Manifest
-    echo Milestone: M47 - Account Session Ticket Handoff / Authenticated Entry
-    echo Configuration: %CONFIG%
-    echo Platform: %PLATFORM%
-    echo Stage root: %STAGE_ROOT%
-    echo Client executable: %STAGE_ROOT%\WAR.exe
-    echo Host executable: %STAGE_ROOT%\WARServer.exe
-    echo Deployable environment root: %STAGE_ROOT%\Environment
-    echo Mutable runtime root: %RUNTIME_STAGE%
-    echo Localhost fallback transport: file-backed-localhost-fallback
-    echo Hosted bootstrap transport: file-backed-hosted-bootstrap
-    echo Environment profiles staged: local, staging, hosted_internal_alpha
-    echo Validation scripts staged:
-    echo - validate_m47_ticket_issue_and_client_entry_win64.bat
-    echo - validate_m47_ticket_denial_and_fail_states_win64.bat
-    echo - validate_m47_reconnect_identity_win64.bat
-    echo - validate_m47_internal_alpha_package_win64.bat
-) > "%MANIFEST_PATH%"
-
-echo [M47] Internal alpha package staged at "%STAGE_ROOT%".
-exit /b 0
-
-:prepare_stage_root
-taskkill /IM WAR.exe /F >nul 2>nul
-taskkill /IM WARServer.exe /F >nul 2>nul
-call :wait_for_unlock
-if not exist "%STAGE_ROOT%" exit /b 0
-
-set /a STAGE_ATTEMPT=0
-:remove_stage_root
-rmdir /s /q "%STAGE_ROOT%" >nul 2>nul
-if not exist "%STAGE_ROOT%" exit /b 0
-set /a STAGE_ATTEMPT+=1
-if %STAGE_ATTEMPT% GEQ 10 (
-    echo [M47] ERROR: unable to clear existing stage root "%STAGE_ROOT%".
-    exit /b 1
-)
-taskkill /IM WAR.exe /F >nul 2>nul
-taskkill /IM WARServer.exe /F >nul 2>nul
-call :wait_for_unlock
-goto :remove_stage_root
-
-:wait_for_unlock
-ping 127.0.0.1 -n 3 >nul
-exit /b 0
+set "WAR_PACKAGE_CONFIG=%CONFIG%"
+call "%SCRIPT_DIR%stage_internal_alpha_package_payload_win64.bat"
+exit /b %ERRORLEVEL%

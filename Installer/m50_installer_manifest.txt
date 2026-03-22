@@ -1,0 +1,14 @@
+version=1
+installer_product=war_market_candidate
+installer_channel=market-candidate
+installer_kind=desktop-windows
+install_root=ProgramFiles/WAR
+runtime_root=runtime
+content_root=BetaContent
+environment_root=Environment
+launcher_root=Launcher
+server_binary=WARServer.exe
+client_binary=WAR.exe
+desktop_shortcut=yes
+uninstall_entry=yes
+repair_entry=yes

@@ -1,0 +1,14 @@
+version=1
+journey_track=beta_retention_expansion
+
+step_01=first_boot_to_ticket_issue
+step_01_goal=prove entry feels intentional and recoverable
+
+step_02=first_hosted_departure_to_orbital_transfer
+step_02_goal=prove destination change is memorable and readable
+
+step_03=frontier_return_loop
+step_03_goal=prove return objectives feel like a continuing journey instead of a disconnected demo
+
+step_04=repeat_session_resume
+step_04_goal=prove returning testers have readable continuity and operator-observable retention surfaces

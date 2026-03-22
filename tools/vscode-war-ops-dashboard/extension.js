@@ -13,6 +13,27 @@ const {
 
 const VIEW_TYPE = "warOps.panel";
 const POLL_INTERVAL_MS = 30000;
+const ACTION_COMMAND_PREFIX = "warOps.action.";
+const ACTION_COMMAND_EXCLUSIONS = new Set(["refreshDashboard", "openOutput"]);
+const REQUIRED_STAGE_FILES = [
+  "WAR.exe",
+  "WARServer.exe",
+  "launch_headless_host_win64.bat",
+  "launch_local_demo_win64.bat",
+  "launch_local_client_against_host_win64.bat",
+  "smoke_test_headless_host_win64.bat",
+  "smoke_test_local_demo_win64.bat"
+];
+const STAGE_MANIFEST_FILES = [
+  "internal_alpha_manifest.txt",
+  "beta_release_candidate_manifest.txt",
+  "market_candidate_manifest.txt",
+  "demo_manifest.txt"
+];
+
+function toActionCommandId(actionId) {
+  return `${ACTION_COMMAND_PREFIX}${actionId}`;
+}
 
 class WarOperationsDashboardProvider {
   constructor() {
@@ -307,6 +328,9 @@ class WarOperationsDashboardProvider {
       case "report":
         return this.collectReportStatus(definition, paths);
 
+      case "bundleReport":
+        return this.collectBundleReportStatus(definition, paths);
+
       case "runtimeFiles":
         return this.collectRuntimeFilesStatus(definition, paths);
 
@@ -317,12 +341,15 @@ class WarOperationsDashboardProvider {
 
   collectStagePackageStatus(definition, paths) {
     if (!paths.stageRoot) {
-      return this.makeStatus("warning", definition.label, "No staged local demo package found");
+      return this.makeStatus("warning", definition.label, "No staged package found");
     }
 
-    const missingPaths = definition.requiredPaths.filter(relativePath => {
+    const missingPaths = REQUIRED_STAGE_FILES.filter(relativePath => {
       return !fs.existsSync(path.join(paths.stageRoot, relativePath));
     });
+    if (!this.findStageManifestFile(paths.stageRoot)) {
+      missingPaths.push("lane manifest");
+    }
 
     if (missingPaths.length > 0) {
       return this.makeStatus(
@@ -336,16 +363,17 @@ class WarOperationsDashboardProvider {
   }
 
   collectReportStatus(definition, paths) {
-    if (!paths.runtimeRoot) {
-      return this.makeStatus("warning", definition.label, "No runtime root resolved");
+    const base = this.resolveStatusBase(definition, paths);
+    if (!base.path) {
+      return this.makeStatus("warning", definition.label, `No ${base.label} resolved`);
     }
 
-    const reportPath = path.join(paths.runtimeRoot, definition.relativePath);
+    const reportPath = path.join(base.path, definition.relativePath);
     if (!fs.existsSync(reportPath)) {
       return this.makeStatus(
         "warning",
         definition.label,
-        `${paths.runtimeLabel}: no report yet`
+        `${base.displayLabel}: no report yet`
       );
     }
 
@@ -357,17 +385,71 @@ class WarOperationsDashboardProvider {
     }
 
     if (/Result:\s*PASS/i.test(content)) {
-      return this.makeStatus("healthy", definition.label, `${paths.runtimeLabel}: PASS`);
+      return this.makeStatus("healthy", definition.label, `${base.displayLabel}: PASS`);
     }
 
     if (/Result:\s*FAIL/i.test(content)) {
-      return this.makeStatus("error", definition.label, `${paths.runtimeLabel}: FAIL`);
+      return this.makeStatus("error", definition.label, `${base.displayLabel}: FAIL`);
     }
 
     return this.makeStatus(
       "warning",
       definition.label,
-      this.firstUsefulLine(content) || `${paths.runtimeLabel}: report present`
+      this.firstUsefulLine(content) || `${base.displayLabel}: report present`
+    );
+  }
+
+  collectBundleReportStatus(definition, paths) {
+    const base = this.resolveStatusBase(definition, paths);
+    if (!base.path) {
+      return this.makeStatus("warning", definition.label, `No ${base.label} resolved`);
+    }
+
+    const total = definition.relativePaths.length;
+    let passCount = 0;
+    let failCount = 0;
+    let missingCount = 0;
+
+    for (const relativePath of definition.relativePaths) {
+      const reportPath = path.join(base.path, relativePath);
+      if (!fs.existsSync(reportPath)) {
+        missingCount += 1;
+        continue;
+      }
+
+      let content = "";
+      try {
+        content = fs.readFileSync(reportPath, "utf8");
+      } catch (error) {
+        return this.makeStatus("error", definition.label, this.formatError(error));
+      }
+
+      if (/Result:\s*FAIL/i.test(content)) {
+        failCount += 1;
+        continue;
+      }
+
+      if (/Result:\s*PASS/i.test(content)) {
+        passCount += 1;
+      }
+    }
+
+    if (failCount > 0) {
+      return this.makeStatus("error", definition.label, `${failCount}/${total} checks failed`);
+    }
+
+    if (passCount === total) {
+      return this.makeStatus("healthy", definition.label, `${passCount}/${total} checks passed`);
+    }
+
+    if (missingCount === total) {
+      return this.makeStatus("warning", definition.label, `${base.displayLabel}: no reports yet`);
+    }
+
+    return this.makeStatus(
+      "warning",
+      definition.label,
+      `${passCount}/${total} checks passed${missingCount ? `, ${missingCount} missing` : ""}`
     );
   }
 
@@ -397,6 +479,30 @@ class WarOperationsDashboardProvider {
       definition.label,
       `${presentCount}/${definition.relativePaths.length} artifacts present`
     );
+  }
+
+  resolveStatusBase(definition, paths) {
+    if (definition.root === "stage") {
+      return {
+        path: paths.stageRoot,
+        label: "staged package",
+        displayLabel: paths.stageLabel || "staged package"
+      };
+    }
+
+    if (definition.root === "repo") {
+      return {
+        path: paths.repoRoot,
+        label: "repo root",
+        displayLabel: "repo"
+      };
+    }
+
+    return {
+      path: paths.runtimeRoot,
+      label: "runtime root",
+      displayLabel: paths.runtimeLabel
+    };
   }
 
   makeStatus(tone, label, detail) {
@@ -602,16 +708,54 @@ class WarOperationsDashboardProvider {
     };
   }
 
-  findLatestStageInfo(repoRoot) {
-    const localDemoRoot = path.join(repoRoot, "out", "local_demo");
-    if (!fs.existsSync(localDemoRoot)) {
-      return null;
-    }
+  findStageManifestFile(stageRoot) {
+    return STAGE_MANIFEST_FILES.find(relativePath => {
+      return fs.existsSync(path.join(stageRoot, relativePath));
+    }) || "";
+  }
 
-    const candidates = fs.readdirSync(localDemoRoot, { withFileTypes: true })
-      .filter(entry => entry.isDirectory())
-      .map(entry => this.parseStageName(entry.name))
-      .filter(Boolean)
+  isUsableStageRoot(stageRoot) {
+    return REQUIRED_STAGE_FILES.every(relativePath => {
+      return fs.existsSync(path.join(stageRoot, relativePath));
+    }) && Boolean(this.findStageManifestFile(stageRoot));
+  }
+
+  findLatestStageInfo(repoRoot) {
+    const laneRoots = [
+      {
+        basePath: path.join(repoRoot, "out", "market_candidate"),
+        laneLabel: "market candidate",
+        laneRank: 4
+      },
+      {
+        basePath: path.join(repoRoot, "out", "beta_candidate"),
+        laneLabel: "beta candidate",
+        laneRank: 3
+      },
+      {
+        basePath: path.join(repoRoot, "out", "internal_alpha"),
+        laneLabel: "internal alpha",
+        laneRank: 2
+      },
+      {
+        basePath: path.join(repoRoot, "out", "local_demo"),
+        laneLabel: "local demo",
+        laneRank: 1
+      }
+    ];
+
+    const candidates = laneRoots
+      .filter(lane => fs.existsSync(lane.basePath))
+      .flatMap(lane => fs.readdirSync(lane.basePath, { withFileTypes: true })
+        .filter(entry => entry.isDirectory())
+        .map(entry => this.parseStageName(entry.name))
+        .filter(Boolean)
+        .map(parsed => ({
+          ...parsed,
+          laneLabel: lane.laneLabel,
+          laneRank: lane.laneRank,
+          basePath: lane.basePath
+        })))
       .sort((left, right) => {
         if (right.milestone !== left.milestone) {
           return right.milestone - left.milestone;
@@ -621,6 +765,10 @@ class WarOperationsDashboardProvider {
           return right.configRank - left.configRank;
         }
 
+        if (right.laneRank !== left.laneRank) {
+          return right.laneRank - left.laneRank;
+        }
+
         return left.name.localeCompare(right.name);
       });
 
@@ -628,12 +776,18 @@ class WarOperationsDashboardProvider {
       return null;
     }
 
-    const best = candidates[0];
-    const stageRoot = path.join(localDemoRoot, best.name);
+    const best = candidates.find(candidate => {
+      return this.isUsableStageRoot(path.join(candidate.basePath, candidate.name));
+    });
+    if (!best) {
+      return null;
+    }
+
+    const stageRoot = path.join(best.basePath, best.name);
 
     return {
       stageRoot,
-      stageLabel: best.name,
+      stageLabel: `${best.name} (${best.laneLabel})`,
       runtimeRoot: path.join(stageRoot, "runtime"),
       runtimeLabel: `${best.name}/runtime`
     };
@@ -658,7 +812,7 @@ class WarOperationsDashboardProvider {
   }
 
   execAction(action, inputValue) {
-    const invocation = this.buildActionInvocation(action, inputValue);
+    const invocation = this.buildExecInvocation(action, inputValue);
 
     return new Promise((resolve, reject) => {
       execFile(
@@ -682,28 +836,22 @@ class WarOperationsDashboardProvider {
     });
   }
 
-  buildActionInvocation(action, inputValue) {
-    if (action.kind !== "script") {
-      throw new Error(`Unsupported runnable action kind: ${action.kind}`);
+  buildExecInvocation(action, inputValue) {
+    const scriptInvocation = this.resolveScriptInvocation(action, inputValue);
+
+    if (this.isBatchScript(scriptInvocation.scriptPath)) {
+      return {
+        command: "cmd.exe",
+        args: [
+          "/d",
+          "/s",
+          "/c",
+          this.buildCmdBatchCall(scriptInvocation.scriptPathWindows, scriptInvocation.args)
+        ],
+        cwd: scriptInvocation.cwd
+      };
     }
 
-    const paths = this.resolveWorkspacePaths();
-    const baseRoot = action.root === "stage" ? paths.stageRoot : paths.repoRoot;
-    if (action.root === "stage" && !baseRoot) {
-      throw new Error("No staged local demo package is available yet. Run Package Release or Package Debug first.");
-    }
-
-    const scriptPath = path.join(baseRoot, action.relativePath);
-    const scriptPathWindows = this.toWindowsPath(scriptPath);
-    const args = Array.isArray(action.args)
-      ? action.args.map(arg => this.resolveActionArgument(arg, paths))
-      : [];
-
-    if (inputValue) {
-      args.push(inputValue);
-    }
-
-    const powerShellCommand = this.buildPowerShellCall(scriptPathWindows, args);
     return {
       command: this.getPowerShellExecutable(),
       args: [
@@ -712,8 +860,58 @@ class WarOperationsDashboardProvider {
         "-ExecutionPolicy",
         "Bypass",
         "-Command",
-        powerShellCommand
+        this.buildPowerShellCall(scriptInvocation.scriptPathWindows, scriptInvocation.args)
       ],
+      cwd: scriptInvocation.cwd
+    };
+  }
+
+  buildActionInvocation(action, inputValue) {
+    const scriptInvocation = this.resolveScriptInvocation(action, inputValue);
+
+    return {
+      command: this.getPowerShellExecutable(),
+      args: [
+        "-NoLogo",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        this.buildPowerShellCall(scriptInvocation.scriptPathWindows, scriptInvocation.args)
+      ],
+      cwd: scriptInvocation.cwd
+    };
+  }
+
+  resolveScriptInvocation(action, inputValue) {
+    if (action.kind !== "script") {
+      throw new Error(`Unsupported runnable action kind: ${action.kind}`);
+    }
+
+    const paths = this.resolveWorkspacePaths();
+    const baseRoot = action.root === "stage" ? paths.stageRoot : paths.repoRoot;
+    if (action.root === "stage" && !baseRoot) {
+      throw new Error("No staged package is available yet. Run Package Release or Package Debug first.");
+    }
+
+    const scriptPath = path.join(baseRoot, action.relativePath);
+    const scriptPathWindows = this.toWindowsPath(scriptPath);
+    const args = Array.isArray(action.args)
+      ? action.args.map(arg => this.resolveActionArgument(arg, paths))
+      : [];
+
+    if (!fs.existsSync(scriptPath)) {
+      throw new Error(`Missing staged script: ${scriptPath}. Rebuild the package from the dashboard first.`);
+    }
+
+    if (inputValue) {
+      args.push(inputValue);
+    }
+
+    return {
+      scriptPath,
+      scriptPathWindows,
+      args,
       cwd: baseRoot
     };
   }
@@ -753,6 +951,16 @@ class WarOperationsDashboardProvider {
     return `& ${this.powerShellQuote(scriptPathWindows)}${quotedArgs ? ` ${quotedArgs}` : ""}`;
   }
 
+  buildCmdBatchCall(scriptPathWindows, args) {
+    const quotedArgs = args.map(value => this.cmdQuote(value)).join(" ");
+    return `call ${this.cmdQuote(scriptPathWindows)}${quotedArgs ? ` ${quotedArgs}` : ""}`;
+  }
+
+  isBatchScript(scriptPath) {
+    const extension = path.extname(scriptPath).toLowerCase();
+    return extension === ".bat" || extension === ".cmd";
+  }
+
   toWindowsPath(fsPath) {
     if (process.platform === "win32") {
       return path.win32.normalize(fsPath);
@@ -776,6 +984,10 @@ class WarOperationsDashboardProvider {
 
   powerShellQuote(value) {
     return `'${String(value).replace(/'/g, "''")}'`;
+  }
+
+  cmdQuote(value) {
+    return `"${String(value).replace(/"/g, '""')}"`;
   }
 
   recordActionResult(label, success, output) {
@@ -1403,6 +1615,13 @@ class WarOperationsDashboardProvider {
 function activate(context) {
   const provider = new WarOperationsDashboardProvider();
   provider.initialize();
+  const actionCommandRegistrations = Object.keys(ACTIONS)
+    .filter(actionId => !ACTION_COMMAND_EXCLUSIONS.has(actionId))
+    .map(actionId => {
+      return vscode.commands.registerCommand(toActionCommandId(actionId), async () => {
+        await provider.handleAction(actionId);
+      });
+    });
 
   context.subscriptions.push(
     provider,
@@ -1414,7 +1633,8 @@ function activate(context) {
     vscode.commands.registerCommand("warOps.openDashboard", async () => provider.focusSidebar()),
     vscode.commands.registerCommand("warOps.focusPanel", async () => provider.focusSidebar()),
     vscode.commands.registerCommand("warOps.refresh", async () => provider.refreshStatuses(true)),
-    vscode.commands.registerCommand("warOps.openOutput", async () => provider.output.show(true))
+    vscode.commands.registerCommand("warOps.openOutput", async () => provider.output.show(true)),
+    ...actionCommandRegistrations
   );
 }
 

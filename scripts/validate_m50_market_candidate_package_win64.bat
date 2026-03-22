@@ -5,10 +5,10 @@ set "SCRIPT_DIR=%~dp0"
 for %%I in ("%SCRIPT_DIR%..") do set "REPO_ROOT=%%~fI"
 set "CONFIG=%~1"
 if "%CONFIG%"=="" set "CONFIG=Release"
-set "STAGE_ROOT=%REPO_ROOT%\out\internal_alpha\WAR_M48_%CONFIG%"
-set "REPORT_PATH=%REPO_ROOT%\out\internal_alpha\m47_validation_report_%CONFIG%.txt"
+set "STAGE_ROOT=%REPO_ROOT%\out\market_candidate\WAR_M50_%CONFIG%"
+set "REPORT_PATH=%REPO_ROOT%\out\market_candidate\m50_validation_report_%CONFIG%.txt"
 
-call "%SCRIPT_DIR%build_internal_alpha_package_win64.bat" "%CONFIG%"
+call "%SCRIPT_DIR%build_market_candidate_package_win64.bat" "%CONFIG%"
 if errorlevel 1 goto :build_fail
 
 pushd "%STAGE_ROOT%" >nul
@@ -30,10 +30,26 @@ call "%STAGE_ROOT%\validate_m47_ticket_denial_and_fail_states_win64.bat"
 if errorlevel 1 goto :stage_fail
 call "%STAGE_ROOT%\validate_m47_reconnect_identity_win64.bat"
 if errorlevel 1 goto :stage_fail
+call "%STAGE_ROOT%\validate_m48_failure_bundle_capture_win64.bat"
+if errorlevel 1 goto :stage_fail
+call "%STAGE_ROOT%\validate_m48_operator_triage_artifacts_win64.bat"
+if errorlevel 1 goto :stage_fail
+call "%STAGE_ROOT%\validate_m49_beta_content_scale_win64.bat"
+if errorlevel 1 goto :stage_fail
+call "%STAGE_ROOT%\validate_m49_retention_expansion_win64.bat"
+if errorlevel 1 goto :stage_fail
+call "%STAGE_ROOT%\validate_m49_release_candidate_discipline_win64.bat"
+if errorlevel 1 goto :stage_fail
+call "%STAGE_ROOT%\validate_m50_launcher_productionization_win64.bat"
+if errorlevel 1 goto :stage_fail
+call "%STAGE_ROOT%\validate_m50_installer_productionization_win64.bat"
+if errorlevel 1 goto :stage_fail
+call "%STAGE_ROOT%\validate_m50_update_productionization_win64.bat"
+if errorlevel 1 goto :stage_fail
 popd >nul
 
 (
-    echo WAR M47 Internal Alpha Validation
+    echo WAR M50 Market Candidate Validation
     echo Result: PASS
     echo Stage root: %STAGE_ROOT%
     echo Scripts run:
@@ -46,13 +62,21 @@ popd >nul
     echo - validate_m47_ticket_issue_and_client_entry_win64.bat
     echo - validate_m47_ticket_denial_and_fail_states_win64.bat
     echo - validate_m47_reconnect_identity_win64.bat
+    echo - validate_m48_failure_bundle_capture_win64.bat
+    echo - validate_m48_operator_triage_artifacts_win64.bat
+    echo - validate_m49_beta_content_scale_win64.bat
+    echo - validate_m49_retention_expansion_win64.bat
+    echo - validate_m49_release_candidate_discipline_win64.bat
+    echo - validate_m50_launcher_productionization_win64.bat
+    echo - validate_m50_installer_productionization_win64.bat
+    echo - validate_m50_update_productionization_win64.bat
 ) > "%REPORT_PATH%"
 type "%REPORT_PATH%"
 exit /b 0
 
 :build_fail
 (
-    echo WAR M47 Internal Alpha Validation
+    echo WAR M50 Market Candidate Validation
     echo Result: FAIL
     echo Stage failed during build/package.
 ) > "%REPORT_PATH%"
@@ -62,7 +86,7 @@ exit /b 1
 :stage_fail
 popd >nul
 (
-    echo WAR M47 Internal Alpha Validation
+    echo WAR M50 Market Candidate Validation
     echo Result: FAIL
     echo Stage root: %STAGE_ROOT%
 ) > "%REPORT_PATH%"

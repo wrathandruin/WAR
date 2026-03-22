@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "engine/core/EnvironmentConfig.h"
+#include "engine/core/FailureBundleProtocol.h"
 #include "engine/core/RuntimeOwnership.h"
 #include "engine/core/RuntimePaths.h"
 #include "engine/host/SessionEntryProtocol.h"
@@ -55,7 +56,8 @@ namespace war
             LocalDemoDiagnosticsReport& localDemoDiagnosticsReport,
             const EnvironmentConfigReport* environmentConfigReport = nullptr,
             const RuntimeOwnershipReport* runtimeOwnershipReport = nullptr,
-            const SessionEntryProtocolReport* sessionEntryProtocolReport = nullptr);
+            const SessionEntryProtocolReport* sessionEntryProtocolReport = nullptr,
+            const FailureBundleProtocolReport* failureBundleProtocolReport = nullptr);
         static void appendTraceLine(
             const RuntimeBoundaryReport& runtimeBoundaryReport,
             const std::string& filename,

@@ -71,7 +71,40 @@ copy /y "%CLIENT_EXE_PATH%" "%STAGE_ROOT%\WAR.exe" >nul || exit /b 1
 copy /y "%SERVER_EXE_PATH%" "%STAGE_ROOT%\WARServer.exe" >nul || exit /b 1
 if exist "%CLIENT_PDB_PATH%" copy /y "%CLIENT_PDB_PATH%" "%STAGE_ROOT%\WAR.pdb" >nul
 if exist "%SERVER_PDB_PATH%" copy /y "%SERVER_PDB_PATH%" "%STAGE_ROOT%\WARServer.pdb" >nul
-if exist "%REPO_ROOT%\assets" xcopy /y /i /e "%REPO_ROOT%\assets" "%STAGE_ROOT%\assets\" >nul
+
+if exist "%REPO_ROOT%\assets" (
+    robocopy "%REPO_ROOT%\assets" "%STAGE_ROOT%\assets" /E /XD "%REPO_ROOT%\assets\imported_assets" /R:2 /W:1 /NFL /NDL /NJH /NJS /NP >nul
+    set "ROBOCOPY_EXIT=%ERRORLEVEL%"
+    if errorlevel 8 (
+        echo [M44] ERROR: failed to stage assets from "%REPO_ROOT%\assets" to "%STAGE_ROOT%\assets" - robocopy exit !ROBOCOPY_EXIT!.
+        exit /b 1
+    )
+)
+
+if not exist "%STAGE_ROOT%\assets\shaders\dx11\vs_color.bin" (
+    echo [M44] ERROR: staged shader binary missing at "%STAGE_ROOT%\assets\shaders\dx11\vs_color.bin".
+    exit /b 1
+)
+
+if not exist "%STAGE_ROOT%\assets\shaders\dx11\fs_color.bin" (
+    echo [M44] ERROR: staged shader binary missing at "%STAGE_ROOT%\assets\shaders\dx11\fs_color.bin".
+    exit /b 1
+)
+
+if not exist "%STAGE_ROOT%\assets\shaders\dx11\vs_texture.bin" (
+    echo [M44] ERROR: staged shader binary missing at "%STAGE_ROOT%\assets\shaders\dx11\vs_texture.bin".
+    exit /b 1
+)
+
+if not exist "%STAGE_ROOT%\assets\shaders\dx11\fs_texture.bin" (
+    echo [M44] ERROR: staged shader binary missing at "%STAGE_ROOT%\assets\shaders\dx11\fs_texture.bin".
+    exit /b 1
+)
+
+if not exist "%STAGE_ROOT%\assets\textures\world_atlas.bmp" (
+    echo [M44] ERROR: staged atlas texture missing at "%STAGE_ROOT%\assets\textures\world_atlas.bmp".
+    exit /b 1
+)
 
 for %%F in (
     "README.md"

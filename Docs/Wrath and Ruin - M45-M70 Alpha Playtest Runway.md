@@ -155,110 +155,109 @@ The game cannot become a real hosted product if entry into the world is still un
 
 ### Next milestone
 
-M48 - Structured Telemetry / Crash Capture / Runtime Event Pipeline
+M48 - Crash Capture / Failure Bundles / Operator Triage Baseline
 
 ---
 
 ### Title
 
-M48 - Structured Telemetry / Crash Capture / Runtime Event Pipeline
+M48 - Crash Capture / Failure Bundles / Operator Triage Baseline
 
 ### Description
 
-M48 establishes the first serious observability baseline for hosted play.
+M48 establishes the first failure-capture and operator-triage baseline for hosted play.
 
-This milestone should make session, runtime, and crash behavior visible enough that engineering and support are no longer guessing.
+This milestone should make bootstrap, startup, and runtime failures diagnosable from packaged artifacts instead of guesswork.
 
 ### Required focus
 
-- structured runtime logs
-- session and host identifiers in logs
-- crash dump or crash-report capture baseline
-- transport and reconnect telemetry
-- mission/session lifecycle telemetry
+- startup, runtime, and bootstrap failure-bundle directories
+- copied runtime evidence attachments and manifests
+- promoted operator-triage artifacts for the latest failure
+- packaged validation of failure capture and triage surfaces
+- preservation of the earlier hosted validation lanes
 
 ### Acceptance signals
 
-- startup, connect, disconnect, crash, and restore events are queryable
-- crash artifacts are preserved in a known location
-- telemetry can distinguish host, client, session, and build version
-- support and engineering can reason about failures from artifacts alone
+- bootstrap and runtime failures create bundles in known locations
+- bundle manifests and attachment manifests are preserved with the failure
+- operator triage gets a promoted latest bundle, summary, and checklist
+- support and engineering can reason about failures from packaged artifacts alone
 
 ### Why this is important
 
-Hosted testing without observability is just slower chaos.
+Hosted testing without failure capture and triage is just slower chaos.
 
 ### Next milestone
 
-M49 - Admin Surface / Backup Restore / Recovery Discipline
+M49 - Beta Content Scale / Retention Expansion / Release-Candidate Discipline
 
 ---
 
 ### Title
 
-M49 - Admin Surface / Backup Restore / Recovery Discipline
+M49 - Beta Content Scale / Retention Expansion / Release-Candidate Discipline
 
 ### Description
 
-M49 gives operators the minimum tools required to run and recover the slice responsibly.
+M49 moves the slice from alpha-hardening posture into a disciplined beta-candidate posture.
 
-This is not a full GM suite.
-It is the first support and operational control surface for alpha hosting.
+This milestone treats content breadth, tester return, and release-candidate packaging as one connected production discipline.
 
 ### Required focus
 
-- host status and runtime inspection
-- player/session lookup
-- restart and graceful shutdown controls
-- backup, restore, and rollback drill
-- persistence recovery confidence
+- staged beta content manifests
+- retention summaries and launch journals
+- release-candidate manifest, checklist, and latest pointer
+- preserved M45 through M48 packaged validation flow
+- beta candidate packaging discipline
 
 ### Acceptance signals
 
-- an operator can inspect runtime health without engineering intervention
-- backup/restore is tested, not assumed
-- rollback expectations are documented
-- a bad build or bad runtime state has a recovery path
+- the beta candidate stages real authored content manifests
+- repeated launches leave behind retention surfaces that can be reviewed
+- hosted/bootstrap runs leave behind release-candidate manifests and checklists
+- the package reads like a beta candidate rather than only an internal-alpha bundle
 
 ### Why this is important
 
-Without recovery discipline, the first hosted test is operationally irresponsible.
+Without content scale and retention discipline, beta credibility is just branding.
 
 ### Next milestone
 
-M50 - Security Hardening Pass 1 / Abuse Controls / Rate Limits
+M50 - Launcher / Installer / Update Productionization
 
 ---
 
 ### Title
 
-M50 - Security Hardening Pass 1 / Abuse Controls / Rate Limits
+M50 - Launcher / Installer / Update Productionization
 
 ### Description
 
-M50 performs the first explicit hardening pass on the hosted slice.
+M50 moves the project from beta-candidate discipline into the first real market-facing distribution discipline.
 
-The goal is not enterprise-complete security.
-The goal is to stop obvious abuse, malformed input, and operational self-harm from being left until after the first cohort.
+The goal is not a final commercial launcher stack.
+The goal is to make launcher entry, installer shape, and update direction explicit, reviewable, and testable.
 
 ### Required focus
 
-- intent validation review
-- malformed input and protocol failure handling
-- rate limiting or abuse throttling baseline
-- save-integrity and persistence safety checks
-- hosted runtime hardening checklist
+- launcher source-of-truth manifest
+- installer source-of-truth manifest
+- update channel source-of-truth manifest
+- launcher, installer, and updater runtime capture
+- preserved M45 through M49 packaged validation flow
 
 ### Acceptance signals
 
-- malformed or spammy client behavior is bounded
-- host runtime does not silently trust obviously bad input
-- persistence corruption paths are reduced and documented
-- the alpha slice has a first real security posture
+- the staged package exposes dedicated Launcher and Installer lanes
+- client launches leave behind launcher-session manifests and latest pointers
+- host/bootstrap runs leave behind installer and updater runtime manifests
+- the package reads like a real distributed product candidate
 
 ### Why this is important
 
-If you wait until after alpha to think about abuse and integrity, you are already late.
+If launcher, install, and update direction are still implied after beta packaging, the project is not ready to be treated like a market candidate.
 
 ### Next milestone
 

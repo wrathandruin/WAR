@@ -1,0 +1,28 @@
+M50 Validation Evidence
+
+Submission classification:
+- sign-off complete
+
+Validation date:
+- March 22, 2026
+
+Primary report:
+- out/market_candidate/m50_validation_report_Release.txt : PASS
+
+Stage root covered:
+- out/market_candidate/WAR_M50_Release
+
+Included carried-forward coverage:
+- M48 failure bundle capture and operator triage artifact promotion
+- M49 beta content scale, retention expansion, and release-candidate discipline
+- M50 launcher, installer, and update productionization
+
+Supporting fixes applied during sign-off:
+- normalized the touched Windows batch wrappers to CRLF so subroutine labels resolve reliably under cmd.exe
+- hardened validate_m47_ticket_issue_and_client_entry_win64.bat to wait for the mirrored host session id before scoring the client status file
+
+Residual notes:
+- Release builds still emit existing C4834 [[nodiscard]] warnings from Application and headless-host code paths; they did not block validation but remain cleanup work
+
+Final statement:
+- M50 is signed off for Release on March 22, 2026
